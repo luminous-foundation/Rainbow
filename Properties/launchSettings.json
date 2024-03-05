@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Rainbow": {
+      "commandName": "Project",
+      "commandLineArgs": ".\\program.rb"
+    }
+  }
+}
