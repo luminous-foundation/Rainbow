@@ -1,3 +1,10 @@
+# RESERVED BYTES
+```
+0xFF - function start
+0xFE - scope start
+0xFD - scope end
+```
+
 # INSTRUCTIONS
 
 ```
@@ -25,6 +32,7 @@
 0x6A-6E	LSH     [imm/var]   [var]
 0x6F-73	RSH     [imm/var]   [var]
 0x74-75	VAR     [type/var]  [name]
+0x76-77 RET     [imm/var]
 ```
 
 # TYPES
@@ -35,7 +43,7 @@
 0x02	i16
 0x03	i32
 0x04	i64
-0x05	u8
+0x05	u8/char
 0x06	u16
 0x07	u32
 0x08	u64
@@ -46,4 +54,39 @@
 0x0D	type
 0x0E	struct
 0x0F	bytecode string (used for variable names, function names, etc.)
+```
+
+# BYTECODE STRINGS
+Bytecode strings are how function names/variable names/etc. are represented in the bytecode.
+Their format is a follows
+```
+(1 byte length) (characters)
+```
+An example string would look like this:
+```
+0D 48 65 6C 6C 6F 2C 20 57 6F 72 6C 64 21
+```
+This as text is
+```
+Hello, World!
+```
+
+# FUNCTIONS
+The format for functions is as follows
+```
+FF (return type) (function name) (args) FE
+    (code)
+FD
+```
+An example function would look like this:
+```
+FF 01 04 6D 61 69 6E 0C 0C 05 04 61 72 67 73 FE
+    (code)
+FD
+```
+In pseudocode this would be
+```cs
+byte main(string[] args) {
+
+}
 ```
