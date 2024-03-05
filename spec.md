@@ -2,10 +2,10 @@
 
 ```
 0x00	NOP
-0x01-02	PUSH	[imm/var]
+0x01-02	PUSH 	[imm/var]
 0x03	POP		[var]
-0x04-05	LDARG	[imm/var]
-0x06-07	CALL	[func/var]
+0x04-05	LDARG 	[imm/var]
+0x06-07	CALL 	[func/var]
 0x08-0C	ADD		[imm/var]	[imm/var]	[var]
 0x0D-11	SUB		[imm/var]	[imm/var]	[var]
 0x12-16	MUL		[imm/var]	[imm/var]	[var]
