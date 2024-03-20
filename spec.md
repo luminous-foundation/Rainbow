@@ -53,7 +53,7 @@
 0x0C	pointer
 0x0D	type
 0x0E	struct
-0x0F	bytecode string (used for variable names, function names, etc.)
+0x0F	bytecode string (used for variable names, function names, etc.) (also is a function pointer)
 ```
 
 # BYTECODE STRINGS
