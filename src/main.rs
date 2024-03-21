@@ -57,6 +57,9 @@ fn main() {
             0x16 => div_imm_var(&mut stack, current_frame, &program, &mut pc),
             0x17 => div_var_var(&mut stack, current_frame, &program, &mut pc),
 
+            0x18 => jmp_imm(&program, &mut pc),
+            0x19 => jmp_var(&mut stack, current_frame, &program, &mut pc),
+
             0x4A => mov_imm(&mut stack, current_frame, &program, &mut pc),
             0x4B => mov_var(&mut stack, current_frame, &program, &mut pc),
 
@@ -102,13 +105,17 @@ fn get_var(stack: &mut Vec<Frame>, current_frame: usize, name: String) -> Box<Ty
     return stack[0].get_var(&name);
 }
 
+fn parse_var(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u8>, pc: &mut usize) -> Box<Types> {
+    let name = parse_string(program, pc);
+    return get_var(stack, current_frame, name);
+}
+
 fn push_imm(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u8>, pc: &mut usize) {
     stack[current_frame].push(parse_imm(program, pc));
 }
 
 fn push_var(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u8>, pc: &mut usize) {
-    let name = parse_string(program, pc);
-    let var = get_var(stack, current_frame, name);
+    let var = parse_var(stack, current_frame, program, pc);
 
     stack[current_frame].push(var);
 }
@@ -138,6 +145,35 @@ fn ldarg_var(stack: &mut Vec<Frame>, program: &Vec<u8>, pc: &mut usize) {
     frame.push(value);
 }
 
+fn jmp(value: Types, pc: &mut usize) {
+    match value {
+        Types::I8(v) => *pc = v as usize,
+        Types::I16(v) => *pc = v as usize,
+        Types::I32(v) => *pc = v as usize,
+        Types::I64(v) => *pc = v as usize,
+        Types::U8(v) => *pc = v as usize,
+        Types::U16(v) => *pc = v as usize,
+        Types::U32(v) => *pc = v as usize,
+        Types::U64(v) => *pc = v as usize,
+        Types::F16(v) => *pc = v.to_f32() as usize,
+        Types::F32(v) => *pc = v as usize,
+        Types::F64(v) => *pc = v as usize,
+        _ => panic!("invalid jump address type")
+    }
+}
+
+fn jmp_imm(program: &Vec<u8>, pc: &mut usize) {
+    let value = *parse_imm(program, pc);
+
+    jmp(value, pc);
+}
+
+fn jmp_var(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u8>, pc: &mut usize) {
+    let value = *parse_var(stack, current_frame, program, pc);
+
+    jmp(value, pc);
+}
+
 fn mov_imm(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u8>, pc: &mut usize) {
     let frame = &mut stack[current_frame];
 
@@ -148,8 +184,7 @@ fn mov_imm(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u8>, pc: 
 }
 
 fn mov_var(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u8>, pc: &mut usize) {
-    let name = parse_string(program, pc);
-    let var = get_var(stack, current_frame, name);
+    let var = parse_var(stack, current_frame, program, pc);
 
     let frame = &mut stack[current_frame];
 
@@ -169,8 +204,7 @@ fn create_var_imm(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u8
 }
 
 fn create_var_var(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u8>, pc: &mut usize) {
-    let name1 = parse_string(program, pc);
-    let t = *get_var(stack, current_frame, name1);
+    let t = *parse_var(stack, current_frame, program, pc);
 
     let name2 = parse_string(program, pc);
 
