@@ -33,6 +33,9 @@ fn main() {
             0x02 => push_var(&mut stack, current_frame, &program, &mut pc),
             
             0x03 => pop(&mut stack, current_frame, &program, &mut pc),
+
+            0x04 => ldarg_imm(&mut stack, &program, &mut pc),
+            0x05 => ldarg_var(&mut stack, &program, &mut pc),
             
             0x08 => add_imm_imm(&mut stack, current_frame, &program, &mut pc),
             0x09 => add_var_imm(&mut stack, current_frame, &program, &mut pc),
@@ -91,40 +94,64 @@ fn main() {
     println!("program done :)");
 }
 
+fn get_var(stack: &mut Vec<Frame>, current_frame: usize, name: String) -> Box<Types> {
+    let frame = &mut stack[current_frame];
+    if frame.has_var(name.clone()) {
+        return frame.get_var(&name);
+    }
+    return stack[0].get_var(&name);
+}
+
 fn push_imm(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u8>, pc: &mut usize) {
-    stack[current_frame].stack.push(parse_imm(program, pc));
+    stack[current_frame].push(parse_imm(program, pc));
 }
 
 fn push_var(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u8>, pc: &mut usize) {
-    let frame = &mut stack[current_frame];
     let name = parse_string(program, pc);
+    let var = get_var(stack, current_frame, name);
 
-    frame.stack.push(frame.get_var(name));
+    stack[current_frame].push(var);
 }
 
 fn pop(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u8>, pc: &mut usize) {
-    let name = parse_string(program, pc);
-
     let frame = &mut stack[current_frame];
+
+    let name = parse_string(program, pc);
     let value = (*frame).pop();
 
     (*frame).set_var(name, value);
 }
 
+fn ldarg_imm(stack: &mut Vec<Frame>, program: &Vec<u8>, pc: &mut usize) {
+    let frame = &mut stack[0]; // global frame
+
+    let value = parse_imm(program, pc);
+
+    frame.push(value);
+}
+
+fn ldarg_var(stack: &mut Vec<Frame>, program: &Vec<u8>, pc: &mut usize) {
+    let frame = &mut stack[0]; // global frame
+
+    let value = parse_imm(program, pc);
+
+    frame.push(value);
+}
+
 fn mov_imm(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u8>, pc: &mut usize) {
     let frame = &mut stack[current_frame];
 
-    let val = parse_imm(program, pc);
+    let value = parse_imm(program, pc);
 
     let name = parse_string(program, pc);
-    frame.set_var(name, val);
+    frame.set_var(name, value);
 }
 
 fn mov_var(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u8>, pc: &mut usize) {
-    let frame = &mut stack[current_frame];
-
     let name = parse_string(program, pc);
-    let var = frame.get_var(name);
+    let var = get_var(stack, current_frame, name);
+
+    let frame = &mut stack[current_frame];
 
     let name = parse_string(program, pc);
     frame.set_var(name, var);
@@ -142,10 +169,8 @@ fn create_var_imm(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u8
 }
 
 fn create_var_var(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u8>, pc: &mut usize) {
-    let frame = &mut stack[current_frame];
-
     let name1 = parse_string(program, pc);
-    let t = *frame.get_var(name1);
+    let t = *get_var(stack, current_frame, name1);
 
     let name2 = parse_string(program, pc);
 

@@ -11,7 +11,7 @@
 [x] 0x00	NOP     
 [x] 0x01-02	PUSH    [imm/var]
 [x] 0x03	POP     [var]
-[ ] 0x04-05	LDARG   [imm/var]
+[x] 0x04-05	LDARG   [imm/var]
 [ ] 0x06-07	CALL    [func/var]
 [x] 0x08-0B	ADD     [imm/var]   [imm/var]   [var]
 [x] 0x0C-0F	SUB     [imm/var]   [imm/var]   [var]

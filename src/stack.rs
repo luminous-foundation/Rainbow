@@ -21,8 +21,8 @@ impl Frame {
         self.stack.push(from_type(t));
     }
 
-    pub fn get_var(&self, name: String) -> Box<Types> {
-        let loc = *self.var_locs.get(&name).expect(format!("tried to get undefined variable `{}`", name).as_str());
+    pub fn get_var(&self, name: &String) -> Box<Types> {
+        let loc = *self.var_locs.get(name).expect(format!("tried to get undefined variable `{}`", name).as_str());
 
         return self.stack[loc].clone();
     }
@@ -33,6 +33,14 @@ impl Frame {
         let loc = *self.var_locs.get(&name).expect(format!("tried to set undefined variable `{}`", name).as_str());
 
         self.stack[loc] = casted;
+    }
+
+    pub fn has_var(&self, name: String) -> bool {
+        return self.var_locs.contains_key(&name);
+    }
+
+    pub fn push(&mut self, value: Box<Types>) {
+        self.stack.push(value);
     }
 
     pub fn pop(&mut self) -> Box<Types> {
