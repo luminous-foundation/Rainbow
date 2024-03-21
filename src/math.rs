@@ -1,4 +1,4 @@
-use crate::{get_var, parse_var, stack::Frame, types::{add, div, mul, parse_imm, parse_string, sub, Types}};
+use crate::{parse_var, stack::Frame, types::{add, div, mul, parse_imm, parse_string, sub, Types}};
 
 // i tried to make macros for these but i cant figure it out
 pub fn add_imm_imm(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u8>, pc: &mut usize) {
@@ -10,8 +10,6 @@ pub fn add_imm_imm(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u
 }
 
 pub fn add_var_imm(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u8>, pc: &mut usize) {
-    let frame = &mut stack[current_frame];
-
     let var1 = parse_var(stack, current_frame, program, pc);
     let var2 = parse_imm(program, pc);
 
@@ -23,8 +21,6 @@ pub fn add_var_imm(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u
 }
 
 pub fn add_imm_var(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u8>, pc: &mut usize) {
-    let frame = &mut stack[current_frame];
-
     let var1 = parse_imm(program, pc);
     let var2 = parse_var(stack, current_frame, program, pc);
 
@@ -36,8 +32,6 @@ pub fn add_imm_var(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u
 }
 
 pub fn add_var_var(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u8>, pc: &mut usize) {
-    let frame = &mut stack[current_frame];
-
     let var1 = parse_var(stack, current_frame, program, pc);
     let var2 = parse_var(stack, current_frame, program, pc);
 
@@ -57,8 +51,6 @@ pub fn sub_imm_imm(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u
 }
 
 pub fn sub_var_imm(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u8>, pc: &mut usize) {
-    let frame = &mut stack[current_frame];
-
     let var1 = parse_var(stack, current_frame, program, pc);
     let var2 = parse_imm(program, pc);
 
@@ -70,8 +62,6 @@ pub fn sub_var_imm(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u
 }
 
 pub fn sub_imm_var(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u8>, pc: &mut usize) {
-    let frame = &mut stack[current_frame];
-
     let var1 = parse_imm(program, pc);
     let var2 = parse_var(stack, current_frame, program, pc);
 
@@ -83,8 +73,6 @@ pub fn sub_imm_var(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u
 }
 
 pub fn sub_var_var(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u8>, pc: &mut usize) {
-    let frame = &mut stack[current_frame];
-
     let var1 = parse_var(stack, current_frame, program, pc);
     let var2 = parse_var(stack, current_frame, program, pc);
 
@@ -104,8 +92,6 @@ pub fn mul_imm_imm(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u
 }
 
 pub fn mul_var_imm(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u8>, pc: &mut usize) {
-    let frame = &mut stack[current_frame];
-
     let var1 = parse_var(stack, current_frame, program, pc);
     let var2 = parse_imm(program, pc);
 
@@ -117,8 +103,6 @@ pub fn mul_var_imm(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u
 }
 
 pub fn mul_imm_var(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u8>, pc: &mut usize) {
-    let frame = &mut stack[current_frame];
-
     let var1 = parse_imm(program, pc);
     let var2 = parse_var(stack, current_frame, program, pc);
 
@@ -130,8 +114,6 @@ pub fn mul_imm_var(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u
 }
 
 pub fn mul_var_var(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u8>, pc: &mut usize) {
-    let frame = &mut stack[current_frame];
-
     let var1 = parse_var(stack, current_frame, program, pc);
     let var2 = parse_var(stack, current_frame, program, pc);
 
@@ -151,8 +133,6 @@ pub fn div_imm_imm(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u
 }
 
 pub fn div_var_imm(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u8>, pc: &mut usize) {
-    let frame = &mut stack[current_frame];
-
     let var1 = parse_var(stack, current_frame, program, pc);
     let var2 = parse_imm(program, pc);
 
@@ -164,8 +144,6 @@ pub fn div_var_imm(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u
 }
 
 pub fn div_imm_var(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u8>, pc: &mut usize) {
-    let frame = &mut stack[current_frame];
-
     let var1 = parse_imm(program, pc);
     let var2 = parse_var(stack, current_frame, program, pc);
 
@@ -177,8 +155,6 @@ pub fn div_imm_var(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u
 }
 
 pub fn div_var_var(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u8>, pc: &mut usize) {
-    let frame = &mut stack[current_frame];
-
     let var1 = parse_var(stack, current_frame, program, pc);
     let var2 = parse_var(stack, current_frame, program, pc);
 

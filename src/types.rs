@@ -1,4 +1,4 @@
-use std::ops::{Add, Div, Mul, Sub};
+use std::{cmp::Ordering, ops::{Add, Div, Mul, Sub}};
 use half::f16;
 
 #[derive(Debug, Clone)]
@@ -130,10 +130,63 @@ macro_rules! impl_div_for_numeric {
     };
 }
 
+macro_rules! impl_eq_for_numeric {
+    ($($t:ty),*) => { // voodoo magic
+        $(
+            impl PartialEq<$t> for Types {
+                fn eq(&self, other: &$t) -> bool {
+                    match *self {
+                        Types::I8(a)  => a == *other as i8,
+                        Types::I16(a) => a == *other as i16,
+                        Types::I32(a) => a == *other as i32,
+                        Types::I64(a) => a == *other as i64,
+                        Types::U8(a)  => a == *other as u8,
+                        Types::U16(a) => a == *other as u16,
+                        Types::U32(a) => a == *other as u32,
+                        Types::U64(a) => a == *other as u64,
+                        Types::F16(a) => a == f16::from_f32(*other as f32),
+                        Types::F32(a) => a == *other as f32,
+                        Types::F64(a) => a == *other as f64,
+                        _ => false
+                    }
+                }
+            }
+        )*
+    };
+}
+
+macro_rules! impl_cmp_for_numeric {
+    ($($t:ty),*) => { // voodoo magic
+        $(
+            impl PartialOrd<$t> for Types {
+                fn partial_cmp(&self, other: &$t) -> Option<Ordering> {
+                    match *self {
+                        Types::I8(a)  => a.partial_cmp(&(*other as i8)),
+                        Types::I16(a) => a.partial_cmp(&(*other as i16)),
+                        Types::I32(a) => a.partial_cmp(&(*other as i32)),
+                        Types::I64(a) => a.partial_cmp(&(*other as i64)),
+                        Types::U8(a)  => a.partial_cmp(&(*other as u8)),
+                        Types::U16(a) => a.partial_cmp(&(*other as u16)),
+                        Types::U32(a) => a.partial_cmp(&(*other as u32)),
+                        Types::U64(a) => a.partial_cmp(&(*other as u64)),
+                        Types::F16(a) => a.partial_cmp(&f16::from_f32(*other as f32)),
+                        Types::F32(a) => a.partial_cmp(&(*other as f32)),
+                        Types::F64(a) => a.partial_cmp(&(*other as f64)),
+                        _ => None
+                    }
+                }
+            }
+        )*
+    };
+}
+
 impl_add_for_numeric!(i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
 impl_sub_for_numeric!(i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
 impl_mul_for_numeric!(i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
 impl_div_for_numeric!(i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
+
+impl_eq_for_numeric!(i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
+impl_cmp_for_numeric!(i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
 
 // FIXME: make these work for all types
 impl Add<f16> for Types {
@@ -180,6 +233,24 @@ impl Div<f16> for Types {
     }
 }
 
+impl PartialEq<f16> for Types {
+    fn eq(&self, other: &f16) -> bool {
+        match *self {
+            Types::F16(a) => a == *other,
+            _ => false
+        }
+    }
+}
+
+impl PartialOrd<f16> for Types {
+    fn partial_cmp(&self, other: &f16) -> Option<Ordering> {
+        match *self {
+            Types::F16(a) => a.partial_cmp(other),
+            _ => None
+        }
+    }
+}
+
 impl Add<Types> for Types {
     type Output = Self;
 
@@ -214,7 +285,7 @@ impl Sub<Types> for Types {
             | (Types::Pointer(_), _) | (_, Types::Pointer(_))
             | (Types::Type(_), _) | (_, Types::Type(_))
             | (Types::Struct(_), _) | (_, Types::Struct(_))
-            | (Types::Function(_), _) | (_, Types::Function(_)) => panic!("Unsupported types for addition"),
+            | (Types::Function(_), _) | (_, Types::Function(_)) => panic!("Unsupported types for subtraction"),
             (a, Types::I8(b))   => a - b,
             (a, Types::I16(b)) => a - b,
             (a, Types::I32(b)) => a - b,
@@ -239,7 +310,7 @@ impl Mul<Types> for Types {
             | (Types::Pointer(_), _) | (_, Types::Pointer(_))
             | (Types::Type(_), _) | (_, Types::Type(_))
             | (Types::Struct(_), _) | (_, Types::Struct(_))
-            | (Types::Function(_), _) | (_, Types::Function(_)) => panic!("Unsupported types for addition"),
+            | (Types::Function(_), _) | (_, Types::Function(_)) => panic!("Unsupported types for multiplication"),
             (a, Types::I8(b))   => a * b,
             (a, Types::I16(b)) => a * b,
             (a, Types::I32(b)) => a * b,
@@ -264,7 +335,7 @@ impl Div<Types> for Types {
             | (Types::Pointer(_), _) | (_, Types::Pointer(_))
             | (Types::Type(_), _) | (_, Types::Type(_))
             | (Types::Struct(_), _) | (_, Types::Struct(_))
-            | (Types::Function(_), _) | (_, Types::Function(_)) => panic!("Unsupported types for addition"),
+            | (Types::Function(_), _) | (_, Types::Function(_)) => panic!("Unsupported types for division"),
             (a, Types::I8(b))   => a / b,
             (a, Types::I16(b)) => a / b,
             (a, Types::I32(b)) => a / b,
@@ -276,6 +347,52 @@ impl Div<Types> for Types {
             (a, Types::F16(b)) => a / b,
             (a, Types::F32(b)) => a / b,
             (a, Types::F64(b)) => a / b,
+        }
+    }
+}
+
+impl PartialEq<Types> for Types {
+    fn eq(&self, other: &Types) -> bool {
+        match (self, other) {
+            (Types::Void(_), _) | (_, Types::Void(_))
+            | (Types::Pointer(_), _) | (_, Types::Pointer(_))
+            | (Types::Type(_), _) | (_, Types::Type(_))
+            | (Types::Struct(_), _) | (_, Types::Struct(_))
+            | (Types::Function(_), _) | (_, Types::Function(_)) => panic!("Unsupported types for comparison"),
+            (a, Types::I8(b))   => a == b,
+            (a, Types::I16(b)) => a == b,
+            (a, Types::I32(b)) => a == b,
+            (a, Types::I64(b)) => a == b,
+            (a, Types::U8(b))   => a == b,
+            (a, Types::U16(b)) => a == b,
+            (a, Types::U32(b)) => a == b,
+            (a, Types::U64(b)) => a == b,
+            (a, Types::F16(b)) => a == b,
+            (a, Types::F32(b)) => a == b,
+            (a, Types::F64(b)) => a == b,
+        }
+    }
+}
+
+impl PartialOrd<Types> for Types {
+    fn partial_cmp(&self, other: &Types) -> Option<Ordering> {
+        match (self, other) {
+            (Types::Void(_), _) | (_, Types::Void(_))
+            | (Types::Pointer(_), _) | (_, Types::Pointer(_))
+            | (Types::Type(_), _) | (_, Types::Type(_))
+            | (Types::Struct(_), _) | (_, Types::Struct(_))
+            | (Types::Function(_), _) | (_, Types::Function(_)) => panic!("Unsupported types for comparison"),
+            (a, Types::I8(b))   => a.partial_cmp(b),
+            (a, Types::I16(b)) => a.partial_cmp(b),
+            (a, Types::I32(b)) => a.partial_cmp(b),
+            (a, Types::I64(b)) => a.partial_cmp(b),
+            (a, Types::U8(b))   => a.partial_cmp(b),
+            (a, Types::U16(b)) => a.partial_cmp(b),
+            (a, Types::U32(b)) => a.partial_cmp(b),
+            (a, Types::U64(b)) => a.partial_cmp(b),
+            (a, Types::F16(b)) => a.partial_cmp(b),
+            (a, Types::F32(b)) => a.partial_cmp(b),
+            (a, Types::F64(b)) => a.partial_cmp(b),
         }
     }
 }
@@ -497,7 +614,7 @@ pub fn cast_type(val: Box<Types>, t: u8) -> Box<Types> {
         (Types::I32(v), 0x0B) => Box::new(Types::F64(*v as f64)),
         (Types::I32(v), 0x0C) => Box::new(Types::Pointer(*v as u64)),
         (Types::I32(v), 0x0D) => Box::new(Types::Type(*v as u8)),
-        (Types::I64(v), 0x00) => Box::new(Types::Void(0)),
+        (Types::I64(_), 0x00) => Box::new(Types::Void(0)),
         (Types::I64(v), 0x01) => Box::new(Types::I8(*v as i8)),
         (Types::I64(v), 0x02) => Box::new(Types::I16(*v as i16)),
         (Types::I64(v), 0x03) => Box::new(Types::I32(*v as i32)),

@@ -2,6 +2,7 @@ use std::fs;
 
 use types::parse_string;
 
+use crate::jump::{je_imm_imm_imm, je_imm_imm_var, je_imm_var_imm, je_imm_var_var, je_var_imm_imm, je_var_imm_var, je_var_var_imm, je_var_var_var, jg_imm_imm_imm, jg_imm_imm_var, jg_imm_var_imm, jg_imm_var_var, jg_var_imm_imm, jg_var_imm_var, jg_var_var_imm, jg_var_var_var, jge_imm_imm_imm, jge_imm_imm_var, jge_imm_var_imm, jge_imm_var_var, jge_var_imm_imm, jge_var_imm_var, jge_var_var_imm, jge_var_var_var, jl_imm_imm_imm, jl_imm_imm_var, jl_imm_var_imm, jl_imm_var_var, jl_var_imm_imm, jl_var_imm_var, jl_var_var_imm, jl_var_var_var, jle_imm_imm_imm, jle_imm_imm_var, jle_imm_var_imm, jle_imm_var_var, jle_var_imm_imm, jle_var_imm_var, jle_var_var_imm, jle_var_var_var, jmp_imm, jmp_var, jne_imm_imm_imm, jne_imm_imm_var, jne_imm_var_imm, jne_imm_var_var, jne_var_imm_imm, jne_var_imm_var, jne_var_var_imm, jne_var_var_var};
 use crate::math::{add_imm_imm, add_imm_var, add_var_imm, add_var_var, div_imm_imm, div_imm_var, div_var_imm, div_var_var, mul_imm_imm, mul_imm_var, mul_var_imm, mul_var_var, sub_imm_imm, sub_imm_var, sub_var_imm, sub_var_var};
 use crate::types::{parse_imm, Types};
 use crate::stack::Frame;
@@ -9,6 +10,7 @@ use crate::stack::Frame;
 mod types;
 mod stack;
 mod math;
+mod jump;
 
 fn main() {
     let program = fs::read("./program.rbb").expect("the file no exist :(");
@@ -59,6 +61,61 @@ fn main() {
 
             0x18 => jmp_imm(&program, &mut pc),
             0x19 => jmp_var(&mut stack, current_frame, &program, &mut pc),
+
+            // function names about to go wild
+            0x1A => jne_imm_imm_imm(&program, &mut pc),
+            0x1B => jne_var_imm_imm(&mut stack, current_frame,&program, &mut pc),
+            0x1C => jne_imm_var_imm(&mut stack, current_frame,&program, &mut pc),
+            0x1D => jne_var_var_imm(&mut stack, current_frame,&program, &mut pc),
+            0x1E => jne_imm_imm_var(&mut stack, current_frame,&program, &mut pc),
+            0x1F => jne_var_imm_var(&mut stack, current_frame,&program, &mut pc),
+            0x20 => jne_imm_var_var(&mut stack, current_frame,&program, &mut pc),
+            0x21 => jne_var_var_var(&mut stack, current_frame,&program, &mut pc),
+            
+            0x22 => je_imm_imm_imm(&program, &mut pc),
+            0x23 => je_var_imm_imm(&mut stack, current_frame,&program, &mut pc),
+            0x24 => je_imm_var_imm(&mut stack, current_frame,&program, &mut pc),
+            0x25 => je_var_var_imm(&mut stack, current_frame,&program, &mut pc),
+            0x26 => je_imm_imm_var(&mut stack, current_frame,&program, &mut pc),
+            0x27 => je_var_imm_var(&mut stack, current_frame,&program, &mut pc),
+            0x28 => je_imm_var_var(&mut stack, current_frame,&program, &mut pc),
+            0x29 => je_var_var_var(&mut stack, current_frame,&program, &mut pc),
+
+            0x2A => jge_imm_imm_imm(&program, &mut pc),
+            0x2B => jge_var_imm_imm(&mut stack, current_frame,&program, &mut pc),
+            0x2C => jge_imm_var_imm(&mut stack, current_frame,&program, &mut pc),
+            0x2D => jge_var_var_imm(&mut stack, current_frame,&program, &mut pc),
+            0x2E => jge_imm_imm_var(&mut stack, current_frame,&program, &mut pc),
+            0x2F => jge_var_imm_var(&mut stack, current_frame,&program, &mut pc),
+            0x30 => jge_imm_var_var(&mut stack, current_frame,&program, &mut pc),
+            0x31 => jge_var_var_var(&mut stack, current_frame,&program, &mut pc),
+            
+            0x32 => jg_imm_imm_imm(&program, &mut pc),
+            0x33 => jg_var_imm_imm(&mut stack, current_frame,&program, &mut pc),
+            0x34 => jg_imm_var_imm(&mut stack, current_frame,&program, &mut pc),
+            0x35 => jg_var_var_imm(&mut stack, current_frame,&program, &mut pc),
+            0x36 => jg_imm_imm_var(&mut stack, current_frame,&program, &mut pc),
+            0x37 => jg_var_imm_var(&mut stack, current_frame,&program, &mut pc),
+            0x38 => jg_imm_var_var(&mut stack, current_frame,&program, &mut pc),
+            0x39 => jg_var_var_var(&mut stack, current_frame,&program, &mut pc),
+
+            0x3A => jle_imm_imm_imm(&program, &mut pc),
+            0x3B => jle_var_imm_imm(&mut stack, current_frame,&program, &mut pc),
+            0x3C => jle_imm_var_imm(&mut stack, current_frame,&program, &mut pc),
+            0x3D => jle_var_var_imm(&mut stack, current_frame,&program, &mut pc),
+            0x3E => jle_imm_imm_var(&mut stack, current_frame,&program, &mut pc),
+            0x3F => jle_var_imm_var(&mut stack, current_frame,&program, &mut pc),
+            0x40 => jle_imm_var_var(&mut stack, current_frame,&program, &mut pc),
+            0x41 => jle_var_var_var(&mut stack, current_frame,&program, &mut pc),
+            
+            0x42 => jl_imm_imm_imm(&program, &mut pc),
+            0x43 => jl_var_imm_imm(&mut stack, current_frame,&program, &mut pc),
+            0x44 => jl_imm_var_imm(&mut stack, current_frame,&program, &mut pc),
+            0x45 => jl_var_var_imm(&mut stack, current_frame,&program, &mut pc),
+            0x46 => jl_imm_imm_var(&mut stack, current_frame,&program, &mut pc),
+            0x47 => jl_var_imm_var(&mut stack, current_frame,&program, &mut pc),
+            0x48 => jl_imm_var_var(&mut stack, current_frame,&program, &mut pc),
+            0x49 => jl_var_var_var(&mut stack, current_frame,&program, &mut pc),
 
             0x4A => mov_imm(&mut stack, current_frame, &program, &mut pc),
             0x4B => mov_var(&mut stack, current_frame, &program, &mut pc),
@@ -143,35 +200,6 @@ fn ldarg_var(stack: &mut Vec<Frame>, program: &Vec<u8>, pc: &mut usize) {
     let value = parse_imm(program, pc);
 
     frame.push(value);
-}
-
-fn jmp(value: Types, pc: &mut usize) {
-    match value {
-        Types::I8(v) => *pc = v as usize,
-        Types::I16(v) => *pc = v as usize,
-        Types::I32(v) => *pc = v as usize,
-        Types::I64(v) => *pc = v as usize,
-        Types::U8(v) => *pc = v as usize,
-        Types::U16(v) => *pc = v as usize,
-        Types::U32(v) => *pc = v as usize,
-        Types::U64(v) => *pc = v as usize,
-        Types::F16(v) => *pc = v.to_f32() as usize,
-        Types::F32(v) => *pc = v as usize,
-        Types::F64(v) => *pc = v as usize,
-        _ => panic!("invalid jump address type")
-    }
-}
-
-fn jmp_imm(program: &Vec<u8>, pc: &mut usize) {
-    let value = *parse_imm(program, pc);
-
-    jmp(value, pc);
-}
-
-fn jmp_var(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u8>, pc: &mut usize) {
-    let value = *parse_var(stack, current_frame, program, pc);
-
-    jmp(value, pc);
 }
 
 fn mov_imm(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u8>, pc: &mut usize) {
