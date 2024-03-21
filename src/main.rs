@@ -54,7 +54,11 @@ fn main() {
             0x16 => div_imm_var(&mut stack, current_frame, &program, &mut pc),
             0x17 => div_var_var(&mut stack, current_frame, &program, &mut pc),
 
-            0x74 => create_var(&mut stack, current_frame, &program, &mut pc),
+            0x4A => mov_imm(&mut stack, current_frame, &program, &mut pc),
+            0x4B => mov_var(&mut stack, current_frame, &program, &mut pc),
+
+            0x5F => create_var_imm(&mut stack, current_frame, &program, &mut pc),
+            0x60 => create_var_var(&mut stack, current_frame, &program, &mut pc),
             _ => {
                 panic!("unknown instruction {}", format!("0x{:02x}", byte));
             }
@@ -107,7 +111,26 @@ fn pop(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u8>, pc: &mut
     (*frame).set_var(name, value);
 }
 
-fn create_var(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u8>, pc: &mut usize) {
+fn mov_imm(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u8>, pc: &mut usize) {
+    let frame = &mut stack[current_frame];
+
+    let val = parse_imm(program, pc);
+
+    let name = parse_string(program, pc);
+    frame.set_var(name, val);
+}
+
+fn mov_var(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u8>, pc: &mut usize) {
+    let frame = &mut stack[current_frame];
+
+    let name = parse_string(program, pc);
+    let var = frame.get_var(name);
+
+    let name = parse_string(program, pc);
+    frame.set_var(name, var);
+}
+
+fn create_var_imm(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u8>, pc: &mut usize) {
     let t = program[*pc];
     *pc += 1;
 
@@ -116,4 +139,19 @@ fn create_var(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u8>, p
     println!("attempting to create variable named {}", name);
 
     stack[current_frame].create_var(name, t);
+}
+
+fn create_var_var(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u8>, pc: &mut usize) {
+    let frame = &mut stack[current_frame];
+
+    let name1 = parse_string(program, pc);
+    let t = *frame.get_var(name1);
+
+    let name2 = parse_string(program, pc);
+
+    println!("attempting to create variable named {}", name2);
+    match t {
+        Types::U8(value) => stack[current_frame].create_var(name2, value),
+        _ => println!("cannot use non-type typed variable to create variable"), // one hell of an error message
+    }
 }

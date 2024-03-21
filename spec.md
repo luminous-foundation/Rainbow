@@ -24,7 +24,7 @@
 [ ] 0x32-39 JG      [imm/var]   [imm/var]   [imm/var]
 [ ] 0x3A-41 JLE     [imm/var]   [imm/var]   [imm/var]
 [ ] 0x42-49 JL      [imm/var]   [imm/var]   [imm/var]
-[ ] 0x4A-4B	MOV     [imm/var]   [var]
+[x] 0x4A-4B	MOV     [imm/var]   [var]
 [ ] 0x4C-4F	AND     [imm/var]   [imm/var]   [var]
 [ ] 0x50-53	OR      [imm/var]   [imm/var]   [var]
 [ ] 0x54-58	XOR     [imm/var]   [imm/var]   [var]
