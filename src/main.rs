@@ -1,12 +1,14 @@
 use std::fs;
 
-use types::add;
+use types::parse_string;
 
+use crate::math::{add_imm_imm, add_imm_var, add_var_imm, add_var_var, div_imm_imm, div_imm_var, div_var_imm, div_var_var, mul_imm_imm, mul_imm_var, mul_var_imm, mul_var_var, sub_imm_imm, sub_imm_var, sub_var_imm, sub_var_var};
 use crate::types::{parse_imm, Types};
 use crate::stack::Frame;
 
 mod types;
 mod stack;
+mod math;
 
 fn main() {
     let program = fs::read("./program.rbb").expect("the file no exist :(");
@@ -25,8 +27,33 @@ fn main() {
         pc += 1;
 
         match byte {
+            0x00 => {/* do nothing */}
+            
             0x01 => push_imm(&mut stack, current_frame, &program, &mut pc),
+            0x02 => push_var(&mut stack, current_frame, &program, &mut pc),
+            
+            0x03 => pop(&mut stack, current_frame, &program, &mut pc),
+            
             0x08 => add_imm_imm(&mut stack, current_frame, &program, &mut pc),
+            0x09 => add_var_imm(&mut stack, current_frame, &program, &mut pc),
+            0x0A => add_imm_var(&mut stack, current_frame, &program, &mut pc),
+            0x0B => add_var_var(&mut stack, current_frame, &program, &mut pc),
+            
+            0x0C => sub_imm_imm(&mut stack, current_frame, &program, &mut pc),
+            0x0D => sub_var_imm(&mut stack, current_frame, &program, &mut pc),
+            0x0E => sub_imm_var(&mut stack, current_frame, &program, &mut pc),
+            0x0F => sub_var_var(&mut stack, current_frame, &program, &mut pc),
+            
+            0x10 => mul_imm_imm(&mut stack, current_frame, &program, &mut pc),
+            0x11 => mul_var_imm(&mut stack, current_frame, &program, &mut pc),
+            0x12 => mul_imm_var(&mut stack, current_frame, &program, &mut pc),
+            0x13 => mul_var_var(&mut stack, current_frame, &program, &mut pc),
+            
+            0x14 => div_imm_imm(&mut stack, current_frame, &program, &mut pc),
+            0x15 => div_var_imm(&mut stack, current_frame, &program, &mut pc),
+            0x16 => div_imm_var(&mut stack, current_frame, &program, &mut pc),
+            0x17 => div_var_var(&mut stack, current_frame, &program, &mut pc),
+
             0x74 => create_var(&mut stack, current_frame, &program, &mut pc),
             _ => {
                 panic!("unknown instruction {}", format!("0x{:02x}", byte));
@@ -64,28 +91,29 @@ fn push_imm(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u8>, pc:
     stack[current_frame].stack.push(parse_imm(program, pc));
 }
 
-fn add_imm_imm(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u8>, pc: &mut usize) {
-    let sum: Box<Types> = add(&parse_imm(program, pc), &parse_imm(program, pc));
+fn push_var(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u8>, pc: &mut usize) {
+    let frame = &mut stack[current_frame];
+    let name = parse_string(program, pc);
 
-    let length = program[*pc] as usize;
-    *pc += 1;
+    frame.stack.push(frame.get_var(name));
+}
 
-    let name = String::from_utf8(program[*pc..(*pc+length)].try_into().unwrap()).unwrap();
-    *pc += length;
+fn pop(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u8>, pc: &mut usize) {
+    let name = parse_string(program, pc);
 
-    stack[current_frame].set_var(name, sum);
+    let frame = &mut stack[current_frame];
+    let value = (*frame).pop();
+
+    (*frame).set_var(name, value);
 }
 
 fn create_var(stack: &mut Vec<Frame>, current_frame: usize, program: &Vec<u8>, pc: &mut usize) {
     let t = program[*pc];
-    let length = program[*pc + 1] as usize;
-    *pc += 2;
+    *pc += 1;
 
-    let name = String::from_utf8(program[*pc..(*pc+length)].try_into().unwrap()).unwrap();
+    let name = parse_string(program, pc);
 
     println!("attempting to create variable named {}", name);
 
     stack[current_frame].create_var(name, t);
-
-    *pc += length;
 }

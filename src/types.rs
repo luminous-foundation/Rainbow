@@ -135,8 +135,6 @@ impl_sub_for_numeric!(i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
 impl_mul_for_numeric!(i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
 impl_div_for_numeric!(i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
 
-
-
 // FIXME: make these work for all types
 impl Add<f16> for Types {
     type Output = Self;
@@ -643,3 +641,12 @@ pub fn cast_type(val: Box<Types>, t: u8) -> Box<Types> {
     }
 }
 
+pub fn parse_string(program: &Vec<u8>, pc: &mut usize) -> String {
+    let length = program[*pc] as usize;
+    *pc += 1;
+
+    let name = String::from_utf8(program[*pc..(*pc+length)].try_into().unwrap()).unwrap();
+    *pc += length;
+
+    return name;
+}
