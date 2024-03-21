@@ -8,7 +8,7 @@
 # INSTRUCTIONS
 
 ```
-[x] 0x00	NOP
+[x] 0x00	NOP     
 [x] 0x01-02	PUSH    [imm/var]
 [x] 0x03	POP     [var]
 [ ] 0x04-05	LDARG   [imm/var]
@@ -17,22 +17,22 @@
 [x] 0x0C-0F	SUB     [imm/var]   [imm/var]   [var]
 [x] 0x10-13	MUL     [imm/var]   [imm/var]   [var]
 [x] 0x14-17	DIV     [imm/var]   [imm/var]   [var]
-[ ] 0x19-1A	JMP     [imm/var]
-[ ] 0x1B-22 JNE     [imm/var]   [imm/var]   [imm/var]
-[ ] 0x23-2A JE      [imm/var]   [imm/var]   [imm/var]
-[ ] 0x2B-32 JGE     [imm/var]   [imm/var]   [imm/var]
-[ ] 0x33-3A JG      [imm/var]   [imm/var]   [imm/var]
-[ ] 0x3B-42 JLE     [imm/var]   [imm/var]   [imm/var]
-[ ] 0x43-4A JL      [imm/var]   [imm/var]   [imm/var]
-[ ] 0x4B-4C	MOV     [imm/var]   [var]
-[ ] 0x4D-50	AND     [imm/var]   [imm/var]   [var]
-[ ] 0x51-54	OR      [imm/var]   [imm/var]   [var]
-[ ] 0x60-58	XOR     [imm/var]   [imm/var]   [var]
-[ ] 0x59-5C	NOT     [imm/var]   [var]
-[ ] 0x6A-60	LSH     [imm/var]   [var]
-[ ] 0x6F-64	RSH     [imm/var]   [var]
-[ ] 0x74-68	VAR     [type/var]  [name]
-[ ] 0x76-77 RET     [imm/var]
+[ ] 0x18-19	JMP     [imm/var]
+[ ] 0x1A-21 JNE     [imm/var]   [imm/var]   [imm/var]
+[ ] 0x22-29 JE      [imm/var]   [imm/var]   [imm/var]
+[ ] 0x2A-31 JGE     [imm/var]   [imm/var]   [imm/var]
+[ ] 0x32-39 JG      [imm/var]   [imm/var]   [imm/var]
+[ ] 0x3A-41 JLE     [imm/var]   [imm/var]   [imm/var]
+[ ] 0x42-49 JL      [imm/var]   [imm/var]   [imm/var]
+[ ] 0x4A-4B	MOV     [imm/var]   [var]
+[ ] 0x4C-4F	AND     [imm/var]   [imm/var]   [var]
+[ ] 0x50-53	OR      [imm/var]   [imm/var]   [var]
+[ ] 0x54-58	XOR     [imm/var]   [imm/var]   [var]
+[ ] 0x59-5A	NOT     [imm/var]   [var]
+[ ] 0x5B-5C	LSH     [imm/var]   [var]
+[ ] 0x5D-5E	RSH     [imm/var]   [var]
+[ ] 0x5F-60	VAR     [type/var]  [name]
+[ ] 0x61-62 RET     [imm/var]
 ```
 
 # TYPES
