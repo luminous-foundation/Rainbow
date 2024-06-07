@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, ops::{Add, Div, Mul, Sub}};
+use std::{cmp::Ordering, ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Not, Shl, Shr, Sub}};
 use half::f16;
 
 #[derive(Debug, Clone)]
@@ -41,7 +41,7 @@ macro_rules! impl_add_for_numeric {
                         Types::F16(a) => Types::F16(a + f16::from_f32(other as f32)),
                         Types::F32(a) => Types::F32(a + other as f32),
                         Types::F64(a) => Types::F64(a + other as f64),
-                        _ => panic!("Unsupported types for addition"),
+                        _ => panic!("unsupported types for addition"),
                     }
                 }
             }
@@ -68,7 +68,7 @@ macro_rules! impl_sub_for_numeric {
                         Types::F16(a) => Types::F16(a - f16::from_f32(other as f32)),
                         Types::F32(a) => Types::F32(a - other as f32),
                         Types::F64(a) => Types::F64(a - other as f64),
-                        _ => panic!("Unsupported types for subtraction"),
+                        _ => panic!("unsupported types for subtraction"),
                     }
                 }
             }
@@ -95,7 +95,7 @@ macro_rules! impl_mul_for_numeric {
                         Types::F16(a) => Types::F16(a * f16::from_f32(other as f32)),
                         Types::F32(a) => Types::F32(a * other as f32),
                         Types::F64(a) => Types::F64(a * other as f64),
-                        _ => panic!("Unsupported types for multiplication"),
+                        _ => panic!("unsupported types for multiplication"),
                     }
                 }
             }
@@ -122,7 +122,7 @@ macro_rules! impl_div_for_numeric {
                         Types::F16(a) => Types::F16(a / f16::from_f32(other as f32)),
                         Types::F32(a) => Types::F32(a / other as f32),
                         Types::F64(a) => Types::F64(a / other as f64),
-                        _ => panic!("Unsupported types for division"),
+                        _ => panic!("unsupported types for division"),
                     }
                 }
             }
@@ -180,6 +180,141 @@ macro_rules! impl_cmp_for_numeric {
     };
 }
 
+macro_rules! impl_and_for_numeric {
+    ($($t:ty),*) => { // voodoo magic
+        $(
+            impl BitAnd<$t> for Types {
+                type Output = Self;
+
+                fn bitand(self, other: $t) -> Self {
+                    match self {
+                        Types::I8(a)  => Types::I8(a & (other as i8)),
+                        Types::I16(a) => Types::I16(a & (other as i16)),
+                        Types::I32(a) => Types::I32(a & (other as i32)),
+                        Types::I64(a) => Types::I64(a & (other as i64)),
+                        Types::U8(a)  => Types::U8(a & (other as u8)),
+                        Types::U16(a) => Types::U16(a & (other as u16)),
+                        Types::U32(a) => Types::U32(a & (other as u32)),
+                        Types::U64(a) => Types::U64(a & (other as u64)),
+                        Types::F16(a) => Types::F16(f16::from_bits((a.to_bits() as u32 & (other as f32).to_bits()) as u16)), // ugly code
+                        Types::F32(a) => Types::F32(f32::from_bits(a.to_bits() & (other as f32).to_bits())),
+                        Types::F64(a) => Types::F64(f64::from_bits(a.to_bits() & (other as f64).to_bits())),
+                        _ => panic!("unsupported types for bitwise and"),
+                    }
+                }
+            }
+        )*
+    };
+}
+
+macro_rules! impl_or_for_numeric {
+    ($($t:ty),*) => { // voodoo magic
+        $(
+            impl BitOr<$t> for Types {
+                type Output = Self;
+
+                fn bitor(self, other: $t) -> Self {
+                    match self {
+                        Types::I8(a)  => Types::I8(a | (other as i8)),
+                        Types::I16(a) => Types::I16(a | (other as i16)),
+                        Types::I32(a) => Types::I32(a | (other as i32)),
+                        Types::I64(a) => Types::I64(a | (other as i64)),
+                        Types::U8(a)  => Types::U8(a | (other as u8)),
+                        Types::U16(a) => Types::U16(a | (other as u16)),
+                        Types::U32(a) => Types::U32(a | (other as u32)),
+                        Types::U64(a) => Types::U64(a | (other as u64)),
+                        Types::F16(a) => Types::F16(f16::from_bits((a.to_bits() as u32 | (other as f32).to_bits()) as u16)), // ugly code
+                        Types::F32(a) => Types::F32(f32::from_bits(a.to_bits() | (other as f32).to_bits())),
+                        Types::F64(a) => Types::F64(f64::from_bits(a.to_bits() | (other as f64).to_bits())),
+                        _ => panic!("unsupported types for bitwise or"),
+                    }
+                }
+            }
+        )*
+    };
+}
+
+macro_rules! impl_xor_for_numeric {
+    ($($t:ty),*) => { // voodoo magic
+        $(
+            impl BitXor<$t> for Types {
+                type Output = Self;
+
+                fn bitxor(self, other: $t) -> Self {
+                    match self {
+                        Types::I8(a)   => Types::I8(a ^ (other as i8)),
+                        Types::I16(a) => Types::I16(a ^ (other as i16)),
+                        Types::I32(a) => Types::I32(a ^ (other as i32)),
+                        Types::I64(a) => Types::I64(a ^ (other as i64)),
+                        Types::U8(a)  => Types::U8(a ^ (other as u8)),
+                        Types::U16(a) => Types::U16(a ^ (other as u16)),
+                        Types::U32(a) => Types::U32(a ^ (other as u32)),
+                        Types::U64(a) => Types::U64(a ^ (other as u64)),
+                        Types::F16(a) => Types::F16(f16::from_bits((a.to_bits() as u32 ^ (other as f32).to_bits()) as u16)), // ugly code
+                        Types::F32(a) => Types::F32(f32::from_bits(a.to_bits() ^ (other as f32).to_bits())),
+                        Types::F64(a) => Types::F64(f64::from_bits(a.to_bits() ^ (other as f64).to_bits())),
+                        _ => panic!("unsupported types for bitwise xor"),
+                    }
+                }
+            }
+        )*
+    };
+}
+
+macro_rules! impl_lsh_for_numeric {
+    ($($t:ty),*) => { // voodoo magic
+        $(
+            impl Shl<$t> for Types {
+                type Output = Self;
+
+                fn shl(self, other: $t) -> Self {
+                    match self {
+                        Types::I8(a)  => Types::I8(a << (other as i8)),
+                        Types::I16(a) => Types::I16(a << (other as i16)),
+                        Types::I32(a) => Types::I32(a << (other as i32)),
+                        Types::I64(a) => Types::I64(a << (other as i64)),
+                        Types::U8(a)  => Types::U8(a << (other as u8)),
+                        Types::U16(a) => Types::U16(a << (other as u16)),
+                        Types::U32(a) => Types::U32(a << (other as u32)),
+                        Types::U64(a) => Types::U64(a << (other as u64)),
+                        Types::F16(a) => Types::F16(f16::from_bits(((a.to_bits() as u32) << (other as f32).to_bits()) as u16)), // ugly code
+                        Types::F32(a) => Types::F32(f32::from_bits(a.to_bits() << (other as f32).to_bits())),
+                        Types::F64(a) => Types::F64(f64::from_bits(a.to_bits() << (other as f64).to_bits())),
+                        _ => panic!("unsupported types for lsh"),
+                    }
+                }
+            }
+        )*
+    };
+}
+
+macro_rules! impl_rsh_for_numeric {
+    ($($t:ty),*) => { // voodoo magic
+        $(
+            impl Shr<$t> for Types {
+                type Output = Self;
+
+                fn shr(self, other: $t) -> Self {
+                    match self {
+                        Types::I8(a)   => Types::I8(a >> (other as i8)),
+                        Types::I16(a) => Types::I16(a >> (other as i16)),
+                        Types::I32(a) => Types::I32(a >> (other as i32)),
+                        Types::I64(a) => Types::I64(a >> (other as i64)),
+                        Types::U8(a)  => Types::U8(a >> (other as u8)),
+                        Types::U16(a) => Types::U16(a >> (other as u16)),
+                        Types::U32(a) => Types::U32(a >> (other as u32)),
+                        Types::U64(a) => Types::U64(a >> (other as u64)),
+                        Types::F16(a) => Types::F16(f16::from_bits((a.to_bits() as u32 >> (other as f32).to_bits()) as u16)), // ugly code
+                        Types::F32(a) => Types::F32(f32::from_bits(a.to_bits() >> (other as f32).to_bits())),
+                        Types::F64(a) => Types::F64(f64::from_bits(a.to_bits() >> (other as f64).to_bits())),
+                        _ => panic!("unsupported types for rsh"),
+                    }
+                }
+            }
+        )*
+    };
+}
+
 impl_add_for_numeric!(i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
 impl_sub_for_numeric!(i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
 impl_mul_for_numeric!(i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
@@ -188,6 +323,13 @@ impl_div_for_numeric!(i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
 impl_eq_for_numeric!(i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
 impl_cmp_for_numeric!(i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
 
+impl_and_for_numeric!(i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
+impl_or_for_numeric!(i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
+impl_xor_for_numeric!(i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
+
+impl_lsh_for_numeric!(i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
+impl_rsh_for_numeric!(i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
+
 // FIXME: make these work for all types
 impl Add<f16> for Types {
     type Output = Self;
@@ -195,7 +337,7 @@ impl Add<f16> for Types {
     fn add(self, other: f16) -> Self {
         match self {
             Types::F16(a) => Types::F16(a + other),
-            _ => panic!("Unsupported types for addition"),
+            _ => panic!("unsupported types for addition"),
         }
     }
 }
@@ -206,7 +348,7 @@ impl Sub<f16> for Types {
     fn sub(self, other: f16) -> Self {
         match self {
             Types::F16(a) => Types::F16(a - other),
-            _ => panic!("Unsupported types for subtraction"),
+            _ => panic!("unsupported types for subtraction"),
         }
     }
 }
@@ -217,7 +359,7 @@ impl Mul<f16> for Types {
     fn mul(self, other: f16) -> Self {
         match self {
             Types::F16(a) => Types::F16(a * other),
-            _ => panic!("Unsupported types for multiplication"),
+            _ => panic!("unsupported types for multiplication"),
         }
     }
 }
@@ -228,7 +370,62 @@ impl Div<f16> for Types {
     fn div(self, other: f16) -> Self {
         match self {
             Types::F16(a) => Types::F16(a / other),
-            _ => panic!("Unsupported types for division"),
+            _ => panic!("unsupported types for division"),
+        }
+    }
+}
+
+impl BitAnd<f16> for Types {
+    type Output = Self;
+
+    fn bitand(self, other: f16) -> Self {
+        match self {
+            Types::F16(a) => Types::F16(f16::from_bits(a.to_bits() & other.to_bits())),
+            _ => panic!("unsupported types for bitwise and"),
+        }
+    }
+}
+
+impl BitOr<f16> for Types {
+    type Output = Self;
+
+    fn bitor(self, other: f16) -> Self {
+        match self {
+            Types::F16(a) => Types::F16(f16::from_bits(a.to_bits() | other.to_bits())),
+            _ => panic!("unsupported types for bitwise or"),
+        }
+    }
+}
+
+impl BitXor<f16> for Types {
+    type Output = Self;
+
+    fn bitxor(self, other: f16) -> Self {
+        match self {
+            Types::F16(a) => Types::F16(f16::from_bits(a.to_bits() ^ other.to_bits())),
+            _ => panic!("unsupported types for bitwise xor"),
+        }
+    }
+}
+
+impl Shl<f16> for Types {
+    type Output = Self;
+
+    fn shl(self, other: f16) -> Self {
+        match self {
+            Types::F16(a) => Types::F16(f16::from_bits(a.to_bits() << other.to_bits())),
+            _ => panic!("unsupported types for lsh"),
+        }
+    }
+}
+
+impl Shr<f16> for Types {
+    type Output = Self;
+
+    fn shr(self, other: f16) -> Self {
+        match self {
+            Types::F16(a) => Types::F16(f16::from_bits(a.to_bits() >> other.to_bits())),
+            _ => panic!("unsupported types for rsh"),
         }
     }
 }
@@ -260,7 +457,7 @@ impl Add<Types> for Types {
             | (Types::Pointer(_), _) | (_, Types::Pointer(_))
             | (Types::Type(_), _) | (_, Types::Type(_))
             | (Types::Struct(_), _) | (_, Types::Struct(_))
-            | (Types::Function(_), _) | (_, Types::Function(_)) => panic!("Unsupported types for addition"),
+            | (Types::Function(_), _) | (_, Types::Function(_)) => panic!("unsupported types for addition"),
             (a, Types::I8(b))   => a + b,
             (a, Types::I16(b)) => a + b,
             (a, Types::I32(b)) => a + b,
@@ -285,7 +482,7 @@ impl Sub<Types> for Types {
             | (Types::Pointer(_), _) | (_, Types::Pointer(_))
             | (Types::Type(_), _) | (_, Types::Type(_))
             | (Types::Struct(_), _) | (_, Types::Struct(_))
-            | (Types::Function(_), _) | (_, Types::Function(_)) => panic!("Unsupported types for subtraction"),
+            | (Types::Function(_), _) | (_, Types::Function(_)) => panic!("unsupported types for subtraction"),
             (a, Types::I8(b))   => a - b,
             (a, Types::I16(b)) => a - b,
             (a, Types::I32(b)) => a - b,
@@ -310,7 +507,7 @@ impl Mul<Types> for Types {
             | (Types::Pointer(_), _) | (_, Types::Pointer(_))
             | (Types::Type(_), _) | (_, Types::Type(_))
             | (Types::Struct(_), _) | (_, Types::Struct(_))
-            | (Types::Function(_), _) | (_, Types::Function(_)) => panic!("Unsupported types for multiplication"),
+            | (Types::Function(_), _) | (_, Types::Function(_)) => panic!("unsupported types for multiplication"),
             (a, Types::I8(b))   => a * b,
             (a, Types::I16(b)) => a * b,
             (a, Types::I32(b)) => a * b,
@@ -335,7 +532,7 @@ impl Div<Types> for Types {
             | (Types::Pointer(_), _) | (_, Types::Pointer(_))
             | (Types::Type(_), _) | (_, Types::Type(_))
             | (Types::Struct(_), _) | (_, Types::Struct(_))
-            | (Types::Function(_), _) | (_, Types::Function(_)) => panic!("Unsupported types for division"),
+            | (Types::Function(_), _) | (_, Types::Function(_)) => panic!("unsupported types for division"),
             (a, Types::I8(b))   => a / b,
             (a, Types::I16(b)) => a / b,
             (a, Types::I32(b)) => a / b,
@@ -358,7 +555,7 @@ impl PartialEq<Types> for Types {
             | (Types::Pointer(_), _) | (_, Types::Pointer(_))
             | (Types::Type(_), _) | (_, Types::Type(_))
             | (Types::Struct(_), _) | (_, Types::Struct(_))
-            | (Types::Function(_), _) | (_, Types::Function(_)) => panic!("Unsupported types for comparison"),
+            | (Types::Function(_), _) | (_, Types::Function(_)) => panic!("unsupported types for comparison"),
             (a, Types::I8(b))   => a == b,
             (a, Types::I16(b)) => a == b,
             (a, Types::I32(b)) => a == b,
@@ -381,7 +578,7 @@ impl PartialOrd<Types> for Types {
             | (Types::Pointer(_), _) | (_, Types::Pointer(_))
             | (Types::Type(_), _) | (_, Types::Type(_))
             | (Types::Struct(_), _) | (_, Types::Struct(_))
-            | (Types::Function(_), _) | (_, Types::Function(_)) => panic!("Unsupported types for comparison"),
+            | (Types::Function(_), _) | (_, Types::Function(_)) => panic!("unsupported types for comparison"),
             (a, Types::I8(b))   => a.partial_cmp(b),
             (a, Types::I16(b)) => a.partial_cmp(b),
             (a, Types::I32(b)) => a.partial_cmp(b),
@@ -393,6 +590,152 @@ impl PartialOrd<Types> for Types {
             (a, Types::F16(b)) => a.partial_cmp(b),
             (a, Types::F32(b)) => a.partial_cmp(b),
             (a, Types::F64(b)) => a.partial_cmp(b),
+        }
+    }
+}
+
+impl BitAnd<Types> for Types {
+    type Output = Self;
+
+    fn bitand(self, other: Types) -> Self {
+        match (self, other) {
+            (Types::Void(_), _) | (_, Types::Void(_))
+            | (Types::Pointer(_), _) | (_, Types::Pointer(_))
+            | (Types::Type(_), _) | (_, Types::Type(_))
+            | (Types::Struct(_), _) | (_, Types::Struct(_))
+            | (Types::Function(_), _) | (_, Types::Function(_)) => panic!("unsupported types for division"),
+            (a, Types::I8(b))   => a & b,
+            (a, Types::I16(b)) => a & b,
+            (a, Types::I32(b)) => a & b,
+            (a, Types::I64(b)) => a & b,
+            (a, Types::U8(b))   => a & b,
+            (a, Types::U16(b)) => a & b,
+            (a, Types::U32(b)) => a & b,
+            (a, Types::U64(b)) => a & b,
+            (a, Types::F16(b)) => a & b,
+            (a, Types::F32(b)) => a & b,
+            (a, Types::F64(b)) => a & b,
+        }
+    }
+}
+
+impl BitOr<Types> for Types {
+    type Output = Self;
+
+    fn bitor(self, other: Types) -> Self {
+        match (self, other) {
+            (Types::Void(_), _) | (_, Types::Void(_))
+            | (Types::Pointer(_), _) | (_, Types::Pointer(_))
+            | (Types::Type(_), _) | (_, Types::Type(_))
+            | (Types::Struct(_), _) | (_, Types::Struct(_))
+            | (Types::Function(_), _) | (_, Types::Function(_)) => panic!("unsupported types for division"),
+            (a, Types::I8(b))   => a | b,
+            (a, Types::I16(b)) => a | b,
+            (a, Types::I32(b)) => a | b,
+            (a, Types::I64(b)) => a | b,
+            (a, Types::U8(b))   => a | b,
+            (a, Types::U16(b)) => a | b,
+            (a, Types::U32(b)) => a | b,
+            (a, Types::U64(b)) => a | b,
+            (a, Types::F16(b)) => a | b,
+            (a, Types::F32(b)) => a | b,
+            (a, Types::F64(b)) => a | b,
+        }
+    }
+}
+
+impl BitXor<Types> for Types {
+    type Output = Self;
+
+    fn bitxor(self, other: Types) -> Self {
+        match (self, other) {
+            (Types::Void(_), _) | (_, Types::Void(_))
+            | (Types::Pointer(_), _) | (_, Types::Pointer(_))
+            | (Types::Type(_), _) | (_, Types::Type(_))
+            | (Types::Struct(_), _) | (_, Types::Struct(_))
+            | (Types::Function(_), _) | (_, Types::Function(_)) => panic!("unsupported types for division"),
+            (a, Types::I8(b))   => a ^ b,
+            (a, Types::I16(b)) => a ^ b,
+            (a, Types::I32(b)) => a ^ b,
+            (a, Types::I64(b)) => a ^ b,
+            (a, Types::U8(b))   => a ^ b,
+            (a, Types::U16(b)) => a ^ b,
+            (a, Types::U32(b)) => a ^ b,
+            (a, Types::U64(b)) => a ^ b,
+            (a, Types::F16(b)) => a ^ b,
+            (a, Types::F32(b)) => a ^ b,
+            (a, Types::F64(b)) => a ^ b,
+        }
+    }
+}
+
+impl Not for Types {
+    type Output = Self;
+
+    fn not(self) -> Self {
+        match self {
+            Types::I8(a)   => Types::I8(!a),
+            Types::I16(a) => Types::I16(!a),
+            Types::I32(a) => Types::I32(!a),
+            Types::I64(a) => Types::I64(!a),
+            Types::U8(a)   => Types::U8(!a),
+            Types::U16(a) => Types::U16(!a),
+            Types::U32(a) => Types::U32(!a),
+            Types::U64(a) => Types::U64(!a),
+            Types::F16(a) => Types::F16(f16::from_bits(!(a.to_bits()))),
+            Types::F32(a) => Types::F32(f32::from_bits(!a.to_bits())),
+            Types::F64(a) => Types::F64(f64::from_bits(!a.to_bits())),
+            _ => panic!("unsupported types for not"),
+        }
+    }
+}
+
+impl Shl<Types> for Types {
+    type Output = Self;
+
+    fn shl(self, other: Types) -> Self {
+        match (self, other) {
+            (Types::Void(_), _) | (_, Types::Void(_))
+            | (Types::Pointer(_), _) | (_, Types::Pointer(_))
+            | (Types::Type(_), _) | (_, Types::Type(_))
+            | (Types::Struct(_), _) | (_, Types::Struct(_))
+            | (Types::Function(_), _) | (_, Types::Function(_)) => panic!("unsupported types for division"),
+            (a, Types::I8(b))   => a << b,
+            (a, Types::I16(b)) => a << b,
+            (a, Types::I32(b)) => a << b,
+            (a, Types::I64(b)) => a << b,
+            (a, Types::U8(b))   => a << b,
+            (a, Types::U16(b)) => a << b,
+            (a, Types::U32(b)) => a << b,
+            (a, Types::U64(b)) => a << b,
+            (a, Types::F16(b)) => a << b,
+            (a, Types::F32(b)) => a << b,
+            (a, Types::F64(b)) => a << b,
+        }
+    }
+}
+
+impl Shr<Types> for Types {
+    type Output = Self;
+
+    fn shr(self, other: Types) -> Self {
+        match (self, other) {
+            (Types::Void(_), _) | (_, Types::Void(_))
+            | (Types::Pointer(_), _) | (_, Types::Pointer(_))
+            | (Types::Type(_), _) | (_, Types::Type(_))
+            | (Types::Struct(_), _) | (_, Types::Struct(_))
+            | (Types::Function(_), _) | (_, Types::Function(_)) => panic!("unsupported types for division"),
+            (a, Types::I8(b))   => a >> b,
+            (a, Types::I16(b)) => a >> b,
+            (a, Types::I32(b)) => a >> b,
+            (a, Types::I64(b)) => a >> b,
+            (a, Types::U8(b))   => a >> b,
+            (a, Types::U16(b)) => a >> b,
+            (a, Types::U32(b)) => a >> b,
+            (a, Types::U64(b)) => a >> b,
+            (a, Types::F16(b)) => a >> b,
+            (a, Types::F32(b)) => a >> b,
+            (a, Types::F64(b)) => a >> b,
         }
     }
 }
@@ -414,6 +757,36 @@ pub fn mul(a: &Box<Types>, b: &Box<Types>) -> Box<Types> {
 
 pub fn div(a: &Box<Types>, b: &Box<Types>) -> Box<Types> {
     let result = (**a).clone() / (**b).clone();
+    Box::new(result)
+}
+
+pub fn and(a: &Box<Types>, b: &Box<Types>) -> Box<Types> {
+    let result = (**a).clone() & (**b).clone();
+    Box::new(result)
+}
+
+pub fn or(a: &Box<Types>, b: &Box<Types>) -> Box<Types> {
+    let result = (**a).clone() | (**b).clone();
+    Box::new(result)
+}
+
+pub fn xor(a: &Box<Types>, b: &Box<Types>) -> Box<Types> {
+    let result = (**a).clone() ^ (**b).clone();
+    Box::new(result)
+}
+
+pub fn not(a: &Box<Types>) -> Box<Types> {
+    let result = !(**a).clone();
+    Box::new(result)
+}
+
+pub fn lsh(a: &Box<Types>, b: &Box<Types>) -> Box<Types> {
+    let result = (**a).clone() << (**b).clone();
+    Box::new(result)
+}
+
+pub fn rsh(a: &Box<Types>, b: &Box<Types>) -> Box<Types> {
+    let result = (**a).clone() >> (**b).clone();
     Box::new(result)
 }
 
@@ -754,7 +1127,7 @@ pub fn cast_type(val: Box<Types>, t: u8) -> Box<Types> {
         (Types::Type(v), 0x0B) => Box::new(Types::F64(*v as f64)),
         (Types::Type(v), 0x0C) => Box::new(Types::Pointer(*v as u64)),
         (Types::Type(v), 0x0D) => Box::new(Types::Type(*v as u8)),
-        _ => panic!("Unsupported type conversion"),
+        _ => panic!("unsupported type conversion"),
     }
 }
 
@@ -762,7 +1135,8 @@ pub fn parse_string(program: &Vec<u8>, pc: &mut usize) -> String {
     let length = program[*pc] as usize;
     *pc += 1;
 
-    let name = String::from_utf8(program[*pc..(*pc+length)].try_into().unwrap()).unwrap();
+    let slice = program[*pc..(*pc+length)].try_into().unwrap();
+    let name = String::from_utf8(slice).unwrap();
     *pc += length;
 
     return name;

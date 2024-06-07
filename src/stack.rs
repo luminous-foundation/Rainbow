@@ -28,6 +28,10 @@ impl Frame {
     }
 
     pub fn set_var(&mut self, name: String, value: Box<Types>) {
+        if name == "_" {
+            return;
+        }
+
         let casted = cast_type(value, *self.var_types.get(&name).unwrap());
 
         let loc = *self.var_locs.get(&name).expect(format!("tried to set undefined variable `{}`", name).as_str());
