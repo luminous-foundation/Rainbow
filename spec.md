@@ -3,6 +3,7 @@
 0xFF - function start
 0xFE - scope start
 0xFD - scope end
+0xFC - data section start
 ```
 
 # INSTRUCTIONS
@@ -30,8 +31,8 @@
 [x] 0x54-57     XOR     [imm/var]   [imm/var]   [var]
 [x] 0x58-59     NOT     [imm/var]   [var]
 [x] 0x5A-5D     LSH     [imm/var]   [var]
-[x] 0x5E-60     RSH     [imm/var]   [var]
-[x] 0x60-63     VAR     [type/var]  [name]
+[x] 0x5E-61     RSH     [imm/var]   [var]
+[x] 0x62-63     VAR     [type/var]  [name]
 [ ] 0x64-65     RET     [imm/var]
 ```
 
@@ -56,6 +57,14 @@
 0x0F	bytecode string (used for variable names, function names, etc.) (also is a function pointer)
 ```
 
+# IMMEDIATE VALUES
+Immediate values are values that are stored within the bytecode instructions themselves. These values are used for all non-pointer data types.
+An example of an instruction that uses immediate values is the creation of a variable with type i32 and value 5 is below.
+```
+62 03 01 61
+4A 03 00 00 00 05 01 61
+```
+
 # BYTECODE STRINGS
 Bytecode strings are how function names/variable names/etc. are represented in the bytecode.
 Their format is a follows
@@ -72,14 +81,27 @@ Hello, World!
 ```
 
 # DATA SECTION
-This is a section of the bytecode where all constants (that aren't non-pointer values that fit in a normal immediate) are stored for use in the program.
+This is a section of the bytecode where all pointer constats (i.e. strings, arrays) are stored for use in the program.
+This section is placed at the end of the file.
 The format is as follows
 ```
-
+FC
+(name) (data type) (length bytes) (data length) (data)
+(name) (data type) (length bytes) (data length) (data)
+...
 ```
+The amount of bytes in the data length is specified by the bytes beforehand.
 
 # DATA CONSTANTS
 Data constants are used for defining data inside of pointers/arrays in the bytecode.
+The format is as follows
+```
+(name) (data type) (length bytes) (data length) (data)
+```
+
+# SCOPES
+Scopes can be defined anywhere in the bytecode. Scopes are defined using the reserved bytes FE (scope start) and FD (scope end) as listed above.
+TODO: add more info on scopes
 
 # FUNCTIONS
 The format for functions is as follows
@@ -87,6 +109,12 @@ The format for functions is as follows
 FF (return type) (function name) (args) FE
     (code)
 FD
+```
+Arguments are defined as follows
+```
+(type) (name)
+(type) (name)
+...
 ```
 An example function would look like this:
 ```
@@ -100,3 +128,9 @@ byte main(string[] args) {
 
 }
 ```
+
+# ERRORS
+Error handling is currently undefined in Rainbow.
+
+# OPTIMIZATIONS
+Optimizations are currently not implemented for Rainbow.
