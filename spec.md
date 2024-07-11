@@ -36,10 +36,10 @@
 [ ] 0x5A-5D     LSH     [imm/var]   [imm/var]   [var]
 [ ] 0x5E-61     RSH     [imm/var]   [imm/var]   [var]
 [ ] 0x62-63     VAR     [type/var]  [name]
-[ ] 0x64-65     RET     [imm/var]
-[ ] 0x66-67     DEREF   [ptr]       [var]
-[ ] 0x68-69     REF     [var]       [ptr var]
-[ ] 0x6A-6B     INST    [name/var]  [var]
+[ ] 0x64-66     RET     {imm/var}
+[ ] 0x67-68     DEREF   [ptr]       [var]
+[ ] 0x69-6A     REF     [var]       [ptr var]
+[ ] 0x6B-6C     INST    [name/var]  [var]
 ```
 
 ## TYPES
