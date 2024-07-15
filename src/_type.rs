@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[repr(u8)]
 pub enum Types {
     VOID    = 0x00,
@@ -43,7 +43,7 @@ impl Types {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Type {
     pub typ: Vec<Types>,
 }

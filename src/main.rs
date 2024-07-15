@@ -1,18 +1,21 @@
-use std::fs;
+use std::{cell::RefCell, collections::HashMap, fs, hash::Hash};
 
 use frame::Frame;
 use scope::{exec_func, exec_scope, parse_scope};
+use value::Value;
+use variable::Variable;
 
 mod scope;
 mod instruction;
 mod function;
 mod _type;
 mod argument;
-mod number;
 mod frame;
 mod variable;
 mod value;
 
+// TODO: better error handling
+// TODO: result type
 fn main() {
     let program = fs::read("./simple_add.rbb").expect("failed to read program");
 
@@ -25,11 +28,39 @@ fn main() {
 
     let mut stack: Vec<Frame> = Vec::new();
 
-    exec_scope(&global_scope, &mut stack[0]);
+    stack.push(Frame { vars: HashMap::new(), stack: Vec::new() });
+
+    exec_scope(&global_scope, &mut stack, 0);
     match global_scope.functions.get("main") {
         Some(func) => exec_func(&func, &mut stack),
         None => (), // main functions are not required
     }
 
-    // run the program :)
+    println!("{:#?}", stack);
+}
+
+// these functions expect the variable to exist
+// if it doesnt, it will crash (it was going to crash later anyways)
+fn get_var(name: String, stack: &mut Vec<Frame>, cur_frame: usize) -> &Variable {
+    if stack[0].vars.contains_key(&name) {
+        return stack[0].get_var(name).expect("unreachable");
+    } else {
+        if stack[cur_frame].vars.contains_key(&name) {
+            return stack[cur_frame].get_var(name).expect("unreachable");
+        } else {
+            panic!("tried to get undefined variable {}", name);
+        }
+    }
+}
+
+fn set_var(name: String, value: Value, stack: &mut Vec<Frame>, cur_frame: usize) {
+    if stack[0].vars.contains_key(&name) {
+        return stack[0].set_var(name, value);
+    } else {
+        if stack[cur_frame].vars.contains_key(&name) {
+            return stack[cur_frame].set_var(name, value);
+        } else {
+            panic!("tried to set undefined variable {}", name);
+        }
+    }
 }

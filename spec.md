@@ -65,6 +65,10 @@
 
 ## IMMEDIATE VALUES
 Immediate values are values that are stored within the bytecode instructions themselves. These values are used for all non-pointer data types.
+Their format is as follows
+```
+(type) (value)
+```
 An example of an instruction that uses immediate values is the creation of a variable with type i32 and value 5 is below.
 ```
 62 03 01 61
