@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{_type::Type, argument::Argument, function::Function, instruction::Instruction};
+use crate::{_type::{Type, Types}, argument::Argument, function::Function, instruction::Instruction};
 
 #[derive(Debug)]
 pub struct Scope {
@@ -10,6 +10,13 @@ pub struct Scope {
 }
 
 // TODO: make scopes in scopes preserve instruction order
+// example:
+// ...
+// {
+//   these instructions should be executed where they are
+//   but as it stands they are executed last
+// }
+// ...
 pub fn exec_scope(scope: &Scope) {
     for instr in &scope.instructions {
         match instr.opcode {
@@ -95,11 +102,11 @@ pub fn parse_type(bytes: &Vec<u8>, index: &mut usize) -> Result<Type, String> {
     let mut typ = Type {typ: Vec::new()};
 
     while bytes[*index] == 0x0C {
-        typ.typ.push(bytes[*index]);
+        typ.typ.push(Types::POINTER);
         *index = *index + 1;
     }
 
-    typ.typ.push(bytes[*index]);
+    typ.typ.push(Types::from_u8(bytes[*index]));
     *index = *index + 1;
 
     return Ok(typ);
