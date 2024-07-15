@@ -1,6 +1,7 @@
 use std::fs;
 
-use scope::{exec_scope, parse_scope};
+use frame::Frame;
+use scope::{exec_func, exec_scope, parse_scope};
 
 mod scope;
 mod instruction;
@@ -10,6 +11,7 @@ mod argument;
 mod number;
 mod frame;
 mod variable;
+mod value;
 
 fn main() {
     let program = fs::read("./simple_add.rbb").expect("failed to read program");
@@ -21,9 +23,11 @@ fn main() {
         Err(error) => panic!("failed to parse program:\n{}", error)
     }
 
-    exec_scope(&global_scope);
+    let mut stack: Vec<Frame> = Vec::new();
+
+    exec_scope(&global_scope, &mut stack[0]);
     match global_scope.functions.get("main") {
-        Some(func) => exec_scope(&func.scope),
+        Some(func) => exec_func(&func, &mut stack),
         None => (), // main functions are not required
     }
 

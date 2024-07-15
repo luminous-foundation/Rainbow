@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{_type::{Type, Types}, argument::Argument, function::Function, instruction::Instruction};
+use crate::{_type::{Type, Types}, argument::Argument, frame::Frame, function::Function, instruction::Instruction};
 
 #[derive(Debug)]
 pub struct Scope {
@@ -17,12 +17,19 @@ pub struct Scope {
 //   but as it stands they are executed last
 // }
 // ...
-pub fn exec_scope(scope: &Scope) {
+pub fn exec_scope(scope: &Scope, frame: &mut Frame) {
     for instr in &scope.instructions {
         match instr.opcode {
             _ => panic!("unknown instruction {:#04x} at {:#06x}", instr.opcode, instr.index)
         }
     }
+}
+
+pub fn exec_func(func: &Function, stack: &mut Vec<Frame>) {
+    stack.push(Frame { vars: Vec::new(), stack: Vec::new() });
+
+    let len = stack.len(); // borrow checker woes
+    exec_scope(&func.scope, &mut stack[len - 1])
 }
 
 // expects `index` to be at the start of the scope body
