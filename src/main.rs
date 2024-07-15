@@ -12,7 +12,7 @@ mod frame;
 mod variable;
 
 fn main() {
-    let program = fs::read("C:\\Users\\Grim\\Desktop\\stuff\\rasm\\tests\\simple_add.rbb").expect("failed to read program");
+    let program = fs::read("./simple_add.rbb").expect("failed to read program");
 
     let mut index = 0;
     let global_scope;
@@ -24,7 +24,7 @@ fn main() {
     exec_scope(&global_scope);
     match global_scope.functions.get("main") {
         Some(func) => exec_scope(&func.scope),
-        None => panic!("could not find main function")
+        None => (), // main functions are not required
     }
 
     // run the program :)
