@@ -12,34 +12,90 @@
 ## INSTRUCTIONS
 
 ```
-[ ] 0x00        NOP                                           Does nothing.
-[ ] 0x01-02     PUSH    [imm/var]                             Pushes a value onto the stack
-[ ] 0x03        POP     [var]                                 Pops a value off of the stack and stores it in a variable
-[ ] 0x04-05     LDARG   [imm/var]                             Loads an argument to be used in a function
-[ ] 0x06-07     CALL    [func/var]                            Calls a function
-[ ] 0x08-0B     ADD     [imm/var]   [imm/var]   [var]         Add two numbers and store in a variable
-[ ] 0x0C-0F     SUB     [imm/var]   [imm/var]   [var]         Subtract two numbers and store in a variable
-[ ] 0x10-13     MUL     [imm/var]   [imm/var]   [var]         Multiply two numbers and store in a variable
-[ ] 0x14-17     DIV     [imm/var]   [imm/var]   [var]         Divide two numbers and store in a variable
-[ ] 0x18-19     JMP     [imm/var]                             Jump to a location within the current scope
-[ ] 0x1A-21     JNE     [imm/var]   [imm/var]   [imm/var]     Jump to a location within the current scope if the given values are not equal
-[ ] 0x22-29     JE      [imm/var]   [imm/var]   [imm/var]     Jump to a location within the current scope if the given values are equal
-[ ] 0x2A-31     JGE     [imm/var]   [imm/var]   [imm/var]     Jump to a location within the current scope if value A is greater than or equal to B
-[ ] 0x32-39     JG      [imm/var]   [imm/var]   [imm/var]     Jump to a location within the current scope if value A is greater than to B
-[ ] 0x3A-41     JLE     [imm/var]   [imm/var]   [imm/var]     Jump to a location within the current scope if value A is less than or equal to B
-[ ] 0x42-49     JL      [imm/var]   [imm/var]   [imm/var]     Jump to a location within the current scope if value A is less than to B
-[ ] 0x4A-4B     MOV     [imm/var]   [var]                     Move a value into a variable
-[ ] 0x4C-4F     AND     [imm/var]   [imm/var]   [var]         Perform bitwise AND on two values and store in a variable
-[ ] 0x50-53     OR      [imm/var]   [imm/var]   [var]         Perform bitwise OR on two values and store in a variable
-[ ] 0x54-57     XOR     [imm/var]   [imm/var]   [var]         Perform bitwise XOR on two values and store in a variable
-[ ] 0x58-59     NOT     [imm/var]   [var]                     Perform bitwise NOT on a value and store in a variable
-[ ] 0x5A-5D     LSH     [imm/var]   [imm/var]   [var]         Left shift value A value B bits
-[ ] 0x5E-61     RSH     [imm/var]   [imm/var]   [var]         Right shift value A value B bits
-[ ] 0x62-63     VAR     [type/var]  [name]                    Create a variable with the given type and name
-[ ] 0x64-66     RET     {imm/var}                             Return from a function (functions with void type do not need to include arguments)
-[ ] 0x67-68     DEREF   [ptr]       [var]                     Dereference a pointer and store in a variable
-[ ] 0x69-6A     REF     [var]       [ptr var]                 Create a reference to a variable and store in another variable
-[ ] 0x6B-6C     INST    [name/var]  [var]                     Instantiate a struct with default values
+[x] 0x00        NOP                                           
+Does nothing.
+
+[ ] 0x01-02     PUSH    [imm/var]                             
+Pushes a value onto the stack
+
+[ ] 0x03        POP     [var]                                 
+Pops a value off of the stack and stores it in a variable
+
+[ ] 0x04-05     LDARG   [imm/var]                             
+Loads an argument to be used in a function
+
+[ ] 0x06-07     CALL    [func/var]                            
+Calls a function
+
+[ ] 0x08-0B     ADD     [imm/var]   [imm/var]   [var]         
+Add two numbers and store in a variable
+
+[ ] 0x0C-0F     SUB     [imm/var]   [imm/var]   [var]         
+Subtract two numbers and store in a variable
+
+[ ] 0x10-13     MUL     [imm/var]   [imm/var]   [var]         
+Multiply two numbers and store in a variable
+
+[ ] 0x14-17     DIV     [imm/var]   [imm/var]   [var]         
+Divide two numbers and store in a variable
+
+[ ] 0x18-19     JMP     [imm/var]                             
+Jump to a location within the current scope
+
+[ ] 0x1A-21     JNE     [imm/var]   [imm/var]   [imm/var]     
+Jump to a location within the current scope if the given values are not equal
+
+[ ] 0x22-29     JE      [imm/var]   [imm/var]   [imm/var]     
+Jump to a location within the current scope if the given values are equal
+
+[ ] 0x2A-31     JGE     [imm/var]   [imm/var]   [imm/var]     
+Jump to a location within the current scope if value A is greater than or equal to B
+
+[ ] 0x32-39     JG      [imm/var]   [imm/var]   [imm/var]     
+Jump to a location within the current scope if value A is greater than to B
+
+[ ] 0x3A-41     JLE     [imm/var]   [imm/var]   [imm/var]     
+Jump to a location within the current scope if value A is less than or equal to B
+
+[ ] 0x42-49     JL      [imm/var]   [imm/var]   [imm/var]     
+Jump to a location within the current scope if value A is less than to B
+
+[ ] 0x4A-4B     MOV     [imm/var]   [var]                     
+Move a value into a variable
+
+[ ] 0x4C-4F     AND     [imm/var]   [imm/var]   [var]         
+Perform bitwise AND on two values and store in a variable
+
+[ ] 0x50-53     OR      [imm/var]   [imm/var]   [var]         
+Perform bitwise OR on two values and store in a variable
+
+[ ] 0x54-57     XOR     [imm/var]   [imm/var]   [var]         
+Perform bitwise XOR on two values and store in a variable
+
+[ ] 0x58-59     NOT     [imm/var]   [var]                     
+Perform bitwise NOT on a value and store in a variable
+
+[ ] 0x5A-5D     LSH     [imm/var]   [imm/var]   [var]         
+Left shift value A value B bits
+
+[ ] 0x5E-61     RSH     [imm/var]   [imm/var]   [var]         
+Right shift value A value B bits
+
+[ ] 0x62-63     VAR     [type/var]  [name]                    
+Create a variable with the given type and name
+
+[ ] 0x64-66     RET     {imm/var}                             
+Return from a function (functions with void type do not need to include arguments)
+
+[ ] 0x67-68     DEREF   [ptr]       [var]                     
+Dereference a pointer and store in a variable
+
+[ ] 0x69-6A     REF     [var]       [ptr var]                 
+Create a reference to a variable and store in another variable
+
+[ ] 0x6B-6C     INST    [name/var]  [var]                     
+Instantiate a struct with default values
+
 ```
 
 ## TYPES
