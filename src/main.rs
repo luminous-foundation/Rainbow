@@ -46,11 +46,11 @@ fn main() {
 
 // these functions expect the variable to exist
 // if it doesnt, it will crash (it was going to crash later anyways)
-fn get_var(name: String, stack: &mut Vec<Frame>, cur_frame: usize) -> &Variable {
-    if stack[0].vars.contains_key(&name) {
+fn get_var<'a>(name: &String, stack: &'a mut Vec<Frame>, cur_frame: usize) -> &'a Variable {
+    if stack[0].vars.contains_key(name) {
         return stack[0].get_var(name).expect("unreachable");
     } else {
-        if stack[cur_frame].vars.contains_key(&name) {
+        if stack[cur_frame].vars.contains_key(name) {
             return stack[cur_frame].get_var(name).expect("unreachable");
         } else {
             panic!("tried to get undefined variable {}", name);

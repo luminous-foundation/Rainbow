@@ -1,4 +1,4 @@
-use std::{cell::RefCell, collections::HashMap};
+use std::{collections::HashMap};
 
 use crate::{_type::{Type, Types}, value::{Value, Values}, variable::Variable};
 
@@ -17,8 +17,8 @@ impl Frame {
         return self.stack.pop().expect("attempted to pop empty stack");
     }
 
-    pub fn get_var(self: &Frame, name: String) -> Option<&Variable> {
-        return self.vars.get(&name);
+    pub fn get_var(self: &Frame, name: &String) -> Option<&Variable> {
+        return self.vars.get(name);
     }
 
     pub fn set_var(self: &mut Frame, name: String, value: Value) {

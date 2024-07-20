@@ -40,8 +40,9 @@ pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
                 stack[cur_frame].push(val.clone());
             }
             Opcode::PUSH_VAR(name) => { // PUSH [name]
-                let var = get_var(name.clone(), stack, cur_frame).clone();
-                stack[cur_frame].push(var.value);
+                let var = get_var(name, stack, cur_frame);
+                let val = var.value.clone();
+                stack[cur_frame].push(val);
             }
             Opcode::POP(name) => { // POP [name]
                 set_var(name.clone(), stack[cur_frame].pop(), stack, cur_frame);
@@ -49,45 +50,45 @@ pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
             Opcode::ADD_I_I(a, b, out) => { // ADD [imm] [imm] [name]
                 // TODO: types :why:
                 // this is just a temporary thing to get it working
-                let var = get_var(out.clone(), stack, cur_frame);
+                let var = get_var(out, stack, cur_frame);
                 let new_val = a.val.add(&b.val);
 
                 set_var(out.clone(), Value { main_type: var.value.main_type.clone(), val: new_val }, stack, cur_frame)
             }
             Opcode::ADD_V_I(a_name, b, out) => { // ADD [name] [imm] [name]
-                let a = get_var(a_name.clone(), stack, cur_frame).clone().value;
+                let a = get_var(a_name, stack, cur_frame).value.clone();
 
                 // TODO: types :why:
                 // this is just a temporary thing to get it working
-                let var = get_var(out.clone(), stack, cur_frame);
+                let var = get_var(out, stack, cur_frame);
                 let new_val = a.val.add(&b.val);
 
                 set_var(out.clone(), Value { main_type: var.value.main_type.clone(), val: new_val }, stack, cur_frame)
             }
             Opcode::ADD_I_V(a, b_name, out) => { // ADD [imm] [name] [name]                
-                let b = get_var(b_name.clone(), stack, cur_frame).clone().value;
+                let b = get_var(b_name, stack, cur_frame).value.clone();
 
                 // TODO: types :why:
                 // this is just a temporary thing to get it working
-                let var = get_var(out.clone(), stack, cur_frame);
+                let var = get_var(out, stack, cur_frame);
                 let new_val = b.val.add(&a.val);
 
                 set_var(out.clone(), Value { main_type: var.value.main_type.clone(), val: new_val }, stack, cur_frame)
             }
             Opcode::ADD_V_V(a_name, b_name, out) => { // ADD [name] [name] [name]
-                let a = get_var(a_name.clone(), stack, cur_frame).clone().value;
+                let a = get_var(a_name, stack, cur_frame).value.clone();
                 
-                let b = get_var(b_name.clone(), stack, cur_frame).clone().value;
+                let b = get_var(b_name, stack, cur_frame).value.clone();
 
                 // TODO: types :why:
                 // this is just a temporary thing to get it working
-                let var = get_var(out.clone(), stack, cur_frame);
+                let var = get_var(out, stack, cur_frame);
                 let new_val = a.val.add(&b.val);
 
                 set_var(out.clone(), Value { main_type: var.value.main_type.clone(), val: new_val }, stack, cur_frame)
             }
             Opcode::JLE_V_I_I(a_name, b, c) => { // JLE [name] [imm] [imm]
-                let a = get_var(a_name.clone(), stack, cur_frame).clone().value;
+                let a = get_var(a_name, stack, cur_frame).value.clone();
 
                 let mut new_pc;
                 match c.val {
@@ -172,7 +173,7 @@ pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
                 stack[cur_frame].push_var(name.clone(), typ.clone());
             }
             Opcode::VAR_NAME(type_var, name) => { // VAR [name] [name]
-                let type_var = get_var(type_var.clone(), stack, cur_frame);
+                let type_var = get_var(type_var, stack, cur_frame);
 
                 let typ;
                 match &type_var.value.val {
