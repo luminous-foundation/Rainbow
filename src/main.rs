@@ -58,11 +58,11 @@ fn get_var<'a>(name: &String, stack: &'a mut Vec<Frame>, cur_frame: usize) -> &'
     }
 }
 
-fn set_var(name: String, value: Value, stack: &mut Vec<Frame>, cur_frame: usize) {
-    if stack[0].vars.contains_key(&name) {
+fn set_var(name: &String, value: Value, stack: &mut Vec<Frame>, cur_frame: usize) {
+    if stack[0].vars.contains_key(name) {
         return stack[0].set_var(name, value);
     } else {
-        if stack[cur_frame].vars.contains_key(&name) {
+        if stack[cur_frame].vars.contains_key(name) {
             return stack[cur_frame].set_var(name, value);
         } else {
             panic!("tried to set undefined variable {}", name);

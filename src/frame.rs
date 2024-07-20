@@ -21,8 +21,8 @@ impl Frame {
         return self.vars.get(name);
     }
 
-    pub fn set_var(self: &mut Frame, name: String, value: Value) {
-        let mut temp = self.vars.get(&name).expect(&format!("attempted to set value of undefined variable {}", name)).clone();
+    pub fn set_var(self: &mut Frame, name: &String, value: Value) {
+        let mut temp = self.vars.get(name).expect(&format!("attempted to set value of undefined variable {}", name)).clone();
         temp.value = value;
         self.vars.insert(name.clone(), temp);
     }

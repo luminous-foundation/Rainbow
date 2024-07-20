@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use half::f16;
 
-use crate::{_type::{Type, Types}, argument::Argument, frame::Frame, function::Function, get_var, instruction::Instruction, set_var, value::{Value, Values}};
+use crate::{_type::{Type, Types}, frame::Frame, function::Function, get_var, instruction::Instruction, set_var, value::{Value, Values}};
 use crate::instruction::Opcode;
 
 #[derive(Debug)]
@@ -45,7 +45,7 @@ pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
                 stack[cur_frame].push(val);
             }
             Opcode::POP(name) => { // POP [name]
-                set_var(name.clone(), stack[cur_frame].pop(), stack, cur_frame);
+                set_var(name, stack[cur_frame].pop(), stack, cur_frame);
             }
             Opcode::ADD_I_I(a, b, out) => { // ADD [imm] [imm] [name]
                 // TODO: types :why:
@@ -53,7 +53,7 @@ pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
                 let var = get_var(out, stack, cur_frame);
                 let new_val = a.val.add(&b.val);
 
-                set_var(out.clone(), Value { main_type: var.value.main_type.clone(), val: new_val }, stack, cur_frame)
+                set_var(out, Value { main_type: var.value.main_type.clone(), val: new_val }, stack, cur_frame)
             }
             Opcode::ADD_V_I(a_name, b, out) => { // ADD [name] [imm] [name]
                 let a = get_var(a_name, stack, cur_frame).value.clone();
@@ -63,7 +63,7 @@ pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
                 let var = get_var(out, stack, cur_frame);
                 let new_val = a.val.add(&b.val);
 
-                set_var(out.clone(), Value { main_type: var.value.main_type.clone(), val: new_val }, stack, cur_frame)
+                set_var(out, Value { main_type: var.value.main_type.clone(), val: new_val }, stack, cur_frame)
             }
             Opcode::ADD_I_V(a, b_name, out) => { // ADD [imm] [name] [name]                
                 let b = get_var(b_name, stack, cur_frame).value.clone();
@@ -73,7 +73,7 @@ pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
                 let var = get_var(out, stack, cur_frame);
                 let new_val = b.val.add(&a.val);
 
-                set_var(out.clone(), Value { main_type: var.value.main_type.clone(), val: new_val }, stack, cur_frame)
+                set_var(out, Value { main_type: var.value.main_type.clone(), val: new_val }, stack, cur_frame)
             }
             Opcode::ADD_V_V(a_name, b_name, out) => { // ADD [name] [name] [name]
                 let a = get_var(a_name, stack, cur_frame).value.clone();
@@ -85,7 +85,7 @@ pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
                 let var = get_var(out, stack, cur_frame);
                 let new_val = a.val.add(&b.val);
 
-                set_var(out.clone(), Value { main_type: var.value.main_type.clone(), val: new_val }, stack, cur_frame)
+                set_var(out, Value { main_type: var.value.main_type.clone(), val: new_val }, stack, cur_frame)
             }
             Opcode::JLE_V_I_I(a_name, b, c) => { // JLE [name] [imm] [imm]
                 let a = get_var(a_name, stack, cur_frame).value.clone();
