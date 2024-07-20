@@ -15,7 +15,7 @@
 [x] 0x00        NOP                                           
 Does nothing.
 
-[ ] 0x01-02     PUSH    [imm/var]                             
+[x] 0x01-02     PUSH    [imm/var]                             
 Pushes a value onto the stack
 
 [ ] 0x03        POP     [var]                                 
@@ -27,7 +27,7 @@ Loads an argument to be used in a function
 [ ] 0x06-07     CALL    [func/var]                            
 Calls a function
 
-[ ] 0x08-0B     ADD     [imm/var]   [imm/var]   [var]         
+[x] 0x08-0B     ADD     [imm/var]   [imm/var]   [var]         
 Add two numbers and store in a variable
 
 [ ] 0x0C-0F     SUB     [imm/var]   [imm/var]   [var]         
@@ -87,13 +87,13 @@ Create a variable with the given type and name
 [ ] 0x64-66     RET     {imm/var}                             
 Return from a function (functions with void type do not need to include arguments)
 
-[ ] 0x67-68     DEREF   [ptr]       [var]                     
+[ ] 0x67-68     DEREF   [ptr imm/ptr var]       [var]                     
 Dereference a pointer and store in a variable
 
-[ ] 0x69-6A     REF     [var]       [ptr var]                 
+[ ] 0x69        REF     [var]       [ptr var]                 
 Create a reference to a variable and store in another variable
 
-[ ] 0x6B-6C     INST    [name/var]  [var]                     
+[ ] 0x6A-6B     INST    [name/var]  [var]                     
 Instantiate a struct with default values
 
 ```

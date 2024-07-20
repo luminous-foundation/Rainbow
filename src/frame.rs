@@ -5,12 +5,16 @@ use crate::{_type::{Type, Types}, value::{Value, Values}, variable::Variable};
 #[derive(Debug, Clone)]
 pub struct Frame {
     pub vars: HashMap<String, Variable>,
-    pub stack: Vec<Variable>, // TODO: change this to use a different holding type to save space
+    pub stack: Vec<Value>,
 }
 
 impl Frame {
-    pub fn push(self: &mut Frame, var: Variable) {
-        self.stack.push(var);
+    pub fn push(self: &mut Frame, val: Value) {
+        self.stack.push(val);
+    }
+    
+    pub fn pop(&mut self) -> Value {
+        return self.stack.pop().expect("attempted to pop empty stack");
     }
 
     pub fn get_var(self: &Frame, name: String) -> Option<&Variable> {

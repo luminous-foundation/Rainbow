@@ -2,7 +2,8 @@ use std::collections::HashMap;
 
 use half::f16;
 
-use crate::{_type::{Type, Types}, argument::Argument, frame::Frame, function::Function, get_var, instruction::Instruction, set_var, value::{Value, Values}, variable::Variable};
+use crate::{_type::{Type, Types}, argument::Argument, frame::Frame, function::Function, get_var, instruction::Instruction, set_var, value::{Value, Values}};
+use crate::instruction::Opcode;
 
 #[derive(Debug)]
 pub struct Scope {
@@ -21,35 +22,40 @@ pub struct Scope {
 // ...
 // TODO: variable scoping that's more precise than function scope
 pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
-    for instr in &scope.instructions {
-        match instr.opcode {
-            0x02 => { // PUSH [name]
-                let name;
-                match &instr.args[0] {
-                    Argument::NAME(n) => name = n,
-                    _ => panic!("expected NAME, got {:?}", instr.args[0]),
-                }
+    let mut pc = 0;
 
-                let var = get_var(name.clone(), stack, cur_frame).clone();
-                stack[cur_frame].push(var);
+    let mut times: [f32; 256] = [0f32; 256];
+    let mut counts: [u32; 256] = [0; 256];
+
+    let start = std::time::Instant::now();
+    while pc < scope.instructions.len() {
+        let instr = &scope.instructions[pc];
+
+        let instr_start = std::time::Instant::now();
+        match &instr.opcode {
+            Opcode::NOP => { // NOP
+                // do nothing
             }
-            0x08 => { // ADD [imm] [imm] [name]
-                let a;
-                match &instr.args[0] {
-                    Argument::IMM(v) => a = v,
-                    _ => panic!("expected IMM, got {:?}", instr.args[0])
-                }
-                let b;
-                match &instr.args[1] {
-                    Argument::IMM(v) => b = v,
-                    _ => panic!("expected IMM, got {:?}", instr.args[1])
-                }
+            Opcode::PUSH_IMM(val) => { // PUSH [imm]
+                stack[cur_frame].push(val.clone());
+            }
+            Opcode::PUSH_VAR(name) => { // PUSH [name]
+                let var = get_var(name.clone(), stack, cur_frame).clone();
+                stack[cur_frame].push(var.value);
+            }
+            Opcode::POP(name) => { // POP [name]
+                set_var(name.clone(), stack[cur_frame].pop(), stack, cur_frame);
+            }
+            Opcode::ADD_I_I(a, b, out) => { // ADD [imm] [imm] [name]
+                // TODO: types :why:
+                // this is just a temporary thing to get it working
+                let var = get_var(out.clone(), stack, cur_frame);
+                let new_val = a.val.add(&b.val);
 
-                let out;
-                match &instr.args[2] {
-                    Argument::NAME(name) => out = name,
-                    _ => panic!("expected NAME, got {:?}", instr.args[2]),
-                }
+                set_var(out.clone(), Value { main_type: var.value.main_type.clone(), val: new_val }, stack, cur_frame)
+            }
+            Opcode::ADD_V_I(a_name, b, out) => { // ADD [name] [imm] [name]
+                let a = get_var(a_name.clone(), stack, cur_frame).clone().value;
 
                 // TODO: types :why:
                 // this is just a temporary thing to get it working
@@ -58,39 +64,138 @@ pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
 
                 set_var(out.clone(), Value { main_type: var.value.main_type.clone(), val: new_val }, stack, cur_frame)
             }
-            0x62 => { // VAR [type] [name]
-                let typ;
-                match &instr.args[0] {
-                    Argument::TYPE(t) => typ = t,
-                    _ => panic!("expected TYPE, got {:?}", instr.args[0]),
+            Opcode::ADD_I_V(a, b_name, out) => { // ADD [imm] [name] [name]                
+                let b = get_var(b_name.clone(), stack, cur_frame).clone().value;
+
+                // TODO: types :why:
+                // this is just a temporary thing to get it working
+                let var = get_var(out.clone(), stack, cur_frame);
+                let new_val = b.val.add(&a.val);
+
+                set_var(out.clone(), Value { main_type: var.value.main_type.clone(), val: new_val }, stack, cur_frame)
+            }
+            Opcode::ADD_V_V(a_name, b_name, out) => { // ADD [name] [name] [name]
+                let a = get_var(a_name.clone(), stack, cur_frame).clone().value;
+                
+                let b = get_var(b_name.clone(), stack, cur_frame).clone().value;
+
+                // TODO: types :why:
+                // this is just a temporary thing to get it working
+                let var = get_var(out.clone(), stack, cur_frame);
+                let new_val = a.val.add(&b.val);
+
+                set_var(out.clone(), Value { main_type: var.value.main_type.clone(), val: new_val }, stack, cur_frame)
+            }
+            Opcode::JLE_V_I_I(a_name, b, c) => { // JLE [name] [imm] [imm]
+                let a = get_var(a_name.clone(), stack, cur_frame).clone().value;
+
+                let mut new_pc;
+                match c.val {
+                    Values::UNSIGNED(c_val) => new_pc = c_val,
+                    Values::SIGNED(c_val) => {
+                        if c_val < 0 {
+                            panic!("cannot jump to negative address");
+                        } else {
+                            new_pc = c_val as u64;
+                        }
+                    }
+                    _ => panic!("expected integer address value")
                 }
-                let name;
-                match &instr.args[1] {
-                    Argument::NAME(n) => name = n,
-                    _ => panic!("expected NAME, got {:?}", instr.args[1]),
+
+                new_pc -= 1;
+
+                match a.val {
+                    Values::SIGNED(a_val) => {
+                        match b.val {
+                            Values::SIGNED(b_val) => {
+                                if a_val <= b_val {
+                                    pc = new_pc as usize;
+                                }
+                            }
+                            Values::UNSIGNED(b_val) => {
+                                if a_val as u64 <= b_val {
+                                    pc = new_pc as usize;
+                                }
+                            }
+                            Values::DECIMAL(b_val) => {
+                                if a_val as f64 <= b_val {
+                                    pc = new_pc as usize;
+                                }
+                            }
+                            _ => panic!("expected a number for comparison, got {:?}", a.val)
+                        }
+                    },
+                    Values::UNSIGNED(a_val) => {
+                        match b.val {
+                            Values::SIGNED(b_val) => {
+                                if a_val as i64 <= b_val {
+                                    pc = new_pc as usize;
+                                }
+                            }
+                            Values::UNSIGNED(b_val) => {
+                                if a_val <= b_val {
+                                    pc = new_pc as usize;
+                                }
+                            }
+                            Values::DECIMAL(b_val) => {
+                                if a_val as f64 <= b_val {
+                                    pc = new_pc as usize;
+                                }
+                            }
+                            _ => panic!("expected a number for comparison, got {:?}", a.val)
+                        }
+                    }
+                    Values::DECIMAL(a_val) => {
+                        match b.val {
+                            Values::SIGNED(b_val) => {
+                                if a_val as i64 <= b_val {
+                                    pc = new_pc as usize;
+                                }
+                            }
+                            Values::UNSIGNED(b_val) => {
+                                if a_val as u64 <= b_val {
+                                    pc = new_pc as usize;
+                                }
+                            }
+                            Values::DECIMAL(b_val) => {
+                                if a_val <= b_val {
+                                    pc = new_pc as usize;
+                                }
+                            }
+                            _ => panic!("expected a number for comparison, got {:?}", a.val)
+                        }
+                    }
+                    _ => panic!("expected a number for comparison, got {:?}", a.val)
                 }
+            }
+            Opcode::VAR_TYPE(typ, name) => { // VAR [type] [name]
                 stack[cur_frame].push_var(name.clone(), typ.clone());
             }
-            0x63 => { // VAR [name] [name]
-                let type_var;
-                match &instr.args[0] {
-                    Argument::NAME(name) => type_var = get_var(name.clone(), stack, cur_frame),
-                    _ => panic!("expected NAME, got {:?}", instr.args[0]),
-                }
+            Opcode::VAR_NAME(type_var, name) => { // VAR [name] [name]
+                let type_var = get_var(type_var.clone(), stack, cur_frame);
 
                 let typ;
                 match &type_var.value.val {
                     Values::TYPE(t) => typ = t.clone(),
                     _ => panic!("tried to create variable with dynamic type stored in variable, but given variable had type {:?}", type_var.value.main_type)
                 }
-                let name;
-                match &instr.args[1] {
-                    Argument::NAME(n) => name = n,
-                    _ => panic!("expected NAME, got {:?}", instr.args[1]),
-                }
+                
                 stack[cur_frame].push_var(name.clone(), typ);
             }
-            _ => panic!("unknown instruction {:#04x} at {:#06x}", instr.opcode, instr.index)
+            _ => panic!("unknown instruction {:#04x} at {:#06x}", instr.opcode.to_u8(), instr.index)
+        }
+        
+        times[instr.opcode.to_u8() as usize] += instr_start.elapsed().as_secs_f32() * 1000f32;
+        counts[instr.opcode.to_u8() as usize] += 1;
+        
+        pc += 1;
+    }
+    
+    println!("scope took {:.2}ms", start.elapsed().as_secs_f32() * 1000f32);
+
+    for x in 0x00..0xff {
+        if counts[x] > 0 {
+            println!("{:#04x}: {:.4}ms avg | {:.4}ms total", x, times[x] / counts[x] as f32, times[x]);
         }
     }
 }
@@ -107,7 +212,6 @@ pub fn parse_scope(bytes: &Vec<u8>, index: &mut usize) -> Result<Scope, String> 
     let mut scope: Scope = Scope {instructions: Vec::new(), scopes: Vec::new(), functions: HashMap::new()};
 
     while *index < bytes.len() {
-        println!("{:#06x}: {:#04x}", *index, bytes[*index]);
         match bytes[*index] {
             0xFF => {
                 *index += 1;
@@ -132,62 +236,70 @@ pub fn parse_scope(bytes: &Vec<u8>, index: &mut usize) -> Result<Scope, String> 
 // expects `index` to be at the start of the instruction
 // leaves `index` to be the byte after the instruction
 pub fn parse_instruction(bytes: &Vec<u8>, index: &mut usize) -> Result<Instruction, String> {
-    let opcode = bytes[*index];
+    let opcode_byte = bytes[*index];
 
     let start_index = *index;
 
     *index += 1;
 
-    let mut args: Vec<Argument> = Vec::new();
-    match opcode {
-        0x00 => (),
-        0x01 => {
-            args.push(Argument::IMM(parse_immediate(bytes, index)?));
+    let opcode: Opcode;
+
+    match opcode_byte {
+        0x00 => {
+            opcode = Opcode::NOP
         }
-        0x02 | 0x03 => {
-            args.push(Argument::NAME(parse_bytecode_string(bytes, index)?));
+        0x01 => {
+            opcode = Opcode::PUSH_IMM(parse_immediate(bytes, index)?)
+        }
+        0x02 => {
+            opcode = Opcode::PUSH_VAR(parse_bytecode_string(bytes, index)?)
+        }
+        0x03 => {
+            opcode = Opcode::POP(parse_bytecode_string(bytes, index)?)
         }
         0x04 => {
-            args.push(Argument::IMM(parse_immediate(bytes, index)?));
+            opcode = Opcode::LDARG_IMM(parse_immediate(bytes, index)?)
         }
-        0x05 | 0x06 | 0x07 => {
-            args.push(Argument::NAME(parse_bytecode_string(bytes, index)?));
+        0x05 => {
+            opcode = Opcode::LDARG_VAR(parse_bytecode_string(bytes, index)?)
         }
         0x08 => {
-            args.push(Argument::IMM(parse_immediate(bytes, index)?));
-            args.push(Argument::IMM(parse_immediate(bytes, index)?));
-            args.push(Argument::NAME(parse_bytecode_string(bytes, index)?));
+            opcode = Opcode::ADD_I_I(parse_immediate(bytes, index)?,
+            parse_immediate(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
         }
         0x09 => {
-            args.push(Argument::NAME(parse_bytecode_string(bytes, index)?));
-            args.push(Argument::IMM(parse_immediate(bytes, index)?));
-            args.push(Argument::NAME(parse_bytecode_string(bytes, index)?));
+            opcode = Opcode::ADD_V_I(parse_bytecode_string(bytes, index)?,
+            parse_immediate(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
         }
         0x0A => {
-            args.push(Argument::IMM(parse_immediate(bytes, index)?));
-            args.push(Argument::NAME(parse_bytecode_string(bytes, index)?));
-            args.push(Argument::NAME(parse_bytecode_string(bytes, index)?));
+            opcode = Opcode::ADD_I_V(parse_immediate(bytes, index)?,
+            parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
         }
         0x0B => {
-            args.push(Argument::NAME(parse_bytecode_string(bytes, index)?));
-            args.push(Argument::NAME(parse_bytecode_string(bytes, index)?));
-            args.push(Argument::NAME(parse_bytecode_string(bytes, index)?));
+            opcode = Opcode::ADD_V_V(parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x3B => {
+            opcode = Opcode::JLE_V_I_I(parse_bytecode_string(bytes, index)?,
+            parse_immediate(bytes, index)?,
+            parse_immediate(bytes, index)?)
         }
         0x62 => {
-            args.push(Argument::TYPE(parse_type(bytes, index)?));
-            args.push(Argument::NAME(parse_bytecode_string(bytes, index)?));
+            opcode = Opcode::VAR_TYPE(parse_type(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
         }
         0x63 => {
-            args.push(Argument::NAME(parse_bytecode_string(bytes, index)?));
-            args.push(Argument::NAME(parse_bytecode_string(bytes, index)?));
+            opcode = Opcode::VAR_NAME(parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
         }
-        0x65 => {
-            args.push(Argument::NAME(parse_bytecode_string(bytes, index)?));
-        }
-        _ => return Err(format!("unknown instruction {:#04x} at {:#06x}", opcode, index))
+        _ => return Err(format!("unknown instruction {:#04x} at {:#06x}", opcode_byte, index))
     }
 
-    return Ok(Instruction { index: start_index, opcode: opcode, args: args });
+    return Ok(Instruction { index: start_index, opcode: opcode });
 }
 
 // expects `index` to be at the start of the function definition
@@ -196,8 +308,6 @@ pub fn parse_function(bytes: &Vec<u8>, index: &mut usize) -> Result<Function, St
     let ret_type = parse_type(bytes, index)?;
 
     let name = parse_bytecode_string(bytes, index)?;
-
-    println!("found function named {}", name);
 
     let mut arg_types: Vec<Type> = Vec::new();
     let mut arg_names: Vec<String> = Vec::new();
