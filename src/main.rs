@@ -2,8 +2,7 @@ use std::{collections::HashMap, fs};
 
 use frame::Frame;
 use scope::{exec_func, exec_scope, parse_scope};
-use value::Value;
-use variable::Variable;
+use value::{Value, Values};
 
 mod scope;
 mod instruction;
@@ -11,7 +10,6 @@ mod function;
 mod _type;
 mod argument;
 mod frame;
-mod variable;
 mod value;
 
 // TODO: better error handling
@@ -46,19 +44,15 @@ fn main() {
 
 // these functions expect the variable to exist
 // if it doesnt, it will crash (it was going to crash later anyways)
-fn get_var<'a>(name: &String, stack: &'a mut Vec<Frame>, cur_frame: usize) -> &'a Variable {
+fn get_var<'a>(name: &String, stack: &'a mut Vec<Frame>, cur_frame: usize) -> &'a Value {
     if stack[0].vars.contains_key(name) {
-        return stack[0].get_var(name).expect("unreachable");
+        return stack[0].get_var(name);
     } else {
-        if stack[cur_frame].vars.contains_key(name) {
-            return stack[cur_frame].get_var(name).expect("unreachable");
-        } else {
-            panic!("tried to get undefined variable {}", name);
-        }
+        return stack[cur_frame].get_var(name);
     }
 }
 
-fn set_var(name: &String, value: Value, stack: &mut Vec<Frame>, cur_frame: usize) {
+fn set_var(name: &String, value: &Values, stack: &mut Vec<Frame>, cur_frame: usize) {
     if stack[0].vars.contains_key(name) {
         return stack[0].set_var(name, value);
     } else {

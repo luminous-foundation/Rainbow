@@ -27,6 +27,8 @@ pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
     let mut times: [f32; 256] = [0f32; 256];
     let mut counts: [u32; 256] = [0; 256];
 
+    let scope_stack_start = stack[cur_frame].stack.len();
+
     let start = std::time::Instant::now();
     while pc < scope.instructions.len() {
         let instr = &scope.instructions[pc];
@@ -41,54 +43,42 @@ pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
             }
             Opcode::PUSH_VAR(name) => { // PUSH [name]
                 let var = get_var(name, stack, cur_frame);
-                let val = var.value.clone();
+                let val = var.clone();
                 stack[cur_frame].push(val);
             }
             Opcode::POP(name) => { // POP [name]
-                set_var(name, stack[cur_frame].pop(), stack, cur_frame);
+                set_var(name, &stack[cur_frame].pop().val, stack, cur_frame);
             }
             Opcode::ADD_I_I(a, b, out) => { // ADD [imm] [imm] [name]
-                // TODO: types :why:
-                // this is just a temporary thing to get it working
-                let var = get_var(out, stack, cur_frame);
-                let new_val = a.val.add(&b.val);
+                let val = a.val.add(&b.val);
 
-                set_var(out, Value { main_type: var.value.main_type.clone(), val: new_val }, stack, cur_frame)
+                set_var(out, &val, stack, cur_frame)
             }
             Opcode::ADD_V_I(a_name, b, out) => { // ADD [name] [imm] [name]
-                let a = get_var(a_name, stack, cur_frame).value.clone();
+                let a = get_var(a_name, stack, cur_frame).clone();
 
-                // TODO: types :why:
-                // this is just a temporary thing to get it working
-                let var = get_var(out, stack, cur_frame);
-                let new_val = a.val.add(&b.val);
+                let val = a.val.add(&b.val);
 
-                set_var(out, Value { main_type: var.value.main_type.clone(), val: new_val }, stack, cur_frame)
+                set_var(out, &val, stack, cur_frame)
             }
             Opcode::ADD_I_V(a, b_name, out) => { // ADD [imm] [name] [name]                
-                let b = get_var(b_name, stack, cur_frame).value.clone();
+                let b = get_var(b_name, stack, cur_frame).clone();
 
-                // TODO: types :why:
-                // this is just a temporary thing to get it working
-                let var = get_var(out, stack, cur_frame);
-                let new_val = b.val.add(&a.val);
+                let val = b.val.add(&a.val);
 
-                set_var(out, Value { main_type: var.value.main_type.clone(), val: new_val }, stack, cur_frame)
+                set_var(out, &val, stack, cur_frame)
             }
             Opcode::ADD_V_V(a_name, b_name, out) => { // ADD [name] [name] [name]
-                let a = get_var(a_name, stack, cur_frame).value.clone();
+                let a = get_var(a_name, stack, cur_frame).clone();
                 
-                let b = get_var(b_name, stack, cur_frame).value.clone();
+                let b = get_var(b_name, stack, cur_frame).clone();
 
-                // TODO: types :why:
-                // this is just a temporary thing to get it working
-                let var = get_var(out, stack, cur_frame);
-                let new_val = a.val.add(&b.val);
+                let val = a.val.add(&b.val);
 
-                set_var(out, Value { main_type: var.value.main_type.clone(), val: new_val }, stack, cur_frame)
+                set_var(out, &val, stack, cur_frame)
             }
             Opcode::JLE_V_I_I(a_name, b, c) => { // JLE [name] [imm] [imm]
-                let a = get_var(a_name, stack, cur_frame).value.clone();
+                let a = get_var(a_name, stack, cur_frame).clone();
 
                 let mut new_pc;
                 match c.val {
@@ -176,9 +166,9 @@ pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
                 let type_var = get_var(type_var, stack, cur_frame);
 
                 let typ;
-                match &type_var.value.val {
+                match &type_var.val {
                     Values::TYPE(t) => typ = t.clone(),
-                    _ => panic!("tried to create variable with dynamic type stored in variable, but given variable had type {:?}", type_var.value.main_type)
+                    _ => panic!("tried to create variable with dynamic type stored in variable, but given variable had type {:?}", type_var.typ)
                 }
                 
                 stack[cur_frame].push_var(name.clone(), typ);
@@ -191,6 +181,8 @@ pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
         
         pc += 1;
     }
+
+    stack[cur_frame].stack = stack[cur_frame].stack[0..scope_stack_start].to_vec();
     
     println!("scope took {:.2}ms", start.elapsed().as_secs_f32() * 1000f32);
 
@@ -428,5 +420,5 @@ pub fn parse_immediate(bytes: &Vec<u8>, index: &mut usize) -> Result<Value, Stri
         _ => return Err(format!("unknown type {:#04x}", typ))
     }
     
-    return Ok(Value { main_type: Types::from_u8(typ), val: value });
+    return Ok(Value { typ: Type { typ: vec![Types::from_u8(typ)] } , val: value });
 }
