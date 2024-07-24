@@ -1,7 +1,8 @@
-use crate::{_type::Type, argument::Argument, value::Value};
+use crate::{_type::Type, value::Value};
 
 #[derive(Debug, Clone)]
 #[repr(u8)]
+#[allow(non_camel_case_types)]
 pub enum Opcode { // very large enum
     NOP                               = 0x00,
     PUSH_IMM(Value)                   = 0x01,

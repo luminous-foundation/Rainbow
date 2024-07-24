@@ -1,4 +1,4 @@
-use std::{cell::RefCell, collections::HashMap, fs, hash::Hash};
+use std::{collections::HashMap, fs};
 
 use frame::Frame;
 use scope::{exec_func, exec_scope, parse_scope};
