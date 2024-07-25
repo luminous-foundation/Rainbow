@@ -182,7 +182,10 @@ pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
         pc += 1;
     }
 
-    stack[cur_frame].stack = stack[cur_frame].stack[0..scope_stack_start].to_vec();
+    // TODO: i want to clear everything created by the scope
+    //       but this on its own leaves dangling variables which will be null refs!
+    //       also this probably shouldn't clear if it's working with the global space...
+    // stack[cur_frame].stack = stack[cur_frame].stack[0..scope_stack_start].to_vec();
     
     println!("scope took {:.2}ms", start.elapsed().as_secs_f32() * 1000f32);
 
