@@ -87,7 +87,7 @@ Create a variable with the given type and name
 [ ] 0x64-66     RET     {imm/var}                             
 Return from a function (functions with void type do not need to include arguments)
 
-[ ] 0x67-68     DEREF   [ptr imm/ptr var]       [var]                     
+[ ] 0x67-68     DEREF   [imm/ptr]   [var]                     
 Dereference a pointer and store in a variable
 
 [ ] 0x69        REF     [var]       [ptr var]                 
