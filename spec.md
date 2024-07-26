@@ -42,22 +42,22 @@ Divide two numbers and store in a variable
 [ ] 0x18-19     JMP     [imm/var]
 Jump to a location within the current scope
 
-[ ] 0x1A-21     JNE     [imm/var]   [imm/var]   [imm/var]
+[x] 0x1A-21     JNE     [imm/var]   [imm/var]   [imm/var]
 Jump to a location within the current scope if the given values are not equal
 
-[ ] 0x22-29     JE      [imm/var]   [imm/var]   [imm/var]
+[x] 0x22-29     JE      [imm/var]   [imm/var]   [imm/var]
 Jump to a location within the current scope if the given values are equal
 
-[ ] 0x2A-31     JGE     [imm/var]   [imm/var]   [imm/var]
+[x] 0x2A-31     JGE     [imm/var]   [imm/var]   [imm/var]
 Jump to a location within the current scope if value A is greater than or equal to B
 
-[ ] 0x32-39     JG      [imm/var]   [imm/var]   [imm/var]
+[x] 0x32-39     JG      [imm/var]   [imm/var]   [imm/var]
 Jump to a location within the current scope if value A is greater than to B
 
-[ ] 0x3A-41     JLE     [imm/var]   [imm/var]   [imm/var]
+[x] 0x3A-41     JLE     [imm/var]   [imm/var]   [imm/var]
 Jump to a location within the current scope if value A is less than or equal to B
 
-[ ] 0x42-49     JL      [imm/var]   [imm/var]   [imm/var]
+[x] 0x42-49     JL      [imm/var]   [imm/var]   [imm/var]
 Jump to a location within the current scope if value A is less than to B
 
 [ ] 0x4A-4B     MOV     [imm/var]   [var]

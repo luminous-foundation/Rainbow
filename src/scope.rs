@@ -45,12 +45,12 @@ macro_rules! compare {
 macro_rules! get_pc {
     ($c:expr, $new_pc:expr) => {
         match $c {
-            Values::UNSIGNED(c_val) => $new_pc = c_val,
+            Values::UNSIGNED(c_val) => $new_pc = c_val as usize,
             Values::SIGNED(c_val) => {
                 if c_val < 0 {
                     panic!("cannot jump to negative address");
                 } else {
-                    $new_pc = c_val as u64;
+                    $new_pc = c_val as usize;
                 }
             }
             _ => panic!("expected integer address value")
@@ -209,6 +209,20 @@ pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
                 let b = get_var(b_name, stack, cur_frame).clone();
 
                 add!(a, b, out, stack, cur_frame);
+            }
+
+            Opcode::JMP_IMM(new_pc_val) => {
+                let new_pc: usize;
+                get_pc!(new_pc_val.val.clone(), new_pc);
+
+                pc = new_pc - 1;
+            }
+            Opcode::JMP_VAR(new_pc_name) => {
+                let new_pc_var = get_var(new_pc_name, stack, cur_frame).val.clone();
+                let new_pc: usize;
+                get_pc!(new_pc_var, new_pc);
+
+                pc = new_pc - 1;
             }
 
             Opcode::JNE_I_I_I(a, b, c) => { // JLE [imm] [imm] [imm]
