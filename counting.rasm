@@ -1,5 +1,3 @@
 VAR u64 count
 ADD 1 count count
-PUSH count
-POP count
 JLE count 100_000 1
