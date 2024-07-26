@@ -39,7 +39,7 @@ Multiply two numbers and store in a variable
 [ ] 0x14-17     DIV     [imm/var]   [imm/var]   [var]
 Divide two numbers and store in a variable
 
-[ ] 0x18-19     JMP     [imm/var]
+[x] 0x18-19     JMP     [imm/var]
 Jump to a location within the current scope
 
 [x] 0x1A-21     JNE     [imm/var]   [imm/var]   [imm/var]
