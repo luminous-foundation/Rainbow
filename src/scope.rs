@@ -12,6 +12,67 @@ pub struct Scope {
     pub functions: HashMap<String, Function>,
 }
 
+// instruction macros
+macro_rules! add {
+    ($a:expr, $b:expr, $out:expr, $stack:expr, $cur_frame:expr) => {
+        let val = $a.val.add(&$b.val);
+        set_var($out, &val, $stack, $cur_frame);
+    };
+}
+
+macro_rules! compare {
+    ($a_val:expr, $b:expr, $op:tt, $pc:expr, $new_pc:expr) => {
+        match $b {
+            Values::SIGNED(b_val) => {
+                if ($a_val as i64) $op b_val {
+                    $pc = $new_pc as usize;
+                }
+            }
+            Values::UNSIGNED(b_val) => {
+                if ($a_val as u64) $op b_val {
+                    $pc = $new_pc as usize;
+                }
+            }
+            Values::DECIMAL(b_val) => {
+                if ($a_val as f64) $op b_val {
+                    $pc = $new_pc as usize;
+                }
+            }
+            _ => panic!("expected a number for comparison, got {:?}", $b),
+        }
+    }
+}
+macro_rules! get_pc {
+    ($c:expr, $new_pc:expr) => {
+        match $c {
+            Values::UNSIGNED(c_val) => $new_pc = c_val,
+            Values::SIGNED(c_val) => {
+                if c_val < 0 {
+                    panic!("cannot jump to negative address");
+                } else {
+                    $new_pc = c_val as u64;
+                }
+            }
+            _ => panic!("expected integer address value")
+        }
+    }
+}
+macro_rules! jle {
+    ($a:expr, $b:expr, $c:expr, $pc:expr) => {
+        let mut new_pc;
+        get_pc!($c.val, new_pc);
+
+        new_pc -= 1;
+
+        match $a.val {
+            Values::SIGNED(a_val) => compare!(a_val, $b.val, <=, $pc, new_pc),
+            Values::UNSIGNED(a_val) => compare!(a_val, $b.val, <=, $pc, new_pc),
+            Values::DECIMAL(a_val) => compare!(a_val, $b.val, <=, $pc, new_pc),
+            _ => panic!("expected a number for comparison, got {:?}", $a.val)
+        }
+    }
+}
+
 // TODO: make scopes in scopes preserve instruction order
 // example:
 // ...
@@ -38,127 +99,85 @@ pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
             Opcode::NOP => { // NOP
                 // do nothing
             }
+
             Opcode::PUSH_IMM(val) => { // PUSH [imm]
                 stack[cur_frame].push(val.clone());
             }
             Opcode::PUSH_VAR(name) => { // PUSH [name]
                 let var = get_var(name, stack, cur_frame);
-                let val = var.clone();
+
+                let val = var.clone(); // borrow checker :(
                 stack[cur_frame].push(val);
             }
+
             Opcode::POP(name) => { // POP [name]
                 set_var(name, &stack[cur_frame].pop().val, stack, cur_frame);
             }
-            Opcode::ADD_I_I(a, b, out) => { // ADD [imm] [imm] [name]
-                let val = a.val.add(&b.val);
 
-                set_var(out, &val, stack, cur_frame)
+            Opcode::ADD_I_I(a, b, out) => { // ADD [imm] [imm] [name]
+                add!(a, b, out, stack, cur_frame);
             }
             Opcode::ADD_V_I(a_name, b, out) => { // ADD [name] [imm] [name]
                 let a = get_var(a_name, stack, cur_frame).clone();
 
-                let val = a.val.add(&b.val);
-
-                set_var(out, &val, stack, cur_frame)
+                add!(a, b, out, stack, cur_frame);
             }
             Opcode::ADD_I_V(a, b_name, out) => { // ADD [imm] [name] [name]                
                 let b = get_var(b_name, stack, cur_frame).clone();
 
-                let val = b.val.add(&a.val);
-
-                set_var(out, &val, stack, cur_frame)
+                add!(a, b, out, stack, cur_frame);
             }
             Opcode::ADD_V_V(a_name, b_name, out) => { // ADD [name] [name] [name]
                 let a = get_var(a_name, stack, cur_frame).clone();
-                
                 let b = get_var(b_name, stack, cur_frame).clone();
 
-                let val = a.val.add(&b.val);
+                add!(a, b, out, stack, cur_frame);
+            }
 
-                set_var(out, &val, stack, cur_frame)
+            Opcode::JLE_I_I_I(a, b, c) => { // JLE [imm] [imm] [imm]
+                jle!(a, b, c, pc);
             }
             Opcode::JLE_V_I_I(a_name, b, c) => { // JLE [name] [imm] [imm]
                 let a = get_var(a_name, stack, cur_frame).clone();
 
-                let mut new_pc;
-                match c.val {
-                    Values::UNSIGNED(c_val) => new_pc = c_val,
-                    Values::SIGNED(c_val) => {
-                        if c_val < 0 {
-                            panic!("cannot jump to negative address");
-                        } else {
-                            new_pc = c_val as u64;
-                        }
-                    }
-                    _ => panic!("expected integer address value")
-                }
-
-                new_pc -= 1;
-
-                match a.val {
-                    Values::SIGNED(a_val) => {
-                        match b.val {
-                            Values::SIGNED(b_val) => {
-                                if a_val <= b_val {
-                                    pc = new_pc as usize;
-                                }
-                            }
-                            Values::UNSIGNED(b_val) => {
-                                if a_val as u64 <= b_val {
-                                    pc = new_pc as usize;
-                                }
-                            }
-                            Values::DECIMAL(b_val) => {
-                                if a_val as f64 <= b_val {
-                                    pc = new_pc as usize;
-                                }
-                            }
-                            _ => panic!("expected a number for comparison, got {:?}", a.val)
-                        }
-                    },
-                    Values::UNSIGNED(a_val) => {
-                        match b.val {
-                            Values::SIGNED(b_val) => {
-                                if a_val as i64 <= b_val {
-                                    pc = new_pc as usize;
-                                }
-                            }
-                            Values::UNSIGNED(b_val) => {
-                                if a_val <= b_val {
-                                    pc = new_pc as usize;
-                                }
-                            }
-                            Values::DECIMAL(b_val) => {
-                                if a_val as f64 <= b_val {
-                                    pc = new_pc as usize;
-                                }
-                            }
-                            _ => panic!("expected a number for comparison, got {:?}", a.val)
-                        }
-                    }
-                    Values::DECIMAL(a_val) => {
-                        match b.val {
-                            Values::SIGNED(b_val) => {
-                                if a_val as i64 <= b_val {
-                                    pc = new_pc as usize;
-                                }
-                            }
-                            Values::UNSIGNED(b_val) => {
-                                if a_val as u64 <= b_val {
-                                    pc = new_pc as usize;
-                                }
-                            }
-                            Values::DECIMAL(b_val) => {
-                                if a_val <= b_val {
-                                    pc = new_pc as usize;
-                                }
-                            }
-                            _ => panic!("expected a number for comparison, got {:?}", a.val)
-                        }
-                    }
-                    _ => panic!("expected a number for comparison, got {:?}", a.val)
-                }
+                jle!(a, b, c, pc);
             }
+            Opcode::JLE_I_V_I(a, b_name, c) => { // JLE [imm] [imm] [imm]
+                let b = get_var(b_name, stack, cur_frame).clone();
+
+                jle!(a, b, c, pc);
+            }
+            Opcode::JLE_V_V_I(a_name, b_name, c) => { // JLE [name] [name] [imm]
+                let a = get_var(a_name, stack, cur_frame).clone();
+                let b = get_var(b_name, stack, cur_frame).clone();
+
+                jle!(a, b, c, pc);
+            }
+            Opcode::JLE_I_I_V(a, b, c_name) => { // JLE [imm] [imm] [name]
+                let c = get_var(c_name, stack, cur_frame).clone();
+                
+                jle!(a, b, c, pc);
+            }
+            Opcode::JLE_V_I_V(a_name, b, c_name) => { // JLE [name] [imm] [name]
+                let a = get_var(a_name, stack, cur_frame).clone();
+                let c = get_var(c_name, stack, cur_frame).clone();
+
+                jle!(a, b, c, pc);
+            }
+            Opcode::JLE_I_V_V(a, b_name, c_name) => { // JLE [imm] [imm] [name]
+                let b = get_var(b_name, stack, cur_frame).clone();
+                let c = get_var(c_name, stack, cur_frame).clone();
+
+                jle!(a, b, c, pc);
+            }
+            Opcode::JLE_V_V_V(a_name, b_name, c_name) => { // JLE [name] [name] [name]
+                let a = get_var(a_name, stack, cur_frame).clone();
+                let b = get_var(b_name, stack, cur_frame).clone();
+                let c = get_var(c_name, stack, cur_frame).clone();
+
+                jle!(a, b, c, pc);
+            }
+
             Opcode::VAR_TYPE(typ, name) => { // VAR [type] [name]
                 stack[cur_frame].push_var(name.clone(), typ.clone());
             }
@@ -173,6 +192,7 @@ pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
                 
                 stack[cur_frame].push_var(name.clone(), typ);
             }
+
             _ => panic!("unknown instruction {:#04x} at {:#06x}", instr.opcode.to_u8(), instr.index)
         }
         
