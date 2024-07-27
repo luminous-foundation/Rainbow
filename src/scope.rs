@@ -514,7 +514,6 @@ pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
             Opcode::VAR_TYPE_NAME(typ, name) => { // VAR [type] [name]
                 stack[cur_frame].push_var(name.clone(), typ.clone());
             }
-            
             Opcode::VAR_VAR_NAME(type_var, name) => { // VAR [var] [name]
                 let typ;
                 get_type!(typ, type_var, stack, cur_frame);
