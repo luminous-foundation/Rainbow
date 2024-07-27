@@ -492,7 +492,7 @@ pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
             Opcode::VAR_TYPE(typ, name) => { // VAR [type] [name]
                 stack[cur_frame].push_var(name.clone(), typ.clone());
             }
-            Opcode::VAR_NAME(type_var, name) => { // VAR [name] [name]
+            Opcode::VAR_VAR(type_var, name) => { // VAR [name] [name]
                 let type_var = get_var(type_var, stack, cur_frame);
 
                 let typ;
@@ -575,21 +575,25 @@ pub fn parse_instruction(bytes: &Vec<u8>, index: &mut usize) -> Result<Instructi
         0x00 => {
             opcode = Opcode::NOP
         }
+
         0x01 => {
             opcode = Opcode::PUSH_IMM(parse_immediate(bytes, index)?)
         }
         0x02 => {
             opcode = Opcode::PUSH_VAR(parse_bytecode_string(bytes, index)?)
         }
+
         0x03 => {
             opcode = Opcode::POP(parse_bytecode_string(bytes, index)?)
         }
+
         0x04 => {
             opcode = Opcode::LDARG_IMM(parse_immediate(bytes, index)?)
         }
         0x05 => {
             opcode = Opcode::LDARG_VAR(parse_bytecode_string(bytes, index)?)
         }
+
         0x08 => {
             opcode = Opcode::ADD_I_I(parse_immediate(bytes, index)?,
             parse_immediate(bytes, index)?,
@@ -610,17 +614,266 @@ pub fn parse_instruction(bytes: &Vec<u8>, index: &mut usize) -> Result<Instructi
             parse_bytecode_string(bytes, index)?,
             parse_bytecode_string(bytes, index)?)
         }
+
+        0x18 => {
+            opcode = Opcode::JMP_IMM(parse_immediate(bytes, index)?)
+        }
+        0x19 => {
+            opcode = Opcode::JMP_VAR(parse_bytecode_string(bytes, index)?)
+        }
+
+        0x1A => {
+            opcode = Opcode::JNE_I_I_I(parse_immediate(bytes, index)?,
+            parse_immediate(bytes, index)?,
+            parse_immediate(bytes, index)?)
+        }
+        0x1B => {
+            opcode = Opcode::JNE_V_I_I(parse_bytecode_string(bytes, index)?,
+            parse_immediate(bytes, index)?,
+            parse_immediate(bytes, index)?)
+        }
+        0x1C => {
+            opcode = Opcode::JNE_I_V_I(parse_immediate(bytes, index)?,
+            parse_bytecode_string(bytes, index)?,
+            parse_immediate(bytes, index)?)
+        }
+        0x1D => {
+            opcode = Opcode::JNE_V_V_I(parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?,
+            parse_immediate(bytes, index)?)
+        }
+        0x1E => {
+            opcode = Opcode::JNE_I_I_V(parse_immediate(bytes, index)?,
+            parse_immediate(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x1F => {
+            opcode = Opcode::JNE_V_I_V(parse_bytecode_string(bytes, index)?,
+            parse_immediate(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x20 => {
+            opcode = Opcode::JNE_I_V_V(parse_immediate(bytes, index)?,
+            parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x21 => {
+            opcode = Opcode::JNE_V_V_V(parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
+        }
+        
+        0x22 => {
+            opcode = Opcode::JE_I_I_I(parse_immediate(bytes, index)?,
+            parse_immediate(bytes, index)?,
+            parse_immediate(bytes, index)?)
+        }
+        0x23 => {
+            opcode = Opcode::JE_V_I_I(parse_bytecode_string(bytes, index)?,
+            parse_immediate(bytes, index)?,
+            parse_immediate(bytes, index)?)
+        }
+        0x24 => {
+            opcode = Opcode::JE_I_V_I(parse_immediate(bytes, index)?,
+            parse_bytecode_string(bytes, index)?,
+            parse_immediate(bytes, index)?)
+        }
+        0x25 => {
+            opcode = Opcode::JE_V_V_I(parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?,
+            parse_immediate(bytes, index)?)
+        }
+        0x26 => {
+            opcode = Opcode::JE_I_I_V(parse_immediate(bytes, index)?,
+            parse_immediate(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x27 => {
+            opcode = Opcode::JE_V_I_V(parse_bytecode_string(bytes, index)?,
+            parse_immediate(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x28 => {
+            opcode = Opcode::JE_I_V_V(parse_immediate(bytes, index)?,
+            parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x29 => {
+            opcode = Opcode::JE_V_V_V(parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
+        }
+        
+        0x2A => {
+            opcode = Opcode::JGE_I_I_I(parse_immediate(bytes, index)?,
+            parse_immediate(bytes, index)?,
+            parse_immediate(bytes, index)?)
+        }
+        0x2B => {
+            opcode = Opcode::JGE_V_I_I(parse_bytecode_string(bytes, index)?,
+            parse_immediate(bytes, index)?,
+            parse_immediate(bytes, index)?)
+        }
+        0x2C => {
+            opcode = Opcode::JGE_I_V_I(parse_immediate(bytes, index)?,
+            parse_bytecode_string(bytes, index)?,
+            parse_immediate(bytes, index)?)
+        }
+        0x2D => {
+            opcode = Opcode::JGE_V_V_I(parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?,
+            parse_immediate(bytes, index)?)
+        }
+        0x2E => {
+            opcode = Opcode::JGE_I_I_V(parse_immediate(bytes, index)?,
+            parse_immediate(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x2F => {
+            opcode = Opcode::JGE_V_I_V(parse_bytecode_string(bytes, index)?,
+            parse_immediate(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x30 => {
+            opcode = Opcode::JGE_I_V_V(parse_immediate(bytes, index)?,
+            parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x31 => {
+            opcode = Opcode::JGE_V_V_V(parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
+        }
+        
+        0x32 => {
+            opcode = Opcode::JG_I_I_I(parse_immediate(bytes, index)?,
+            parse_immediate(bytes, index)?,
+            parse_immediate(bytes, index)?)
+        }
+        0x33 => {
+            opcode = Opcode::JG_V_I_I(parse_bytecode_string(bytes, index)?,
+            parse_immediate(bytes, index)?,
+            parse_immediate(bytes, index)?)
+        }
+        0x34 => {
+            opcode = Opcode::JG_I_V_I(parse_immediate(bytes, index)?,
+            parse_bytecode_string(bytes, index)?,
+            parse_immediate(bytes, index)?)
+        }
+        0x35 => {
+            opcode = Opcode::JG_V_V_I(parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?,
+            parse_immediate(bytes, index)?)
+        }
+        0x36 => {
+            opcode = Opcode::JG_I_I_V(parse_immediate(bytes, index)?,
+            parse_immediate(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x37 => {
+            opcode = Opcode::JG_V_I_V(parse_bytecode_string(bytes, index)?,
+            parse_immediate(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x38 => {
+            opcode = Opcode::JG_I_V_V(parse_immediate(bytes, index)?,
+            parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x39 => {
+            opcode = Opcode::JG_V_V_V(parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
+        }
+        
+        0x3A => {
+            opcode = Opcode::JLE_I_I_I(parse_immediate(bytes, index)?,
+            parse_immediate(bytes, index)?,
+            parse_immediate(bytes, index)?)
+        }
         0x3B => {
             opcode = Opcode::JLE_V_I_I(parse_bytecode_string(bytes, index)?,
             parse_immediate(bytes, index)?,
             parse_immediate(bytes, index)?)
         }
+        0x3C => {
+            opcode = Opcode::JLE_I_V_I(parse_immediate(bytes, index)?,
+            parse_bytecode_string(bytes, index)?,
+            parse_immediate(bytes, index)?)
+        }
+        0x3D => {
+            opcode = Opcode::JLE_V_V_I(parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?,
+            parse_immediate(bytes, index)?)
+        }
+        0x3E => {
+            opcode = Opcode::JLE_I_I_V(parse_immediate(bytes, index)?,
+            parse_immediate(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x3F => {
+            opcode = Opcode::JLE_V_I_V(parse_bytecode_string(bytes, index)?,
+            parse_immediate(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x40 => {
+            opcode = Opcode::JLE_I_V_V(parse_immediate(bytes, index)?,
+            parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x41 => {
+            opcode = Opcode::JLE_V_V_V(parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
+        }
+        
+        0x42 => {
+            opcode = Opcode::JL_I_I_I(parse_immediate(bytes, index)?,
+            parse_immediate(bytes, index)?,
+            parse_immediate(bytes, index)?)
+        }
+        0x43 => {
+            opcode = Opcode::JL_V_I_I(parse_bytecode_string(bytes, index)?,
+            parse_immediate(bytes, index)?,
+            parse_immediate(bytes, index)?)
+        }
+        0x44 => {
+            opcode = Opcode::JL_I_V_I(parse_immediate(bytes, index)?,
+            parse_bytecode_string(bytes, index)?,
+            parse_immediate(bytes, index)?)
+        }
+        0x45 => {
+            opcode = Opcode::JL_V_V_I(parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?,
+            parse_immediate(bytes, index)?)
+        }
+        0x46 => {
+            opcode = Opcode::JL_I_I_V(parse_immediate(bytes, index)?,
+            parse_immediate(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x47 => {
+            opcode = Opcode::JL_V_I_V(parse_bytecode_string(bytes, index)?,
+            parse_immediate(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x48 => {
+            opcode = Opcode::JL_I_V_V(parse_immediate(bytes, index)?,
+            parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x49 => {
+            opcode = Opcode::JL_V_V_V(parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
+        }
+        
         0x62 => {
             opcode = Opcode::VAR_TYPE(parse_type(bytes, index)?,
             parse_bytecode_string(bytes, index)?)
         }
         0x63 => {
-            opcode = Opcode::VAR_NAME(parse_bytecode_string(bytes, index)?,
+            opcode = Opcode::VAR_VAR(parse_bytecode_string(bytes, index)?,
             parse_bytecode_string(bytes, index)?)
         }
         _ => return Err(format!("unknown instruction {:#04x} at {:#06x}", opcode_byte, index))

@@ -103,7 +103,7 @@ pub enum Opcode { // very large enum
     RSH_I_V(Value, String, String)    = 0x60,
     RSH_V_V(String, String, String)   = 0x61,
     VAR_TYPE(Type, String)            = 0x62,
-    VAR_NAME(String, String)          = 0x63,
+    VAR_VAR(String, String)           = 0x63,
     RET                               = 0x64,
     RET_IMM(Value)                    = 0x65,
     RET_VAR(String)                   = 0x66,
@@ -111,7 +111,7 @@ pub enum Opcode { // very large enum
     DEREF_VAR(String, String)         = 0x68,
     REF(String, String)               = 0x69,
     INST_NAME(String)                 = 0x6A,
-    INSTR_VAR(String)                 = 0x6B,
+    INST_VAR(String)                  = 0x6B,
 }
 
 impl Opcode {
@@ -216,7 +216,7 @@ impl Opcode {
             Opcode::RSH_I_V(_, _, _)   => 0x60,
             Opcode::RSH_V_V(_, _, _)   => 0x61,
             Opcode::VAR_TYPE(_, _)     => 0x62,
-            Opcode::VAR_NAME(_, _)     => 0x63,
+            Opcode::VAR_VAR(_, _)      => 0x63,
             Opcode::RET                => 0x64,
             Opcode::RET_IMM(_)         => 0x65,
             Opcode::RET_VAR(_)         => 0x66,
@@ -224,7 +224,7 @@ impl Opcode {
             Opcode::DEREF_VAR(_, _)    => 0x68,
             Opcode::REF(_, _)          => 0x69,
             Opcode::INST_NAME(_)       => 0x6A,
-            Opcode::INSTR_VAR(_)       => 0x6B,
+            Opcode::INST_VAR(_)        => 0x6B,
         }
     }
 }
