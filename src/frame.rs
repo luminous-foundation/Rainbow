@@ -1,4 +1,4 @@
-use std::{collections::HashMap};
+use std::collections::HashMap;
 
 use crate::{_type::{Type, Types}, value::{Value, Values}};
 
@@ -26,30 +26,29 @@ impl Frame {
     }
 
     pub fn set_var(self: &mut Frame, name: &String, value: &Values) {
-        let val = self.vars.get(name).expect(&format!("attempted to set value of undefined variable {}", name)).clone();
+        let val = *self.vars.get(name).unwrap_or_else(|| panic!("attempted to set value of undefined variable {}", name));
         self.stack[val].set(value);
     }
 
     pub fn push_var(self: &mut Frame, name: String, typ: Type) {
-        let value;
-        match typ.typ[0] {
-            Types::VOID => value = Value { typ: typ, val: Values::VOID },
-            Types::I8 => value = Value { typ: typ, val: Values::SIGNED(0) },
-            Types::I16 => value = Value { typ: typ, val: Values::SIGNED(0) },
-            Types::I32 => value = Value { typ: typ, val: Values::SIGNED(0) },
-            Types::I64 => value = Value { typ: typ, val: Values::SIGNED(0) },
-            Types::U8 => value = Value { typ: typ, val: Values::UNSIGNED(0) },
-            Types::U16 => value = Value { typ: typ, val: Values::UNSIGNED(0) },
-            Types::U32 => value = Value { typ: typ, val: Values::UNSIGNED(0) },
-            Types::U64 => value = Value { typ: typ, val: Values::UNSIGNED(0) },
-            Types::F16 => value = Value { typ: typ, val: Values::DECIMAL(0f64) },
-            Types::F32 => value = Value { typ: typ, val: Values::DECIMAL(0f64) },
-            Types::F64 => value = Value { typ: typ, val: Values::DECIMAL(0f64) },
-            Types::POINTER => value = Value { typ: typ, val: Values::POINTER(0) },
-            Types::TYPE => value = Value { typ: typ, val: Values::TYPE(Type { typ: todo!() }) },
-            Types::STRUCT => value = Value { typ: typ, val: todo!() },
-            Types::NAME => value = Value { typ: typ, val: Values::NAME("".to_string()) },
-        }
+        let value = match typ.typ[0] {
+            Types::VOID => Value { typ: typ, val: Values::VOID },
+            Types::I8 => Value { typ: typ, val: Values::SIGNED(0) },
+            Types::I16 => Value { typ: typ, val: Values::SIGNED(0) },
+            Types::I32 => Value { typ: typ, val: Values::SIGNED(0) },
+            Types::I64 => Value { typ: typ, val: Values::SIGNED(0) },
+            Types::U8 => Value { typ: typ, val: Values::UNSIGNED(0) },
+            Types::U16 => Value { typ: typ, val: Values::UNSIGNED(0) },
+            Types::U32 => Value { typ: typ, val: Values::UNSIGNED(0) },
+            Types::U64 => Value { typ: typ, val: Values::UNSIGNED(0) },
+            Types::F16 => Value { typ: typ, val: Values::DECIMAL(0f64) },
+            Types::F32 => Value { typ: typ, val: Values::DECIMAL(0f64) },
+            Types::F64 => Value { typ: typ, val: Values::DECIMAL(0f64) },
+            Types::POINTER => Value { typ: typ, val: Values::POINTER(0) },
+            Types::TYPE => Value { typ: typ, val: Values::TYPE(Type { typ: todo!() }) },
+            Types::STRUCT => Value { typ: typ, val: todo!() },
+            Types::NAME => Value { typ: typ, val: Values::NAME("".to_string()) },
+        };
 
         let index = self.stack.len();
         self.stack.push(value);

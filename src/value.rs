@@ -1,4 +1,4 @@
-use crate::_type::{Type, Types};
+use crate::_type::Type;
 
 #[derive(Debug, Clone)]
 pub enum Values {
@@ -21,7 +21,7 @@ pub struct Value {
 
 impl Value {
     pub fn set(&mut self, other: &Values) { // yeah it's just a wrapper what about it
-        self.val.set(&other);
+        self.val.set(other);
     }
 }
 
@@ -125,28 +125,28 @@ impl Values {
             (Values::POINTER(_), Values::TYPE(_))                    => panic!("cannot add type to a pointer"),
             (Values::POINTER(_), Values::NAME(_))                    => panic!("cannot add name to a pointer"),
             (Values::STRUCT, Values::VOID)                           => panic!("cannot add to a struct"),
-            (Values::STRUCT, Values::SIGNED(v))                => panic!("cannot add to a struct"),
-            (Values::STRUCT, Values::UNSIGNED(v))              => panic!("cannot add to a struct"),
-            (Values::STRUCT, Values::DECIMAL(v))               => panic!("cannot add to a struct"),
-            (Values::STRUCT, Values::POINTER(v))             => panic!("cannot add to a struct"),
+            (Values::STRUCT, Values::SIGNED(_))                      => panic!("cannot add to a struct"),
+            (Values::STRUCT, Values::UNSIGNED(_))                    => panic!("cannot add to a struct"),
+            (Values::STRUCT, Values::DECIMAL(_))                     => panic!("cannot add to a struct"),
+            (Values::STRUCT, Values::POINTER(_))                     => panic!("cannot add to a struct"),
             (Values::STRUCT, Values::STRUCT)                         => panic!("cannot add to a struct"),
-            (Values::STRUCT, Values::TYPE(v))                 => panic!("cannot add to a struct"),
-            (Values::STRUCT, Values::NAME(v))               => panic!("cannot add to a struct"),
-            (Values::TYPE(s), Values::VOID)                   => panic!("cannot add to a type"),
-            (Values::TYPE(s), Values::SIGNED(v))        => panic!("cannot add to a type"),
-            (Values::TYPE(s), Values::UNSIGNED(v))      => panic!("cannot add to a type"),
-            (Values::TYPE(s), Values::DECIMAL(v))       => panic!("cannot add to a type"),
-            (Values::TYPE(s), Values::POINTER(v))     => panic!("cannot add to a type"),
-            (Values::TYPE(s), Values::STRUCT)                 => panic!("cannot add to a type"),
-            (Values::TYPE(s), Values::TYPE(v))         => panic!("cannot add to a type"),
-            (Values::TYPE(s), Values::NAME(v))       => panic!("cannot add to a type"),
-            (Values::NAME(s), Values::VOID)                 => panic!("cannot add void to a name"),
-            (Values::NAME(s), Values::SIGNED(v))      => panic!("cannot add number to a name"),
-            (Values::NAME(s), Values::UNSIGNED(v))    => panic!("cannot add number to a name"),
-            (Values::NAME(s), Values::DECIMAL(v))     => panic!("cannot add number to a name"),
-            (Values::NAME(s), Values::POINTER(v))   => panic!("cannot add pointer to a name"),
-            (Values::NAME(s), Values::STRUCT)               => panic!("cannot add struct to a name"),
-            (Values::NAME(s), Values::TYPE(v))       => panic!("cannot add type to a name"),
+            (Values::STRUCT, Values::TYPE(_))                        => panic!("cannot add to a struct"),
+            (Values::STRUCT, Values::NAME(_))                        => panic!("cannot add to a struct"),
+            (Values::TYPE(_), Values::VOID)                          => panic!("cannot add to a type"),
+            (Values::TYPE(_), Values::SIGNED(_))                     => panic!("cannot add to a type"),
+            (Values::TYPE(_), Values::UNSIGNED(_))                   => panic!("cannot add to a type"),
+            (Values::TYPE(_), Values::DECIMAL(_))                    => panic!("cannot add to a type"),
+            (Values::TYPE(_), Values::POINTER(_))                    => panic!("cannot add to a type"),
+            (Values::TYPE(_), Values::STRUCT)                        => panic!("cannot add to a type"),
+            (Values::TYPE(_), Values::TYPE(_))                       => panic!("cannot add to a type"),
+            (Values::TYPE(_), Values::NAME(_))                       => panic!("cannot add to a type"),
+            (Values::NAME(_), Values::VOID)                          => panic!("cannot add void to a name"),
+            (Values::NAME(_), Values::SIGNED(_))                     => panic!("cannot add number to a name"),
+            (Values::NAME(_), Values::UNSIGNED(_))                   => panic!("cannot add number to a name"),
+            (Values::NAME(_), Values::DECIMAL(_))                    => panic!("cannot add number to a name"),
+            (Values::NAME(_), Values::POINTER(_))                    => panic!("cannot add pointer to a name"),
+            (Values::NAME(_), Values::STRUCT)                        => panic!("cannot add struct to a name"),
+            (Values::NAME(_), Values::TYPE(_))                       => panic!("cannot add type to a name"),
             (Values::NAME(s), Values::NAME(v))     => Values::NAME(s.clone() + v),
         }
     }
