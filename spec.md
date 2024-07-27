@@ -60,43 +60,57 @@ Jump to a location within the current scope if value A is less than or equal to 
 [x] 0x42-49     JL      [imm/var]   [imm/var]   [imm/var]
 Jump to a location within the current scope if value A is less than to B
 
-[ ] 0x4A-4B     MOV     [imm/var]   [var]
+[ ] 0x4A-4C     MOV     [imm/*var]  [var]
 Move a value into a variable
 
-[ ] 0x4C-4F     AND     [imm/var]   [imm/var]   [var]
+[ ] 0x4D-50     AND     [imm/var]   [imm/var]   [var]
 Perform bitwise AND on two values and store in a variable
 
-[ ] 0x50-53     OR      [imm/var]   [imm/var]   [var]
+[ ] 0x51-54     OR      [imm/var]   [imm/var]   [var]
 Perform bitwise OR on two values and store in a variable
 
-[ ] 0x54-57     XOR     [imm/var]   [imm/var]   [var]
+[ ] 0x55-58     XOR     [imm/var]   [imm/var]   [var]
 Perform bitwise XOR on two values and store in a variable
 
-[ ] 0x58-59     NOT     [imm/var]   [var]
+[ ] 0x59-5A     NOT     [imm/var]   [var]
 Perform bitwise NOT on a value and store in a variable
 
-[ ] 0x5A-5D     LSH     [imm/var]   [imm/var]   [var]
+[ ] 0x5B-5E     LSH     [imm/var]   [imm/var]   [var]
 Left shift value A value B bits
 
-[ ] 0x5E-61     RSH     [imm/var]   [imm/var]   [var]
+[ ] 0x5F-62     RSH     [imm/var]   [imm/var]   [var]
 Right shift value A value B bits
 
-[ ] 0x62-63     VAR     [type/var]  [name/var]
+[ ] 0x63-66     VAR     [type/var]  [name/var]
 Create a variable with the given type and name
 
-[ ] 0x64-66     RET     {imm/var}
+[ ] 0x67-69     RET     {imm/var}
 Return from a function (functions with void type do not need to include arguments)
 
-[ ] 0x67-68     DEREF   [imm/ptr]   [var]
+[ ] 0x6A-6B     DEREF   [imm/ptr]   [var]
 Dereference a pointer and store in a variable
 
-[ ] 0x69        REF     [var]       [ptr var]
+[ ] 0x6C        REF     [var]       [ptr var]
 Create a reference to a variable and store in another variable
 
-[ ] 0x6A-6B     INST    [name/var]  [var]
+[ ] 0x6D-6E     INST    [name/var]  [var]
 Instantiate a struct with default values
 
 ```
+
+0xXX-0xYY - instruction opcode range
+counted up by argument type (TODO: qualify this better)
+
+[...]     - argument
+these arguments are required
+
+{...}     - optional argument
+these arguments are not required
+
+*var      - specifies a dynamically named variable is supported
+the argument you pass in is either a statically named var that contains the value you are trying to move,
+or a variable that contains the name of the variable you want to move
+
 
 ## TYPES
 

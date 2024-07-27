@@ -489,10 +489,10 @@ pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
                 jl!(a, b, c, pc);
             }
 
-            Opcode::VAR_TYPE(typ, name) => { // VAR [type] [name]
+            Opcode::VAR_TYPE_NAME(typ, name) => { // VAR [type] [name]
                 stack[cur_frame].push_var(name.clone(), typ.clone());
             }
-            Opcode::VAR_VAR(type_var, name) => { // VAR [name] [name]
+            Opcode::VAR_VAR_NAME(type_var, name) => { // VAR [name] [name]
                 let type_var = get_var(type_var, stack, cur_frame);
 
                 let typ;
@@ -502,6 +502,36 @@ pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
                 }
                 
                 stack[cur_frame].push_var(name.clone(), typ);
+            }
+            Opcode::VAR_TYPE_VAR(typ, name_var) => {
+                let name_var = get_var(name_var, stack, cur_frame);
+
+                let name;
+                match &name_var.val {
+                    Values::NAME(n) => name = n.clone(),
+                    _ => panic!("tried to create variable with dynamic name stored in variable, but given variable had type {:?}", name_var.typ)
+                }
+
+                stack[cur_frame].push_var(name, typ.clone())
+            }
+            Opcode::VAR_VAR_VAR(type_var, name_var) => {
+                let type_var = get_var(type_var, stack, cur_frame);
+
+                let typ;
+                match &type_var.val {
+                    Values::TYPE(t) => typ = t.clone(),
+                    _ => panic!("tried to create variable with dynamic type stored in variable, but given variable had type {:?}", type_var.typ)
+                }
+
+                let name_var = get_var(name_var, stack, cur_frame);
+
+                let name;
+                match &name_var.val {
+                    Values::NAME(n) => name = n.clone(),
+                    _ => panic!("tried to create variable with dynamic name stored in variable, but given variable had type {:?}", name_var.typ)
+                }
+
+                stack[cur_frame].push_var(name, typ);
             }
 
             _ => panic!("unknown instruction {:#04x} at {:#06x}", instr.opcode.to_u8(), instr.index)
@@ -868,12 +898,20 @@ pub fn parse_instruction(bytes: &Vec<u8>, index: &mut usize) -> Result<Instructi
             parse_bytecode_string(bytes, index)?)
         }
         
-        0x62 => {
-            opcode = Opcode::VAR_TYPE(parse_type(bytes, index)?,
+        0x63 => {
+            opcode = Opcode::VAR_TYPE_NAME(parse_type(bytes, index)?,
             parse_bytecode_string(bytes, index)?)
         }
-        0x63 => {
-            opcode = Opcode::VAR_VAR(parse_bytecode_string(bytes, index)?,
+        0x64 => {
+            opcode = Opcode::VAR_VAR_NAME(parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x65 => {
+            opcode = Opcode::VAR_TYPE_VAR(parse_type(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x66 => {
+            opcode = Opcode::VAR_VAR_VAR(parse_bytecode_string(bytes, index)?,
             parse_bytecode_string(bytes, index)?)
         }
         _ => return Err(format!("unknown instruction {:#04x} at {:#06x}", opcode_byte, index))
