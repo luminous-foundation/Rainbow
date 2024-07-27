@@ -150,6 +150,27 @@ macro_rules! jl {
     }
 }
 
+macro_rules! get_type {
+    ($typ:expr, $type_var:expr, $stack:expr, $cur_frame:expr) => {
+        let type_var = get_var($type_var, $stack, $cur_frame);
+
+        match &type_var.val {
+            Values::TYPE(t) => $typ = t.clone(),
+            _ => panic!("tried to create variable with dynamic type stored in variable, but given variable had type {:?}", type_var.typ)
+        }
+    }
+}
+macro_rules! get_name {
+    ($name:expr, $name_var:expr, $stack:expr, $cur_frame:expr) => {
+        let name_var = get_var($name_var, $stack, $cur_frame);
+
+        match &name_var.val {
+            Values::NAME(n) => $name = n.clone(),
+            _ => panic!("tried to create variable with dynamic name stored in variable, but given variable had type {:?}", name_var.typ)
+        }
+    }
+}
+
 // TODO: make scopes in scopes preserve instruction order
 // example:
 // ...
@@ -159,6 +180,7 @@ macro_rules! jl {
 // }
 // ...
 // TODO: variable scoping that's more precise than function scope
+// ^ the above todo will be resolved when a below todo is resolved
 pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
     let mut pc = 0;
 
@@ -492,44 +514,25 @@ pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
             Opcode::VAR_TYPE_NAME(typ, name) => { // VAR [type] [name]
                 stack[cur_frame].push_var(name.clone(), typ.clone());
             }
+            
             Opcode::VAR_VAR_NAME(type_var, name) => { // VAR [var] [name]
-                let type_var = get_var(type_var, stack, cur_frame);
-
                 let typ;
-                match &type_var.val {
-                    Values::TYPE(t) => typ = t.clone(),
-                    _ => panic!("tried to create variable with dynamic type stored in variable, but given variable had type {:?}", type_var.typ)
-                }
+                get_type!(typ, type_var, stack, cur_frame);
                 
                 stack[cur_frame].push_var(name.clone(), typ);
             }
             Opcode::VAR_TYPE_VAR(typ, name_var) => { // VAR [type] [var]
-                let name_var = get_var(name_var, stack, cur_frame);
-
                 let name;
-                match &name_var.val {
-                    Values::NAME(n) => name = n.clone(),
-                    _ => panic!("tried to create variable with dynamic name stored in variable, but given variable had type {:?}", name_var.typ)
-                }
+                get_name!(name, name_var, stack, cur_frame);
 
                 stack[cur_frame].push_var(name, typ.clone())
             }
             Opcode::VAR_VAR_VAR(type_var, name_var) => { // VAR [var] [var]
-                let type_var = get_var(type_var, stack, cur_frame);
-
                 let typ;
-                match &type_var.val {
-                    Values::TYPE(t) => typ = t.clone(),
-                    _ => panic!("tried to create variable with dynamic type stored in variable, but given variable had type {:?}", type_var.typ)
-                }
-
-                let name_var = get_var(name_var, stack, cur_frame);
+                get_type!(typ, type_var, stack, cur_frame);
 
                 let name;
-                match &name_var.val {
-                    Values::NAME(n) => name = n.clone(),
-                    _ => panic!("tried to create variable with dynamic name stored in variable, but given variable had type {:?}", name_var.typ)
-                }
+                get_name!(name, name_var, stack, cur_frame);
 
                 stack[cur_frame].push_var(name, typ);
             }
