@@ -492,7 +492,7 @@ pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
             Opcode::VAR_TYPE_NAME(typ, name) => { // VAR [type] [name]
                 stack[cur_frame].push_var(name.clone(), typ.clone());
             }
-            Opcode::VAR_VAR_NAME(type_var, name) => { // VAR [name] [name]
+            Opcode::VAR_VAR_NAME(type_var, name) => { // VAR [var] [name]
                 let type_var = get_var(type_var, stack, cur_frame);
 
                 let typ;
@@ -503,7 +503,7 @@ pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
                 
                 stack[cur_frame].push_var(name.clone(), typ);
             }
-            Opcode::VAR_TYPE_VAR(typ, name_var) => {
+            Opcode::VAR_TYPE_VAR(typ, name_var) => { // VAR [type] [var]
                 let name_var = get_var(name_var, stack, cur_frame);
 
                 let name;
@@ -514,7 +514,7 @@ pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
 
                 stack[cur_frame].push_var(name, typ.clone())
             }
-            Opcode::VAR_VAR_VAR(type_var, name_var) => {
+            Opcode::VAR_VAR_VAR(type_var, name_var) => { // VAR [var] [var]
                 let type_var = get_var(type_var, stack, cur_frame);
 
                 let typ;
