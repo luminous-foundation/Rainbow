@@ -18,7 +18,7 @@ Does nothing.
 [x] 0x01-02     PUSH    [imm/var]
 Pushes a value onto the stack
 
-[ ] 0x03        POP     [var]
+[x] 0x03        POP     [var]
 Pops a value off of the stack and stores it in a variable
 
 [ ] 0x04-05     LDARG   [imm/var]
@@ -30,13 +30,13 @@ Calls a function
 [x] 0x08-0B     ADD     [imm/var]   [imm/var]   [var]
 Add two numbers and store in a variable
 
-[ ] 0x0C-0F     SUB     [imm/var]   [imm/var]   [var]
+[x] 0x0C-0F     SUB     [imm/var]   [imm/var]   [var]
 Subtract two numbers and store in a variable
 
-[ ] 0x10-13     MUL     [imm/var]   [imm/var]   [var]
+[x] 0x10-13     MUL     [imm/var]   [imm/var]   [var]
 Multiply two numbers and store in a variable
 
-[ ] 0x14-17     DIV     [imm/var]   [imm/var]   [var]
+[x] 0x14-17     DIV     [imm/var]   [imm/var]   [var]
 Divide two numbers and store in a variable
 
 [x] 0x18-19     JMP     [imm/var]
@@ -96,6 +96,8 @@ Create a reference to a variable and store in another variable
 [ ] 0x6D-6E     INST    [name/var]  [var]
 Instantiate a struct with default values
 
+[ ] 0x6F-72     MOD     [imm/var]   [imm/var]   [var]
+Perform modulus on two values and store in a variable
 ```
 
 0xXX-0xYY - instruction opcode range

@@ -19,6 +19,25 @@ macro_rules! add {
         set_var($out, &val, $stack, $cur_frame);
     };
 }
+macro_rules! sub {
+    ($a:expr, $b:expr, $out:expr, $stack:expr, $cur_frame:expr) => {
+        let val = $a.val.sub(&$b.val);
+        set_var($out, &val, $stack, $cur_frame);
+    };
+}
+macro_rules! mul {
+    ($a:expr, $b:expr, $out:expr, $stack:expr, $cur_frame:expr) => {
+        let val = $a.val.mul(&$b.val);
+        set_var($out, &val, $stack, $cur_frame);
+    };
+}
+macro_rules! div {
+    ($a:expr, $b:expr, $out:expr, $stack:expr, $cur_frame:expr) => {
+        let val = $a.val.div(&$b.val);
+        set_var($out, &val, $stack, $cur_frame);
+    };
+}
+
 
 macro_rules! compare {
     ($a_val:expr, $b:expr, $op:tt, $pc:expr, $new_pc:expr) => {
@@ -231,6 +250,66 @@ pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
                 let b = get_var(b_name, stack, cur_frame).clone();
 
                 add!(a, b, out, stack, cur_frame);
+            }
+
+            Opcode::SUB_I_I(a, b, out) => { // ADD [imm] [imm] [name]
+                sub!(a, b, out, stack, cur_frame);
+            }
+            Opcode::SUB_V_I(a_name, b, out) => { // ADD [name] [imm] [name]
+                let a = get_var(a_name, stack, cur_frame).clone();
+
+                sub!(a, b, out, stack, cur_frame);
+            }
+            Opcode::SUB_I_V(a, b_name, out) => { // ADD [imm] [name] [name]                
+                let b = get_var(b_name, stack, cur_frame).clone();
+
+                sub!(a, b, out, stack, cur_frame);
+            }
+            Opcode::SUB_V_V(a_name, b_name, out) => { // ADD [name] [name] [name]
+                let a = get_var(a_name, stack, cur_frame).clone();
+                let b = get_var(b_name, stack, cur_frame).clone();
+
+                sub!(a, b, out, stack, cur_frame);
+            }
+
+            Opcode::MUL_I_I(a, b, out) => { // ADD [imm] [imm] [name]
+                mul!(a, b, out, stack, cur_frame);
+            }
+            Opcode::MUL_V_I(a_name, b, out) => { // ADD [name] [imm] [name]
+                let a = get_var(a_name, stack, cur_frame).clone();
+
+                mul!(a, b, out, stack, cur_frame);
+            }
+            Opcode::MUL_I_V(a, b_name, out) => { // ADD [imm] [name] [name]                
+                let b = get_var(b_name, stack, cur_frame).clone();
+
+                mul!(a, b, out, stack, cur_frame);
+            }
+            Opcode::MUL_V_V(a_name, b_name, out) => { // ADD [name] [name] [name]
+                let a = get_var(a_name, stack, cur_frame).clone();
+                let b = get_var(b_name, stack, cur_frame).clone();
+
+                mul!(a, b, out, stack, cur_frame);
+            }
+
+            Opcode::DIV_I_I(a, b, out) => { // ADD [imm] [imm] [name]
+                div!(a, b, out, stack, cur_frame);
+            }
+            Opcode::DIV_V_I(a_name, b, out) => { // ADD [name] [imm] [name]
+                let a = get_var(a_name, stack, cur_frame).clone();
+
+                div!(a, b, out, stack, cur_frame);
+            }
+            Opcode::DIV_I_V(a, b_name, out) => { // ADD [imm] [name] [name]                
+                let b = get_var(b_name, stack, cur_frame).clone();
+
+                div!(a, b, out, stack, cur_frame);
+            }
+            Opcode::DIV_V_V(a_name, b_name, out) => { // ADD [name] [name] [name]
+                let a = get_var(a_name, stack, cur_frame).clone();
+                let b = get_var(b_name, stack, cur_frame).clone();
+
+                div!(a, b, out, stack, cur_frame);
             }
 
             Opcode::JMP_IMM(new_pc_val) => {
