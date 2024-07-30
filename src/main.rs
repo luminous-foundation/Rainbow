@@ -52,11 +52,15 @@ fn get_var<'a>(name: &String, stack: &'a mut [Frame], cur_frame: usize) -> &'a V
 }
 
 fn set_var(name: &String, value: &Values, stack: &mut [Frame], cur_frame: usize) {
+    if name == "_" {
+        return;
+    }
+
     if stack[0].vars.contains_key(name) {
-        return stack[0].set_var(name, value);
+        stack[0].set_var(name, value);
     } else {
         if stack[cur_frame].vars.contains_key(name) {
-            return stack[cur_frame].set_var(name, value);
+            stack[cur_frame].set_var(name, value);
         } else {
             panic!("tried to set undefined variable {}", name);
         }
