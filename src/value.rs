@@ -149,6 +149,6 @@ impl Values {
     }
 
     pub fn modulo(&self, other: &Values) -> Values {
-        math!(self, other, %, "divide", "divided");
+        math!(self, other, %, "modulo", "modulo");
     }
 }
