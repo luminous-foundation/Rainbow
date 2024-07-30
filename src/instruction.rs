@@ -115,6 +115,10 @@ pub enum Opcode { // very large enum
     REF(String, String)               = 0x6C,
     INST_NAME(String)                 = 0x6D,
     INST_VAR(String)                  = 0x6E,
+    MOD_I_I(Value, Value, String)     = 0x6F,
+    MOD_V_I(String, Value, String)    = 0x70,
+    MOD_I_V(Value, String, String)    = 0x71,
+    MOD_V_V(String, String, String)   = 0x72,
 }
 
 impl Opcode {
@@ -231,6 +235,10 @@ impl Opcode {
             Opcode::REF(_, _)           => 0x6C,
             Opcode::INST_NAME(_)        => 0x6D,
             Opcode::INST_VAR(_)         => 0x6E,
+            Opcode::MOD_I_I(_, _, _)    => 0x6F,
+            Opcode::MOD_V_I(_, _, _)    => 0x70,
+            Opcode::MOD_I_V(_, _, _)    => 0x71,
+            Opcode::MOD_V_V(_, _, _)    => 0x72,
         }
     }
 }
