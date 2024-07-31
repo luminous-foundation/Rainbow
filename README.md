@@ -9,7 +9,8 @@ If you just want to run a Rainbow file (.rbb), currently there is no way to do i
 ### If you want to develop programs for Rainbow however
 The current recommended method for programming for Rainbow is to use [RASM](https://github.com/luminous-foundation/rasm).
 
-However, if you would like to use Rainbow for your language (or so desire to program in raw bytecode) you can refer to [the spec](spec.md)
+However, if you would like to use Rainbow for your language (or so desire to program in raw bytecode) you can refer to [the spec](spec.md).
+
 Here is also a quick example of a program that adds two numbers, and stores the result in a variable.
 
 ```
@@ -24,7 +25,7 @@ The first byte is the opcode, `66` denoting the VAR instruction with the argumen
 
 The second byte is the type.
 
-The last two bytes are the name of the variable (according to the bytecode string format specified in [the spec](spec.md))
+The last two bytes are the name of the variable (according to the bytecode string format specified in [the spec](spec.md)).
 
 
 `08 01 01 01 02 01 61`
