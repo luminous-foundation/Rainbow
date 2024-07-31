@@ -20,6 +20,7 @@ Pushes a value onto the stack
 
 [x] 0x03        POP     [var]
 Pops a value off of the stack and stores it in a variable
+With a stack underflow, the program will crash
 
 [ ] 0x04-05     LDARG   [imm/var]
 Loads an argument to be used in a function
@@ -98,6 +99,9 @@ Instantiate a struct with default values
 
 [x] 0x72-75     MOD     [imm/var]   [imm/var]   [var]
 Perform modulus on two values and store in a variable
+
+[ ] 0x76-79     PMOV    [imm/var]   [ptr]       [imm/var]
+Moves the first value into the place in memory that the pointer references, with the offset specified in the third value
 ```
 
 0xXX-0xYY - instruction opcode range
