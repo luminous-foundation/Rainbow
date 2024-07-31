@@ -22,10 +22,10 @@ Pushes a value onto the stack
 Pops a value off of the stack and stores it in a variable
 With a stack underflow, the program will crash
 
-[ ] 0x04-05     LDARG   [imm/var]
+[x] 0x04-05     LDARG   [imm/var]
 Loads an argument to be used in a function
 
-[ ] 0x06-07     CALL    [func/var]
+[x] 0x06-07     CALL    [func/var]
 Calls a function
 
 [x] 0x08-0B     ADD     [imm/var]   [imm/var]   [var]
