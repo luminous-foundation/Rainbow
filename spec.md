@@ -61,7 +61,7 @@ Jump to a location within the current scope if value A is less than or equal to 
 [x] 0x42-49     JL      [imm/var]   [imm/var]   [imm/var]
 Jump to a location within the current scope if value A is less than to B
 
-[ ] 0x4A-4F     MOV     [imm/*var]   [*var]
+[x] 0x4A-4F     MOV     [imm/*var]   [*var]
 Move a value into a variable
 
 [ ] 0x50-53     AND     [imm/var]   [imm/var]   [var]
