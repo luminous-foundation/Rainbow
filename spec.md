@@ -60,43 +60,43 @@ Jump to a location within the current scope if value A is less than or equal to 
 [x] 0x42-49     JL      [imm/var]   [imm/var]   [imm/var]
 Jump to a location within the current scope if value A is less than to B
 
-[ ] 0x4A-4C     MOV     [imm/*var]  [var]
+[ ] 0x4A-4F     MOV     [imm/*var]   [*var]
 Move a value into a variable
 
-[ ] 0x4D-50     AND     [imm/var]   [imm/var]   [var]
+[ ] 0x50-53     AND     [imm/var]   [imm/var]   [var]
 Perform bitwise AND on two values and store in a variable
 
-[ ] 0x51-54     OR      [imm/var]   [imm/var]   [var]
+[ ] 0x54-57     OR      [imm/var]   [imm/var]   [var]
 Perform bitwise OR on two values and store in a variable
 
-[ ] 0x55-58     XOR     [imm/var]   [imm/var]   [var]
+[ ] 0x58-5B     XOR     [imm/var]   [imm/var]   [var]
 Perform bitwise XOR on two values and store in a variable
 
-[ ] 0x59-5A     NOT     [imm/var]   [var]
+[ ] 0x5C-5D     NOT     [imm/var]   [var]
 Perform bitwise NOT on a value and store in a variable
 
-[ ] 0x5B-5E     LSH     [imm/var]   [imm/var]   [var]
+[ ] 0x5E-61     LSH     [imm/var]   [imm/var]   [var]
 Left shift value A value B bits
 
-[ ] 0x5F-62     RSH     [imm/var]   [imm/var]   [var]
+[ ] 0x62-65     RSH     [imm/var]   [imm/var]   [var]
 Right shift value A value B bits
 
-[x] 0x63-66     VAR     [type/var]  [name/var]
+[x] 0x66-69     VAR     [type/var]  [name/var]
 Create a variable with the given type and name
 
-[ ] 0x67-69     RET     {imm/var}
+[ ] 0x6A-6C     RET     {imm/var}
 Return from a function (functions with void type do not need to include arguments)
 
-[ ] 0x6A-6B     DEREF   [imm/ptr]   [var]
+[ ] 0x6D-6E     DEREF   [imm/ptr]   [var]
 Dereference a pointer and store in a variable
 
-[ ] 0x6C        REF     [var]       [ptr var]
+[ ] 0x6F        REF     [var]       [ptr var]
 Create a reference to a variable and store in another variable
 
-[ ] 0x6D-6E     INST    [name/var]  [var]
+[ ] 0x70-71     INST    [name/var]  [var]
 Instantiate a struct with default values
 
-[x] 0x6F-72     MOD     [imm/var]   [imm/var]   [var]
+[x] 0x72-75     MOD     [imm/var]   [imm/var]   [var]
 Perform modulus on two values and store in a variable
 ```
 

@@ -174,6 +174,12 @@ macro_rules! jl {
     }
 }
 
+macro_rules! mov {
+    ($a:expr, $b:expr, $stack:expr, $cur_frame:expr) => {
+        set_var($b, &$a.val, $stack, $cur_frame);
+    }
+}
+
 macro_rules! get_type {
     ($typ:expr, $type_var:expr, $stack:expr, $cur_frame:expr) => {
         let type_var = get_var($type_var, $stack, $cur_frame);
@@ -185,12 +191,12 @@ macro_rules! get_type {
     }
 }
 macro_rules! get_name {
-    ($name:expr, $name_var:expr, $stack:expr, $cur_frame:expr) => {
+    ($name:expr, $name_var:expr, $stack:expr, $cur_frame:expr, $action:expr) => {
         let name_var = get_var($name_var, $stack, $cur_frame);
 
         match &name_var.val {
             Values::NAME(n) => $name = n.clone(),
-            _ => panic!("tried to create variable with dynamic name stored in variable, but given variable had type {:?}", name_var.typ)
+            _ => panic!("tried to {} variable with dynamic name stored in variable, but given variable had type {:?}", $action, name_var.typ)
         }
     }
 }
@@ -595,6 +601,48 @@ pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
                 jl!(a, b, c, pc);
             }
 
+            Opcode::MOV_I_V(a, b) => {
+                mov!(a, b, stack, cur_frame);
+            }
+            Opcode::MOV_V_V(a_name, b) => {
+                let a = get_var(a_name, stack, cur_frame).clone();
+
+                mov!(a, b, stack, cur_frame);
+            }
+            Opcode::MOV_VV_V(a_var, b) => {
+                let a_name;
+                get_name!(a_name, a_var, stack, cur_frame, "access");
+
+                let a = get_var(&a_name, stack, cur_frame).clone();
+
+                mov!(a, b, stack, cur_frame);
+            }
+            Opcode::MOV_I_VV(a, b_var) => {
+                let b;
+                get_name!(b, b_var, stack, cur_frame, "set");
+
+                mov!(a, &b, stack, cur_frame);
+            }
+            Opcode::MOV_V_VV(a_name, b_var) => {
+                let a = get_var(a_name, stack, cur_frame).clone();
+
+                let b;
+                get_name!(b, b_var, stack, cur_frame, "set");
+
+                mov!(a, &b, stack, cur_frame);
+            }
+            Opcode::MOV_VV_VV(a_var, b_var) => {
+                let a_name;
+                get_name!(a_name, a_var, stack, cur_frame, "access");
+
+                let a = get_var(&a_name, stack, cur_frame).clone();
+
+                let b;
+                get_name!(b, b_var, stack, cur_frame, "set");
+
+                mov!(a, &b, stack, cur_frame);
+            }
+
             Opcode::VAR_TYPE_NAME(typ, name) => { // VAR [type] [name]
                 stack[cur_frame].push_var(name.clone(), typ.clone());
             }
@@ -606,7 +654,7 @@ pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
             }
             Opcode::VAR_TYPE_VAR(typ, name_var) => { // VAR [type] [var]
                 let name;
-                get_name!(name, name_var, stack, cur_frame);
+                get_name!(name, name_var, stack, cur_frame, "create");
 
                 stack[cur_frame].push_var(name, typ.clone())
             }
@@ -615,7 +663,7 @@ pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
                 get_type!(typ, type_var, stack, cur_frame);
 
                 let name;
-                get_name!(name, name_var, stack, cur_frame);
+                get_name!(name, name_var, stack, cur_frame, "create");
 
                 stack[cur_frame].push_var(name, typ);
             }
@@ -1065,39 +1113,64 @@ pub fn parse_instruction(bytes: &Vec<u8>, index: &mut usize) -> Result<Instructi
             parse_bytecode_string(bytes, index)?)
         }
         
-        0x63 => {
+        0x4A => {
+            Opcode::MOV_I_V(parse_immediate(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x4B => {
+            Opcode::MOV_V_V(parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x4C => {
+            Opcode::MOV_VV_V(parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x4D => {
+            Opcode::MOV_I_VV(parse_immediate(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x4E => {
+            Opcode::MOV_V_VV(parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x4F => {
+            Opcode::MOV_VV_VV(parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
+        }
+
+        0x66 => {
             Opcode::VAR_TYPE_NAME(parse_type(bytes, index)?,
             parse_bytecode_string(bytes, index)?)
         }
-        0x64 => {
+        0x67 => {
             Opcode::VAR_VAR_NAME(parse_bytecode_string(bytes, index)?,
             parse_bytecode_string(bytes, index)?)
         }
-        0x65 => {
+        0x68 => {
             Opcode::VAR_TYPE_VAR(parse_type(bytes, index)?,
             parse_bytecode_string(bytes, index)?)
         }
-        0x66 => {
+        0x69 => {
             Opcode::VAR_VAR_VAR(parse_bytecode_string(bytes, index)?,
             parse_bytecode_string(bytes, index)?)
         }
 
-        0x6F => {
+        0x72 => {
             Opcode::MOD_I_I(parse_immediate(bytes, index)?,
             parse_immediate(bytes, index)?,
             parse_bytecode_string(bytes, index)?)
         }
-        0x70 => {
+        0x73 => {
             Opcode::MOD_V_I(parse_bytecode_string(bytes, index)?,
             parse_immediate(bytes, index)?,
             parse_bytecode_string(bytes, index)?)
         }
-        0x71 => {
+        0x74 => {
             Opcode::MOD_I_V(parse_immediate(bytes, index)?,
             parse_bytecode_string(bytes, index)?,
             parse_bytecode_string(bytes, index)?)
         }
-        0x72 => {
+        0x75 => {
             Opcode::MOD_V_V(parse_bytecode_string(bytes, index)?,
             parse_bytecode_string(bytes, index)?,
             parse_bytecode_string(bytes, index)?)

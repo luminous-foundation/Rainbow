@@ -1,3 +1,6 @@
 VAR u64 count
+VAR u64 count_copy
 ADD 1 count count
-JLE count 100_000 1
+JLE count 100_000 2
+MOV count count_copy
+MOV 0 count
