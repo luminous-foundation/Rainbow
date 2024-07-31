@@ -1,7 +1,8 @@
 use std::{collections::HashMap, fs};
 
 use frame::Frame;
-use scope::{exec_func, exec_scope, parse_scope};
+use function::Function;
+use scope::{exec_func, exec_scope, parse_scope, Scope};
 use value::{Value, Values};
 
 mod scope;
@@ -14,7 +15,7 @@ mod value;
 // TODO: better error handling
 // TODO: result type
 fn main() {
-    let program = fs::read("./counting.rbb").expect("failed to read program");
+    let program = fs::read("./calling.rbb").expect("failed to read program");
 
     let start = std::time::Instant::now();
     let mut index = 0;
@@ -30,15 +31,27 @@ fn main() {
     stack.push(Frame { vars: HashMap::new(), stack: Vec::new() });
 
     let exec_start = std::time::Instant::now();
-    exec_scope(&global_scope, &mut stack, 0);
+    exec_scope(&global_scope, &global_scope, &mut stack, 0);
     
     if let Some(func) = global_scope.functions.get("main") { // main functions are not required
-        exec_func(func, &mut stack);
+        exec_func(func, &global_scope, &mut stack);
     }
     println!("execution took {:.2}ms", exec_start.elapsed().as_secs_f32() * 1000f32);
     println!("whole program took {:.2}ms", start.elapsed().as_secs_f32() * 1000f32);
 
     println!("{:#?}", stack);
+}
+
+// this function expects the function to exist
+// if it doesnt, it will crash
+fn get_func<'a>(name: &String, scope: &'a Scope, global_scope: &'a Scope) -> &'a Function{
+    if scope.functions.contains_key(name) {
+        return scope.functions.get(name).expect("unreachable");
+    } else if global_scope.functions.contains_key(name) {
+        return global_scope.functions.get(name).expect("unreachable");
+    } else {
+        panic!("tried to call undefined function {}", name);
+    }
 }
 
 // these functions expect the variable to exist

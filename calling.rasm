@@ -1,0 +1,9 @@
+VAR u32 global_var
+
+void main() {
+    CALL test
+}
+
+void test() {
+    MOV 1234 global_var
+}

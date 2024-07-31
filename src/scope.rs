@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use half::f16;
 
-use crate::{_type::{Type, Types}, frame::Frame, function::Function, get_var, instruction::Instruction, set_var, value::{Value, Values}};
+use crate::{_type::{Type, Types}, frame::Frame, function::Function, get_func, get_var, instruction::Instruction, set_var, value::{Value, Values}};
 use crate::instruction::Opcode;
 
 #[derive(Debug)]
@@ -13,6 +13,13 @@ pub struct Scope {
 }
 
 // instruction macros
+macro_rules! call {
+    ($func:expr, $scope:expr, $global_scope:expr, $stack:expr) => {
+        let func = get_func($func, $scope, $global_scope);
+        exec_func(func, $global_scope, $stack);
+    }
+}
+
 macro_rules! add {
     ($a:expr, $b:expr, $out:expr, $stack:expr, $cur_frame:expr) => {
         let val = $a.val.add(&$b.val);
@@ -211,7 +218,7 @@ macro_rules! get_name {
 // ...
 // TODO: variable scoping that's more precise than function scope
 // ^ the above todo will be resolved when a below todo is resolved
-pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
+pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
     let mut pc = 0;
 
     let mut times: [f32; 256] = [0f32; 256];
@@ -232,91 +239,119 @@ pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
             Opcode::PUSH_IMM(val) => { // PUSH [imm]
                 stack[cur_frame].push(val.clone());
             }
-            Opcode::PUSH_VAR(name) => { // PUSH [name]
+            Opcode::PUSH_VAR(name) => { // PUSH [var]
                 let var = get_var(name, stack, cur_frame);
 
                 let val = var.clone(); // borrow checker :(
                 stack[cur_frame].push(val);
             }
 
-            Opcode::POP(name) => { // POP [name]
+            Opcode::LDARG_IMM(val) => { // LDARG [imm]
+                // yes, it is the exact same as PUSH
+                // why is it a seperate instruction you may ask?
+                // i don't know
+                stack[cur_frame].push(val.clone());
+            }
+            Opcode::LDARG_VAR(name) => { // LDARG [var]
+                let var = get_var(name, stack, cur_frame);
+
+                let val = var.clone();
+                stack[cur_frame].push(val);
+            }
+
+            Opcode::CALL_FUNC(func) => { // CALL [func]
+                call!(func, scope, global_scope, stack);
+            }
+            Opcode::CALL_VAR(func_var) => { // CALL [var]
+                let func_var = get_var(func_var, stack, cur_frame);
+
+                let func;
+                match &func_var.val {
+                    Values::NAME(n) => func = n,
+                    _ => panic!("tried to call function with name stored in variable, but given variable had type {:?}", func_var.typ)
+                }
+
+                call!(func, scope, global_scope, stack);
+            }
+
+            Opcode::POP(name) => { // POP [var]
                 set_var(name, &stack[cur_frame].pop().val, stack, cur_frame);
             }
 
-            Opcode::ADD_I_I(a, b, out) => { // ADD [imm] [imm] [name]
+            Opcode::ADD_I_I(a, b, out) => { // ADD [imm] [imm] [var]
                 add!(a, b, out, stack, cur_frame);
             }
-            Opcode::ADD_V_I(a_name, b, out) => { // ADD [name] [imm] [name]
+            Opcode::ADD_V_I(a_name, b, out) => { // ADD [var] [imm] [var]
                 let a = get_var(a_name, stack, cur_frame).clone();
 
                 add!(a, b, out, stack, cur_frame);
             }
-            Opcode::ADD_I_V(a, b_name, out) => { // ADD [imm] [name] [name]                
-                let b = get_var(b_name, stack, cur_frame).clone();
-
-                add!(a, b, out, stack, cur_frame);
-            }
-            Opcode::ADD_V_V(a_name, b_name, out) => { // ADD [name] [name] [name]
-                let a = get_var(a_name, stack, cur_frame).clone();
+            Opcode::ADD_I_V(a, b_name, out) => { // ADD [imm] [var] [var]                
                 let b = get_var(b_name, stack, cur_frame).clone();
 
                 add!(a, b, out, stack, cur_frame);
             }
+            Opcode::ADD_V_V(a_name, b_name, out) => { // ADD [var] [var] [var]
+                let a = get_var(a_name, stack, cur_frame).clone();
+                let b = get_var(b_name, stack, cur_frame).clone();
 
-            Opcode::SUB_I_I(a, b, out) => { // SUB [imm] [imm] [name]
+                add!(a, b, out, stack, cur_frame);
+            }
+
+            Opcode::SUB_I_I(a, b, out) => { // SUB [imm] [imm] [var]
                 sub!(a, b, out, stack, cur_frame);
             }
-            Opcode::SUB_V_I(a_name, b, out) => { // SUB [name] [imm] [name]
+            Opcode::SUB_V_I(a_name, b, out) => { // SUB [var] [imm] [var]
                 let a = get_var(a_name, stack, cur_frame).clone();
 
                 sub!(a, b, out, stack, cur_frame);
             }
-            Opcode::SUB_I_V(a, b_name, out) => { // SUB [imm] [name] [name]                
+            Opcode::SUB_I_V(a, b_name, out) => { // SUB [imm] [var] [var]                
                 let b = get_var(b_name, stack, cur_frame).clone();
 
                 sub!(a, b, out, stack, cur_frame);
             }
-            Opcode::SUB_V_V(a_name, b_name, out) => { // SUB [name] [name] [name]
+            Opcode::SUB_V_V(a_name, b_name, out) => { // SUB [var] [var] [var]
                 let a = get_var(a_name, stack, cur_frame).clone();
                 let b = get_var(b_name, stack, cur_frame).clone();
 
                 sub!(a, b, out, stack, cur_frame);
             }
 
-            Opcode::MUL_I_I(a, b, out) => { // MUL [imm] [imm] [name]
+            Opcode::MUL_I_I(a, b, out) => { // MUL [imm] [imm] [var]
                 mul!(a, b, out, stack, cur_frame);
             }
-            Opcode::MUL_V_I(a_name, b, out) => { // MUL [name] [imm] [name]
+            Opcode::MUL_V_I(a_name, b, out) => { // MUL [var] [imm] [var]
                 let a = get_var(a_name, stack, cur_frame).clone();
 
                 mul!(a, b, out, stack, cur_frame);
             }
-            Opcode::MUL_I_V(a, b_name, out) => { // MUL [imm] [name] [name]                
+            Opcode::MUL_I_V(a, b_name, out) => { // MUL [imm] [var] [var]                
                 let b = get_var(b_name, stack, cur_frame).clone();
 
                 mul!(a, b, out, stack, cur_frame);
             }
-            Opcode::MUL_V_V(a_name, b_name, out) => { // MUL [name] [name] [name]
+            Opcode::MUL_V_V(a_name, b_name, out) => { // MUL [var] [var] [var]
                 let a = get_var(a_name, stack, cur_frame).clone();
                 let b = get_var(b_name, stack, cur_frame).clone();
 
                 mul!(a, b, out, stack, cur_frame);
             }
 
-            Opcode::DIV_I_I(a, b, out) => { // DIV [imm] [imm] [name]
+            Opcode::DIV_I_I(a, b, out) => { // DIV [imm] [imm] [var]
                 div!(a, b, out, stack, cur_frame);
             }
-            Opcode::DIV_V_I(a_name, b, out) => { // DIV [name] [imm] [name]
+            Opcode::DIV_V_I(a_name, b, out) => { // DIV [var] [imm] [var]
                 let a = get_var(a_name, stack, cur_frame).clone();
-
-                div!(a, b, out, stack, cur_frame);
-            }
-            Opcode::DIV_I_V(a, b_name, out) => { // DIV [imm] [name] [name]                
-                let b = get_var(b_name, stack, cur_frame).clone();
 
                 div!(a, b, out, stack, cur_frame);
             }
-            Opcode::DIV_V_V(a_name, b_name, out) => { // DIV [name] [name] [name]
+            Opcode::DIV_I_V(a, b_name, out) => { // DIV [imm] [var] [var]                
+                let b = get_var(b_name, stack, cur_frame).clone();
+
+                div!(a, b, out, stack, cur_frame);
+            }
+            Opcode::DIV_V_V(a_name, b_name, out) => { // DIV [var] [var] [var]
                 let a = get_var(a_name, stack, cur_frame).clone();
                 let b = get_var(b_name, stack, cur_frame).clone();
 
@@ -340,7 +375,7 @@ pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
             Opcode::JNE_I_I_I(a, b, c) => { // JNE [imm] [imm] [imm]
                 jne!(a, b, c, pc);
             }
-            Opcode::JNE_V_I_I(a_name, b, c) => { // JNE [name] [imm] [imm]
+            Opcode::JNE_V_I_I(a_name, b, c) => { // JNE [var] [imm] [imm]
                 let a = get_var(a_name, stack, cur_frame).clone();
 
                 jne!(a, b, c, pc);
@@ -350,30 +385,30 @@ pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
 
                 jne!(a, b, c, pc);
             }
-            Opcode::JNE_V_V_I(a_name, b_name, c) => { // JNE [name] [name] [imm]
+            Opcode::JNE_V_V_I(a_name, b_name, c) => { // JNE [var] [var] [imm]
                 let a = get_var(a_name, stack, cur_frame).clone();
                 let b = get_var(b_name, stack, cur_frame).clone();
 
                 jne!(a, b, c, pc);
             }
-            Opcode::JNE_I_I_V(a, b, c_name) => { // JNE [imm] [imm] [name]
+            Opcode::JNE_I_I_V(a, b, c_name) => { // JNE [imm] [imm] [var]
                 let c = get_var(c_name, stack, cur_frame).clone();
 
                 jne!(a, b, c, pc);
             }
-            Opcode::JNE_V_I_V(a_name, b, c_name) => { // JNE [name] [imm] [name]
+            Opcode::JNE_V_I_V(a_name, b, c_name) => { // JNE [var] [imm] [var]
                 let a = get_var(a_name, stack, cur_frame).clone();
                 let c = get_var(c_name, stack, cur_frame).clone();
 
                 jne!(a, b, c, pc);
             }
-            Opcode::JNE_I_V_V(a, b_name, c_name) => { // JNE [imm] [imm] [name]
+            Opcode::JNE_I_V_V(a, b_name, c_name) => { // JNE [imm] [imm] [var]
                 let b = get_var(b_name, stack, cur_frame).clone();
                 let c = get_var(c_name, stack, cur_frame).clone();
 
                 jne!(a, b, c, pc);
             }
-            Opcode::JNE_V_V_V(a_name, b_name, c_name) => { // JNE [name] [name] [name]
+            Opcode::JNE_V_V_V(a_name, b_name, c_name) => { // JNE [var] [var] [var]
                 let a = get_var(a_name, stack, cur_frame).clone();
                 let b = get_var(b_name, stack, cur_frame).clone();
                 let c = get_var(c_name, stack, cur_frame).clone();
@@ -384,7 +419,7 @@ pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
             Opcode::JE_I_I_I(a, b, c) => { // JE [imm] [imm] [imm]
                 je!(a, b, c, pc);
             }
-            Opcode::JE_V_I_I(a_name, b, c) => { // JE [name] [imm] [imm]
+            Opcode::JE_V_I_I(a_name, b, c) => { // JE [var] [imm] [imm]
                 let a = get_var(a_name, stack, cur_frame).clone();
 
                 je!(a, b, c, pc);
@@ -394,30 +429,30 @@ pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
 
                 je!(a, b, c, pc);
             }
-            Opcode::JE_V_V_I(a_name, b_name, c) => { // JE [name] [name] [imm]
+            Opcode::JE_V_V_I(a_name, b_name, c) => { // JE [var] [var] [imm]
                 let a = get_var(a_name, stack, cur_frame).clone();
                 let b = get_var(b_name, stack, cur_frame).clone();
 
                 je!(a, b, c, pc);
             }
-            Opcode::JE_I_I_V(a, b, c_name) => { // JE [imm] [imm] [name]
+            Opcode::JE_I_I_V(a, b, c_name) => { // JE [imm] [imm] [var]
                 let c = get_var(c_name, stack, cur_frame).clone();
 
                 je!(a, b, c, pc);
             }
-            Opcode::JE_V_I_V(a_name, b, c_name) => { // JE [name] [imm] [name]
+            Opcode::JE_V_I_V(a_name, b, c_name) => { // JE [var] [imm] [var]
                 let a = get_var(a_name, stack, cur_frame).clone();
                 let c = get_var(c_name, stack, cur_frame).clone();
 
                 je!(a, b, c, pc);
             }
-            Opcode::JE_I_V_V(a, b_name, c_name) => { // JE [imm] [imm] [name]
+            Opcode::JE_I_V_V(a, b_name, c_name) => { // JE [imm] [imm] [var]
                 let b = get_var(b_name, stack, cur_frame).clone();
                 let c = get_var(c_name, stack, cur_frame).clone();
 
                 je!(a, b, c, pc);
             }
-            Opcode::JE_V_V_V(a_name, b_name, c_name) => { // JE [name] [name] [name]
+            Opcode::JE_V_V_V(a_name, b_name, c_name) => { // JE [var] [var] [var]
                 let a = get_var(a_name, stack, cur_frame).clone();
                 let b = get_var(b_name, stack, cur_frame).clone();
                 let c = get_var(c_name, stack, cur_frame).clone();
@@ -428,7 +463,7 @@ pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
             Opcode::JGE_I_I_I(a, b, c) => { // JGE [imm] [imm] [imm]
                 jge!(a, b, c, pc);
             }
-            Opcode::JGE_V_I_I(a_name, b, c) => { // JGE [name] [imm] [imm]
+            Opcode::JGE_V_I_I(a_name, b, c) => { // JGE [var] [imm] [imm]
                 let a = get_var(a_name, stack, cur_frame).clone();
 
                 jge!(a, b, c, pc);
@@ -438,30 +473,30 @@ pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
 
                 jge!(a, b, c, pc);
             }
-            Opcode::JGE_V_V_I(a_name, b_name, c) => { // JGE [name] [name] [imm]
+            Opcode::JGE_V_V_I(a_name, b_name, c) => { // JGE [var] [var] [imm]
                 let a = get_var(a_name, stack, cur_frame).clone();
                 let b = get_var(b_name, stack, cur_frame).clone();
 
                 jge!(a, b, c, pc);
             }
-            Opcode::JGE_I_I_V(a, b, c_name) => { // JGE [imm] [imm] [name]
+            Opcode::JGE_I_I_V(a, b, c_name) => { // JGE [imm] [imm] [var]
                 let c = get_var(c_name, stack, cur_frame).clone();
 
                 jge!(a, b, c, pc);
             }
-            Opcode::JGE_V_I_V(a_name, b, c_name) => { // JGE [name] [imm] [name]
+            Opcode::JGE_V_I_V(a_name, b, c_name) => { // JGE [var] [imm] [var]
                 let a = get_var(a_name, stack, cur_frame).clone();
                 let c = get_var(c_name, stack, cur_frame).clone();
 
                 jge!(a, b, c, pc);
             }
-            Opcode::JGE_I_V_V(a, b_name, c_name) => { // JGE [imm] [imm] [name]
+            Opcode::JGE_I_V_V(a, b_name, c_name) => { // JGE [imm] [imm] [var]
                 let b = get_var(b_name, stack, cur_frame).clone();
                 let c = get_var(c_name, stack, cur_frame).clone();
 
                 jge!(a, b, c, pc);
             }
-            Opcode::JGE_V_V_V(a_name, b_name, c_name) => { // JGE [name] [name] [name]
+            Opcode::JGE_V_V_V(a_name, b_name, c_name) => { // JGE [var] [var] [var]
                 let a = get_var(a_name, stack, cur_frame).clone();
                 let b = get_var(b_name, stack, cur_frame).clone();
                 let c = get_var(c_name, stack, cur_frame).clone();
@@ -472,7 +507,7 @@ pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
             Opcode::JG_I_I_I(a, b, c) => { // JG [imm] [imm] [imm]
                 jg!(a, b, c, pc);
             }
-            Opcode::JG_V_I_I(a_name, b, c) => { // JG [name] [imm] [imm]
+            Opcode::JG_V_I_I(a_name, b, c) => { // JG [var] [imm] [imm]
                 let a = get_var(a_name, stack, cur_frame).clone();
 
                 jg!(a, b, c, pc);
@@ -482,30 +517,30 @@ pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
 
                 jg!(a, b, c, pc);
             }
-            Opcode::JG_V_V_I(a_name, b_name, c) => { // JG [name] [name] [imm]
+            Opcode::JG_V_V_I(a_name, b_name, c) => { // JG [var] [var] [imm]
                 let a = get_var(a_name, stack, cur_frame).clone();
                 let b = get_var(b_name, stack, cur_frame).clone();
 
                 jg!(a, b, c, pc);
             }
-            Opcode::JG_I_I_V(a, b, c_name) => { // JG [imm] [imm] [name]
+            Opcode::JG_I_I_V(a, b, c_name) => { // JG [imm] [imm] [var]
                 let c = get_var(c_name, stack, cur_frame).clone();
 
                 jg!(a, b, c, pc);
             }
-            Opcode::JG_V_I_V(a_name, b, c_name) => { // JG [name] [imm] [name]
+            Opcode::JG_V_I_V(a_name, b, c_name) => { // JG [var] [imm] [var]
                 let a = get_var(a_name, stack, cur_frame).clone();
                 let c = get_var(c_name, stack, cur_frame).clone();
 
                 jg!(a, b, c, pc);
             }
-            Opcode::JG_I_V_V(a, b_name, c_name) => { // JG [imm] [imm] [name]
+            Opcode::JG_I_V_V(a, b_name, c_name) => { // JG [imm] [imm] [var]
                 let b = get_var(b_name, stack, cur_frame).clone();
                 let c = get_var(c_name, stack, cur_frame).clone();
 
                 jg!(a, b, c, pc);
             }
-            Opcode::JG_V_V_V(a_name, b_name, c_name) => { // JG [name] [name] [name]
+            Opcode::JG_V_V_V(a_name, b_name, c_name) => { // JG [var] [var] [var]
                 let a = get_var(a_name, stack, cur_frame).clone();
                 let b = get_var(b_name, stack, cur_frame).clone();
                 let c = get_var(c_name, stack, cur_frame).clone();
@@ -516,7 +551,7 @@ pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
             Opcode::JLE_I_I_I(a, b, c) => { // JLE [imm] [imm] [imm]
                 jle!(a, b, c, pc);
             }
-            Opcode::JLE_V_I_I(a_name, b, c) => { // JLE [name] [imm] [imm]
+            Opcode::JLE_V_I_I(a_name, b, c) => { // JLE [var] [imm] [imm]
                 let a = get_var(a_name, stack, cur_frame).clone();
 
                 jle!(a, b, c, pc);
@@ -526,30 +561,30 @@ pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
 
                 jle!(a, b, c, pc);
             }
-            Opcode::JLE_V_V_I(a_name, b_name, c) => { // JLE [name] [name] [imm]
+            Opcode::JLE_V_V_I(a_name, b_name, c) => { // JLE [var] [var] [imm]
                 let a = get_var(a_name, stack, cur_frame).clone();
                 let b = get_var(b_name, stack, cur_frame).clone();
 
                 jle!(a, b, c, pc);
             }
-            Opcode::JLE_I_I_V(a, b, c_name) => { // JLE [imm] [imm] [name]
+            Opcode::JLE_I_I_V(a, b, c_name) => { // JLE [imm] [imm] [var]
                 let c = get_var(c_name, stack, cur_frame).clone();
 
                 jle!(a, b, c, pc);
             }
-            Opcode::JLE_V_I_V(a_name, b, c_name) => { // JLE [name] [imm] [name]
+            Opcode::JLE_V_I_V(a_name, b, c_name) => { // JLE [var] [imm] [var]
                 let a = get_var(a_name, stack, cur_frame).clone();
                 let c = get_var(c_name, stack, cur_frame).clone();
 
                 jle!(a, b, c, pc);
             }
-            Opcode::JLE_I_V_V(a, b_name, c_name) => { // JLE [imm] [imm] [name]
+            Opcode::JLE_I_V_V(a, b_name, c_name) => { // JLE [imm] [imm] [var]
                 let b = get_var(b_name, stack, cur_frame).clone();
                 let c = get_var(c_name, stack, cur_frame).clone();
 
                 jle!(a, b, c, pc);
             }
-            Opcode::JLE_V_V_V(a_name, b_name, c_name) => { // JLE [name] [name] [name]
+            Opcode::JLE_V_V_V(a_name, b_name, c_name) => { // JLE [var] [var] [var]
                 let a = get_var(a_name, stack, cur_frame).clone();
                 let b = get_var(b_name, stack, cur_frame).clone();
                 let c = get_var(c_name, stack, cur_frame).clone();
@@ -560,7 +595,7 @@ pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
             Opcode::JL_I_I_I(a, b, c) => { // JL [imm] [imm] [imm]
                 jl!(a, b, c, pc);
             }
-            Opcode::JL_V_I_I(a_name, b, c) => { // JL [name] [imm] [imm]
+            Opcode::JL_V_I_I(a_name, b, c) => { // JL [var] [imm] [imm]
                 let a = get_var(a_name, stack, cur_frame).clone();
 
                 jl!(a, b, c, pc);
@@ -570,30 +605,30 @@ pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
 
                 jl!(a, b, c, pc);
             }
-            Opcode::JL_V_V_I(a_name, b_name, c) => { // JL [name] [name] [imm]
+            Opcode::JL_V_V_I(a_name, b_name, c) => { // JL [var] [var] [imm]
                 let a = get_var(a_name, stack, cur_frame).clone();
                 let b = get_var(b_name, stack, cur_frame).clone();
 
                 jl!(a, b, c, pc);
             }
-            Opcode::JL_I_I_V(a, b, c_name) => { // JL [imm] [imm] [name]
+            Opcode::JL_I_I_V(a, b, c_name) => { // JL [imm] [imm] [var]
                 let c = get_var(c_name, stack, cur_frame).clone();
 
                 jl!(a, b, c, pc);
             }
-            Opcode::JL_V_I_V(a_name, b, c_name) => { // JL [name] [imm] [name]
+            Opcode::JL_V_I_V(a_name, b, c_name) => { // JL [var] [imm] [var]
                 let a = get_var(a_name, stack, cur_frame).clone();
                 let c = get_var(c_name, stack, cur_frame).clone();
 
                 jl!(a, b, c, pc);
             }
-            Opcode::JL_I_V_V(a, b_name, c_name) => { // JL [imm] [imm] [name]
+            Opcode::JL_I_V_V(a, b_name, c_name) => { // JL [imm] [imm] [var]
                 let b = get_var(b_name, stack, cur_frame).clone();
                 let c = get_var(c_name, stack, cur_frame).clone();
 
                 jl!(a, b, c, pc);
             }
-            Opcode::JL_V_V_V(a_name, b_name, c_name) => { // JL [name] [name] [name]
+            Opcode::JL_V_V_V(a_name, b_name, c_name) => { // JL [var] [var] [var]
                 let a = get_var(a_name, stack, cur_frame).clone();
                 let b = get_var(b_name, stack, cur_frame).clone();
                 let c = get_var(c_name, stack, cur_frame).clone();
@@ -601,15 +636,15 @@ pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
                 jl!(a, b, c, pc);
             }
 
-            Opcode::MOV_I_V(a, b) => {
+            Opcode::MOV_I_V(a, b) => { // MOV [imm] [var]
                 mov!(a, b, stack, cur_frame);
             }
-            Opcode::MOV_V_V(a_name, b) => {
+            Opcode::MOV_V_V(a_name, b) => { // MOV [var] [var]
                 let a = get_var(a_name, stack, cur_frame).clone();
 
                 mov!(a, b, stack, cur_frame);
             }
-            Opcode::MOV_VV_V(a_var, b) => {
+            Opcode::MOV_VV_V(a_var, b) => { // MOV [var var] [var]
                 let a_name;
                 get_name!(a_name, a_var, stack, cur_frame, "access");
 
@@ -617,13 +652,13 @@ pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
 
                 mov!(a, b, stack, cur_frame);
             }
-            Opcode::MOV_I_VV(a, b_var) => {
+            Opcode::MOV_I_VV(a, b_var) => { // MOV [imm] [var var]
                 let b;
                 get_name!(b, b_var, stack, cur_frame, "set");
 
                 mov!(a, &b, stack, cur_frame);
             }
-            Opcode::MOV_V_VV(a_name, b_var) => {
+            Opcode::MOV_V_VV(a_name, b_var) => { // MOV [var] [var var]
                 let a = get_var(a_name, stack, cur_frame).clone();
 
                 let b;
@@ -631,7 +666,7 @@ pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
 
                 mov!(a, &b, stack, cur_frame);
             }
-            Opcode::MOV_VV_VV(a_var, b_var) => {
+            Opcode::MOV_VV_VV(a_var, b_var) => { // MOV [var var] [var var]
                 let a_name;
                 get_name!(a_name, a_var, stack, cur_frame, "access");
 
@@ -668,20 +703,20 @@ pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
                 stack[cur_frame].push_var(name, typ);
             }
 
-            Opcode::MOD_I_I(a, b, out) => { // MOD [imm] [imm] [name]
+            Opcode::MOD_I_I(a, b, out) => { // MOD [imm] [imm] [var]
                 modulo!(a, b, out, stack, cur_frame);
             }
-            Opcode::MOD_V_I(a_name, b, out) => { // MOD [name] [imm] [name]
+            Opcode::MOD_V_I(a_name, b, out) => { // MOD [var] [imm] [var]
                 let a = get_var(a_name, stack, cur_frame).clone();
 
                 modulo!(a, b, out, stack, cur_frame);
             }
-            Opcode::MOD_I_V(a, b_name, out) => { // MOD [imm] [name] [name]                
+            Opcode::MOD_I_V(a, b_name, out) => { // MOD [imm] [var] [var]                
                 let b = get_var(b_name, stack, cur_frame).clone();
 
                 modulo!(a, b, out, stack, cur_frame);
             }
-            Opcode::MOD_V_V(a_name, b_name, out) => { // MOD [name] [name] [name]
+            Opcode::MOD_V_V(a_name, b_name, out) => { // MOD [var] [var] [var]
                 let a = get_var(a_name, stack, cur_frame).clone();
                 let b = get_var(b_name, stack, cur_frame).clone();
 
@@ -711,11 +746,13 @@ pub fn exec_scope(scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
     }
 }
 
-pub fn exec_func(func: &Function, stack: &mut Vec<Frame>) {
+pub fn exec_func(func: &Function, global_scope: &Scope, stack: &mut Vec<Frame>) {
     stack.push(Frame { vars: HashMap::new(), stack: Vec::new() });
 
     let len = stack.len(); // borrow checker woes
-    exec_scope(&func.scope, stack, len - 1);
+    exec_scope(&func.scope, global_scope, stack, len - 1);
+
+    stack.pop();
 }
 
 // expects `index` to be at the start of the scope body
@@ -734,7 +771,10 @@ pub fn parse_scope(bytes: &Vec<u8>, index: &mut usize) -> Result<Scope, String> 
                 *index += 1;
                 scope.scopes.push(parse_scope(bytes, index)?);
             }
-            0xFD => break,
+            0xFD => {
+                *index += 1;
+                break;
+            }
             _ => {
                 scope.instructions.push(parse_instruction(bytes, index)?);
             }
@@ -774,6 +814,13 @@ pub fn parse_instruction(bytes: &Vec<u8>, index: &mut usize) -> Result<Instructi
         }
         0x05 => {
             Opcode::LDARG_VAR(parse_bytecode_string(bytes, index)?)
+        }
+
+        0x06 => {
+            Opcode::CALL_FUNC(parse_bytecode_string(bytes, index)?)
+        }
+        0x07 => {
+            Opcode::CALL_VAR(parse_bytecode_string(bytes, index)?)
         }
 
         0x08 => {
