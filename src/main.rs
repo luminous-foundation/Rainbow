@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fs};
+use std::{collections::HashMap, env, fs};
 
 use frame::Frame;
 use function::Function;
@@ -15,7 +15,9 @@ mod value;
 // TODO: better error handling
 // TODO: result type
 fn main() {
-    let program = fs::read("./calling.rbb").expect("failed to read program");
+    let args: Vec<String> = env::args().collect();
+
+    let program = fs::read(args[1].clone()).expect("failed to read program");
 
     let start = std::time::Instant::now();
     let mut index = 0;
