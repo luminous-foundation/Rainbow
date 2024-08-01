@@ -50,6 +50,8 @@ The more things that can run on Rainbow the more things can talk to each other t
 ## What is the future plans for Rainbow?
 Currently the below list of features is planned for Rainbow.
 
+- [ ] Type Checking
+
 - [ ] Self-hosted
 
 - [ ] Language interop (FFI, other bytecodes, etc.)

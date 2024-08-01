@@ -1,13 +1,14 @@
-VAR u32 global_var
-VAR u8 ret_val
+VAR u32 add_result
 
 void main() {
-    CALL test
-    POP ret_val
+    LDARG 5
+    LDARG 10
+    CALL add
+    POP add_result
 }
 
-u8 test() {
-    MOV 1234 global_var
-
-    RET 127
+u32 add(u32 a u32 b) {
+    VAR u32 ret
+    ADD a b ret
+    RET ret
 }

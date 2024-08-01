@@ -703,14 +703,15 @@ pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, c
                 stack[cur_frame].push_var(name, typ);
             }
 
-            Opcode::RET => {
+            // TODO: return type checking
+            Opcode::RET => { // RET
                 break;
             }
-            Opcode::RET_IMM(v) => {
+            Opcode::RET_IMM(v) => { // RET [imm]
                 stack[cur_frame - 1].push(v.clone());
                 break;
             }
-            Opcode::RET_VAR(var) => {
+            Opcode::RET_VAR(var) => { // RET [var]
                 let v = get_var(var, stack, cur_frame).clone();
 
                 stack[cur_frame - 1].push(v);
@@ -763,7 +764,15 @@ pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, c
 pub fn exec_func(func: &Function, global_scope: &Scope, stack: &mut Vec<Frame>) {
     stack.push(Frame { vars: HashMap::new(), stack: Vec::new() });
 
-    let len = stack.len(); // borrow checker woes
+    let len = stack.len();
+
+    for i in 0..func.arg_names.len() {
+        // TODO: argument type checking
+        let val = stack[len - 2].pop();
+        stack[len - 1].push_var(func.arg_names[i].clone(), func.arg_types[i].clone());
+        stack[len - 1].set_var(&func.arg_names[i], &val.val);
+    }
+
     exec_scope(&func.scope, global_scope, stack, len - 1);
 
     stack.pop();
