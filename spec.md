@@ -85,7 +85,7 @@ Right shift value A value B bits
 [x] 0x66-69     VAR     [type/var]  [name/var]
 Create a variable with the given type and name
 
-[ ] 0x6A-6C     RET     {imm/var}
+[x] 0x6A-6C     RET     {imm/var}
 Return from a function (functions with void type do not need to include arguments)
 
 [ ] 0x6D-6E     DEREF   [imm/ptr]   [var]
