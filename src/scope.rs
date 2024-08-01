@@ -703,6 +703,20 @@ pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, c
                 stack[cur_frame].push_var(name, typ);
             }
 
+            Opcode::RET => {
+                break;
+            }
+            Opcode::RET_IMM(v) => {
+                stack[cur_frame - 1].push(v.clone());
+                break;
+            }
+            Opcode::RET_VAR(var) => {
+                let v = get_var(var, stack, cur_frame).clone();
+
+                stack[cur_frame - 1].push(v);
+                break;
+            }
+
             Opcode::MOD_I_I(a, b, out) => { // MOD [imm] [imm] [var]
                 modulo!(a, b, out, stack, cur_frame);
             }
@@ -1200,6 +1214,16 @@ pub fn parse_instruction(bytes: &Vec<u8>, index: &mut usize) -> Result<Instructi
         0x69 => {
             Opcode::VAR_VAR_VAR(parse_bytecode_string(bytes, index)?,
             parse_bytecode_string(bytes, index)?)
+        }
+
+        0x6A => {
+            Opcode::RET
+        }
+        0x6B => {
+            Opcode::RET_IMM(parse_immediate(bytes, index)?)
+        }
+        0x6C => {
+            Opcode::RET_VAR(parse_bytecode_string(bytes, index)?)
         }
 
         0x72 => {

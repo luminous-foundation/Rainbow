@@ -1,9 +1,13 @@
 VAR u32 global_var
+VAR u8 ret_val
 
 void main() {
     CALL test
+    POP ret_val
 }
 
-void test() {
+u8 test() {
     MOV 1234 global_var
+
+    RET 127
 }
