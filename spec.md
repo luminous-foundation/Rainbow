@@ -13,110 +13,129 @@
 
 ```
 [x] 0x00        NOP
-Does nothing.
+Does nothing
 
 [x] 0x01-02     PUSH    [imm/var]
-Pushes a value onto the stack
+Pushes value A onto the stack
 
 [x] 0x03        POP     [var]
-Pops a value off of the stack and stores it in a variable
+Pops a value off of the stack and stores it in variable A
 With a stack underflow, the program will crash
 
 [x] 0x04-05     LDARG   [imm/var]
-Loads an argument to be used in a function
+Loads argument A to be used in a function
+(This is currently functionally identical to PUSH)
 
 [x] 0x06-07     CALL    [func/var]
-Calls a function
+Calls function A
 
 [x] 0x08-0B     ADD     [imm/var]   [imm/var]   [var]
-Add two numbers and store in a variable
+Add A to B and store in variable C
 
 [x] 0x0C-0F     SUB     [imm/var]   [imm/var]   [var]
-Subtract two numbers and store in a variable
+Subtract B from A and store in variable C
 
 [x] 0x10-13     MUL     [imm/var]   [imm/var]   [var]
-Multiply two numbers and store in a variable
+Multiply A by B and store in variable C
 
 [x] 0x14-17     DIV     [imm/var]   [imm/var]   [var]
-Divide two numbers and store in a variable
+Divide A by B and store in variable C
 
 [x] 0x18-19     JMP     [imm/var]
-Jump to a location within the current scope
+Jump to location A within the current scope
 
 [x] 0x1A-21     JNE     [imm/var]   [imm/var]   [imm/var]
-Jump to a location within the current scope if the given values are not equal
+Jump to location C within the current scope if the given values are not equal
 
 [x] 0x22-29     JE      [imm/var]   [imm/var]   [imm/var]
-Jump to a location within the current scope if the given values are equal
+Jump to location C within the current scope if the given values are equal
 
 [x] 0x2A-31     JGE     [imm/var]   [imm/var]   [imm/var]
-Jump to a location within the current scope if value A is greater than or equal to B
+Jump to location C within the current scope if value A is greater than or equal to B
 
 [x] 0x32-39     JG      [imm/var]   [imm/var]   [imm/var]
-Jump to a location within the current scope if value A is greater than to B
+Jump to location C within the current scope if value A is greater than to B
 
 [x] 0x3A-41     JLE     [imm/var]   [imm/var]   [imm/var]
-Jump to a location within the current scope if value A is less than or equal to B
+Jump to location C within the current scope if value A is less than or equal to B
 
 [x] 0x42-49     JL      [imm/var]   [imm/var]   [imm/var]
-Jump to a location within the current scope if value A is less than to B
+Jump to location C within the current scope if value A is less than to B
 
 [x] 0x4A-4F     MOV     [imm/*var]   [*var]
-Move a value into a variable
+Move value A into variable B
 
 [ ] 0x50-53     AND     [imm/var]   [imm/var]   [var]
-Perform bitwise AND on two values and store in a variable
+Perform bitwise AND on A and B and store in variable C
 
 [ ] 0x54-57     OR      [imm/var]   [imm/var]   [var]
-Perform bitwise OR on two values and store in a variable
+Perform bitwise OR on A and B and store in variable C
 
 [ ] 0x58-5B     XOR     [imm/var]   [imm/var]   [var]
-Perform bitwise XOR on two values and store in a variable
+Perform bitwise XOR on A and B and store in variable C
 
 [ ] 0x5C-5D     NOT     [imm/var]   [var]
-Perform bitwise NOT on a value and store in a variable
+Perform bitwise NOT on A and B and store in variable C
 
 [ ] 0x5E-61     LSH     [imm/var]   [imm/var]   [var]
-Left shift value A value B bits
+Left shift A by B bits and store in variable C
 
 [ ] 0x62-65     RSH     [imm/var]   [imm/var]   [var]
-Right shift value A value B bits
+Right shift A by B bits and store in variable C
 
 [x] 0x66-69     VAR     [type/var]  [name/var]
-Create a variable with the given type and name
+Create a variable with type A and name B
 
 [x] 0x6A-6C     RET     {imm/var}
-Return from a function (functions with void type do not need to include arguments)
+Return value A from a function
+(functions with void type do not need to include arguments)
 
 [x] 0x6D-6E     DEREF   [imm/ptr]   [var]
-Dereference a pointer and store in a variable
+Dereference pointer A and store in variable B
 (note: deref clones the value that you are dereferencing)
 
 [x] 0x6F        REF     [var]       [ptr var]
-Create a reference to a variable and store in another variable
+Create a reference to variable A and store in variable B
 
 [ ] 0x70-71     INST    [name/var]  [var]
-Instantiate a struct with default values
+Instantiate a struct named A and store in varaible B
+(Struct will be filled with 0s or empty values)
 
 [x] 0x72-75     MOD     [imm/var]   [imm/var]   [var]
-Perform modulus on two values and store in a variable
+Perform modulus on A and B and store in variable C
 
-[ ] 0x76-79     PMOV    [imm/var]   [ptr]       [imm/var]
-Moves the first value into the place in memory that the pointer references, with the offset specified in the third value
+[ ] 0x76-79     PMOV    [imm/var]   [ptr var]   [imm/var]
+Moves the value A into where value B references, with the offset C
+
+[ ] 0x7A-7D     ALLOC   [type/var]  [imm/var]   [ptr var]
+Allocates a pointer with type A, size B, and puts the address in variable C
+
+[ ] 0x7E-82     FREE    [imm/ptr]   {imm/var}
+Frees pointer A with size B
+(Size only needs to be provided when given immediate address, but still can be provided given pointer variable)
 ```
 
 0xXX-0xYY - instruction opcode range
-Counted up by argument type (TODO: qualify this better)
+Counted up by argument type. (TODO: qualify this better)
 
 [...]     - argument
-These arguments are required
+These arguments are required.
 
 {...}     - optional argument
-These arguments are not required
+These arguments are not required.
+
+imm       - immediate value
+This is an immediate value as specified below.
+
+var       - variable name
+This is a variable name, represented as a bytecode string as specified below.
+
+ptr var   - variable name, where the variable holds a pointer
+This is also a variable name represented as a bytecode string, but the specified variable must have the pointer type.
 
 *var      - specifies a dynamically named variable is supported
 The argument you pass in is either a statically named var that contains the value you are trying to move,
-or a variable that contains the name of the variable you want to move
+or a variable that contains the name of the variable you want to move.
 
 
 ## TYPES
