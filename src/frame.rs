@@ -32,27 +32,31 @@ impl Frame {
     }
 
     pub fn push_var(self: &mut Frame, name: String, typ: Type) {
-        let value = match typ.typ[0] {
-            Types::VOID => Value { typ: typ, val: Values::VOID },
-            Types::I8 => Value { typ: typ, val: Values::SIGNED(0) },
-            Types::I16 => Value { typ: typ, val: Values::SIGNED(0) },
-            Types::I32 => Value { typ: typ, val: Values::SIGNED(0) },
-            Types::I64 => Value { typ: typ, val: Values::SIGNED(0) },
-            Types::U8 => Value { typ: typ, val: Values::UNSIGNED(0) },
-            Types::U16 => Value { typ: typ, val: Values::UNSIGNED(0) },
-            Types::U32 => Value { typ: typ, val: Values::UNSIGNED(0) },
-            Types::U64 => Value { typ: typ, val: Values::UNSIGNED(0) },
-            Types::F16 => Value { typ: typ, val: Values::DECIMAL(0f64) },
-            Types::F32 => Value { typ: typ, val: Values::DECIMAL(0f64) },
-            Types::F64 => Value { typ: typ, val: Values::DECIMAL(0f64) },
-            Types::POINTER => Value { typ: typ, val: Values::POINTER(0) },
-            Types::TYPE => Value { typ: typ, val: Values::TYPE(Type { typ: todo!() }) },
-            Types::STRUCT => Value { typ: typ, val: todo!() },
-            Types::NAME => Value { typ: typ, val: Values::NAME("".to_string()) },
-        };
-
-        let index = self.stack.len();
-        self.stack.push(value);
-        self.vars.insert(name.clone(), index);
+        if self.vars.contains_key(&name) {
+            // TODO: handle this if the type changes
+        } else {
+            let value = match typ.typ[0] {
+                Types::VOID => Value { typ: typ, val: Values::VOID },
+                Types::I8 => Value { typ: typ, val: Values::SIGNED(0) },
+                Types::I16 => Value { typ: typ, val: Values::SIGNED(0) },
+                Types::I32 => Value { typ: typ, val: Values::SIGNED(0) },
+                Types::I64 => Value { typ: typ, val: Values::SIGNED(0) },
+                Types::U8 => Value { typ: typ, val: Values::UNSIGNED(0) },
+                Types::U16 => Value { typ: typ, val: Values::UNSIGNED(0) },
+                Types::U32 => Value { typ: typ, val: Values::UNSIGNED(0) },
+                Types::U64 => Value { typ: typ, val: Values::UNSIGNED(0) },
+                Types::F16 => Value { typ: typ, val: Values::DECIMAL(0f64) },
+                Types::F32 => Value { typ: typ, val: Values::DECIMAL(0f64) },
+                Types::F64 => Value { typ: typ, val: Values::DECIMAL(0f64) },
+                Types::POINTER => Value { typ: typ, val: Values::POINTER(0) },
+                Types::TYPE => Value { typ: typ, val: Values::TYPE(Type { typ: todo!() }) },
+                Types::STRUCT => Value { typ: typ, val: todo!() },
+                Types::NAME => Value { typ: typ, val: Values::NAME("".to_string()) },
+            };
+    
+            let index = self.stack.len();
+            self.stack.push(value);
+            self.vars.insert(name.clone(), index);
+        }
     }
 }
