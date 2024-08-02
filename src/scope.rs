@@ -13,6 +13,22 @@ pub struct Scope {
 }
 
 // instruction macros
+macro_rules! peek {
+    ($val:expr, $out:expr, $stack:expr, $cur_frame:expr) => {
+        let index;
+        match $val.val {
+            Values::SIGNED(n) => index = n as usize,
+            Values::UNSIGNED(n) => index = n as usize,
+            Values::DECIMAL(n) => index = n as usize,
+            Values::POINTER(n) => index = n as usize,
+            _ => panic!("cannot peek using a non-numeral value index"),
+        }
+
+        let val = $stack[$cur_frame].stack[index].val.clone();
+        set_var($out, &val, $stack, $cur_frame);
+    }
+}
+
 macro_rules! call {
     ($func:expr, $scope:expr, $global_scope:expr, $stack:expr) => {
         let func = get_func($func, $scope, $global_scope);
@@ -264,20 +280,12 @@ pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, c
             }
 
             Opcode::PEEK_IMM(val, out) => { // PEEK [imm] [var]
-                let index;
-                match val.val {
-                    Values::SIGNED(n) => index = n as usize,
-                    Values::UNSIGNED(n) => index = n as usize,
-                    Values::DECIMAL(n) => index = n as usize,
-                    Values::POINTER(n) => index = n as usize,
-                    _ => panic!("cannot peek using a non-numeral value index"),
-                }
-
-                let val = stack[cur_frame].stack[index].val.clone();
-                set_var(out, &val, stack, cur_frame);
+                peek!(val, out, stack, cur_frame);
             }
-            Opcode::PEEK_VAR(name, out) => { // PEEK [var] [var]
-                
+            Opcode::PEEK_VAR(val_var, out) => { // PEEK [var] [var]
+                let val = get_var(val_var, stack, cur_frame);
+
+                peek!(val, out, stack, cur_frame);
             }
 
             Opcode::CALL_FUNC(func) => { // CALL [func]
