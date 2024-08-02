@@ -13,6 +13,7 @@ impl Frame {
         self.stack.push(val);
     }
     
+    // TODO: have this remove any variables that say they live at this location
     pub fn pop(&mut self) -> Value {
         return self.stack.pop().expect("attempted to pop empty stack");
     }

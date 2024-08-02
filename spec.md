@@ -88,10 +88,11 @@ Create a variable with the given type and name
 [x] 0x6A-6C     RET     {imm/var}
 Return from a function (functions with void type do not need to include arguments)
 
-[ ] 0x6D-6E     DEREF   [imm/ptr]   [var]
+[x] 0x6D-6E     DEREF   [imm/ptr]   [var]
 Dereference a pointer and store in a variable
+(note: deref clones the value that you are dereferencing)
 
-[ ] 0x6F        REF     [var]       [ptr var]
+[x] 0x6F        REF     [var]       [ptr var]
 Create a reference to a variable and store in another variable
 
 [ ] 0x70-71     INST    [name/var]  [var]

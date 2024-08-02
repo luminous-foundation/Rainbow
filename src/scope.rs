@@ -208,6 +208,19 @@ macro_rules! get_name {
     }
 }
 
+macro_rules! deref {
+    ($ptr:expr, $out:expr, $stack:expr, $cur_frame:expr) => {
+        let index;
+        match $ptr.val {
+            Values::POINTER(p) => index = p,
+            _ => panic!("attempted to deref non-pointer value")
+        }
+        
+        let val = $stack[0].stack[index].val.clone();
+        set_var($out, &val, $stack, $cur_frame);
+    }
+}
+
 // TODO: make scopes in scopes preserve instruction order
 // example:
 // ...
@@ -246,6 +259,10 @@ pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, c
                 stack[cur_frame].push(val);
             }
 
+            Opcode::POP(name) => { // POP [var]
+                set_var(name, &stack[cur_frame].pop().val, stack, cur_frame);
+            }
+
             Opcode::LDARG_IMM(val) => { // LDARG [imm]
                 // yes, it is the exact same as PUSH
                 // why is it a seperate instruction you may ask?
@@ -272,10 +289,6 @@ pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, c
                 }
 
                 call!(func, scope, global_scope, stack);
-            }
-
-            Opcode::POP(name) => { // POP [var]
-                set_var(name, &stack[cur_frame].pop().val, stack, cur_frame);
             }
 
             Opcode::ADD_I_I(a, b, out) => { // ADD [imm] [imm] [var]
@@ -716,6 +729,46 @@ pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, c
 
                 stack[cur_frame - 1].push(v);
                 break;
+            }
+
+            // TODO: make REF_IMM and turn this into REF_VAR
+            Opcode::REF(var, out_var) => {
+                let index = stack[0].stack.len();
+
+                // we only need to move the variable to the heap if it isnt already on the heap
+                // TODO: figure out a way to change the name of the created variable on the heap
+                //       to remove the possibility of name collisions
+                //       
+                //       if you have a variable with a certain name and you REF it, if there
+                //       is a global variable with the same name it wil overwrite it
+                if !stack[0].vars.contains_key(var) {
+                    if stack[cur_frame].vars.contains_key(var) {
+                        let orig_var = stack[cur_frame].get_var(var).clone();
+
+                        stack[0].push_var(var.clone(), orig_var.typ);
+                        stack[0].set_var(var, &orig_var.val);
+                    } else {
+                        panic!("attempted to create a reference to a variable that doesnt exist");
+                    }
+                }
+                
+                // ugly line
+                let out_var_type = get_var(out_var, stack, cur_frame).typ.typ[0].clone();
+                match out_var_type {
+                    Types::POINTER => {
+                        set_var(out_var, &Values::POINTER(index), stack, cur_frame);
+                    }
+                    _ => panic!("attempted set a variable with type {:?} to a reference", out_var_type)
+                }
+            }
+
+            Opcode::DEREF_IMM(ptr, out) => {
+                deref!(ptr, out, stack, cur_frame);
+            }
+            Opcode::DEREF_VAR(ptr_var, out) => {
+                let ptr = get_var(ptr_var, stack, cur_frame);
+
+                deref!(ptr, out, stack, cur_frame);
             }
 
             Opcode::MOD_I_I(a, b, out) => { // MOD [imm] [imm] [var]
@@ -1233,6 +1286,20 @@ pub fn parse_instruction(bytes: &Vec<u8>, index: &mut usize) -> Result<Instructi
         }
         0x6C => {
             Opcode::RET_VAR(parse_bytecode_string(bytes, index)?)
+        }
+
+        0x6D => {
+            Opcode::DEREF_IMM(parse_immediate(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x6E => {
+            Opcode::DEREF_VAR(parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
+        }
+
+        0x6F => {
+            Opcode::REF(parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
         }
 
         0x72 => {
