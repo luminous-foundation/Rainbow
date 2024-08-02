@@ -47,8 +47,7 @@ Yes, and it is encouraged.
 
 The more things that can run on Rainbow the more things can talk to each other through Rainbow.
 
-## What is the future plans for Rainbow?
-Currently the below list of features is planned for Rainbow.
+## Roadmap
 
 - [ ] Type Checking
 
