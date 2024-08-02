@@ -24,9 +24,8 @@ Pushes value A onto the stack
 Pops a value off of the stack and stores it in variable A
 With a stack underflow, the program will crash
 
-[x] 0x04-05     LDARG   [imm/var]
-Loads argument A to be used in a function
-(This is currently functionally identical to PUSH)
+[ ] 0x04-0x05   PEEK    [imm/var]   [var]
+Copies value from the stack at index A and stores it in variable B
 
 [x] 0x06-07     CALL    [func/var]
 Calls function A
@@ -256,7 +255,7 @@ FD
 ```
 In pseudocode this would be
 ```c++
-byte main(char** args) {
+i8 main(char** args) {
 
 }
 ```

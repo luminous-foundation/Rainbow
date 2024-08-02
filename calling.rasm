@@ -1,8 +1,8 @@
 VAR u32 add_result
 
 void main() {
-    LDARG 5
-    LDARG 10
+    PUSH 5
+    PUSH 10
     CALL add
     POP add_result
 }

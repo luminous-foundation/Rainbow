@@ -255,7 +255,7 @@ pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, c
             Opcode::PUSH_VAR(name) => { // PUSH [var]
                 let var = get_var(name, stack, cur_frame);
 
-                let val = var.clone(); // borrow checker :(
+                let val = var.clone();
                 stack[cur_frame].push(val);
             }
 
@@ -263,17 +263,21 @@ pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, c
                 set_var(name, &stack[cur_frame].pop().val, stack, cur_frame);
             }
 
-            Opcode::LDARG_IMM(val) => { // LDARG [imm]
-                // yes, it is the exact same as PUSH
-                // why is it a seperate instruction you may ask?
-                // i don't know
-                stack[cur_frame].push(val.clone());
-            }
-            Opcode::LDARG_VAR(name) => { // LDARG [var]
-                let var = get_var(name, stack, cur_frame);
+            Opcode::PEEK_IMM(val, out) => { // PEEK [imm] [var]
+                let index;
+                match val.val {
+                    Values::SIGNED(n) => index = n as usize,
+                    Values::UNSIGNED(n) => index = n as usize,
+                    Values::DECIMAL(n) => index = n as usize,
+                    Values::POINTER(n) => index = n as usize,
+                    _ => panic!("cannot peek using a non-numeral value index"),
+                }
 
-                let val = var.clone();
-                stack[cur_frame].push(val);
+                let val = stack[cur_frame].stack[index].val.clone();
+                set_var(out, &val, stack, cur_frame);
+            }
+            Opcode::PEEK_VAR(name, out) => { // PEEK [var] [var]
+                
             }
 
             Opcode::CALL_FUNC(func) => { // CALL [func]
@@ -886,10 +890,12 @@ pub fn parse_instruction(bytes: &Vec<u8>, index: &mut usize) -> Result<Instructi
         }
 
         0x04 => {
-            Opcode::LDARG_IMM(parse_immediate(bytes, index)?)
+            Opcode::PEEK_IMM(parse_immediate(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
         }
         0x05 => {
-            Opcode::LDARG_VAR(parse_bytecode_string(bytes, index)?)
+            Opcode::PEEK_VAR(parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
         }
 
         0x06 => {
@@ -1447,10 +1453,10 @@ pub fn parse_immediate(bytes: &[u8], index: &mut usize) -> Result<Value, String>
             *index += 8;
 
         }
-        0x0C => return Err("`POINTER` is unsupported as an immediate value".to_string()),
+        0x0C => return Err("`POINTER` is unsupported as an immediate value".to_string()), // TODO: why?
         0x0D => return Err("`TYPE` is unsupported as an immediate value".to_string()),
         0x0E => return Err("`STRUCT` is unsupported as an immediate value".to_string()),
-        0x0F => return Err("`NAME` is unsupported as an immediate value".to_string()),
+        0x0F => return Err("`NAME` is unsupported as an immediate value".to_string()), // TODO: why?
         _ => return Err(format!("unknown type {:#04x}", typ))
     }
     
