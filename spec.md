@@ -11,6 +11,8 @@
 
 ## INSTRUCTIONS
 
+Each instruction consists of an opcode followed by its arguments.
+
 ```
 [x] 0x00        NOP
 Does nothing
@@ -116,7 +118,7 @@ Frees pointer A with size B
 ```
 
 0xXX-0xYY - instruction opcode range
-Counted up by argument type. (TODO: qualify this better)
+Counted up by argument type, futher explained below.
 
 [...]     - argument
 These arguments are required.
@@ -137,6 +139,24 @@ This is also a variable name represented as a bytecode string, but the specified
 The argument you pass in is either a statically named var that contains the value you are trying to move,
 or a variable that contains the name of the variable you want to move.
 
+
+## OPCODE RANGES AND ARGUMENT COMBINATIONS
+
+For a given range of opcodes, the instructions differ by changing the argument types in a set order. The argument types change systematically from left to right.
+
+### Example:
+Opcode range `0x22-29` (the JE instruction) corresponds to the following instructions:
+
+- `0x22` [imm] [imm] [imm]
+- `0x23` [var] [imm] [imm]
+- `0x24` [imm] [var] [imm]
+- `0x25` [var] [var] [imm]
+- `0x26` [imm] [imm] [var]
+- `0x27` [var] [imm] [var]
+- `0x28` [imm] [var] [var]
+- `0x29` [var] [var] [var]
+
+In this example, `imm` and `var` are just two of the possible argument types, with other combinations being possible. The types increment based on a fixed order, with each new opcode reflecting a new combination.
 
 ## TYPES
 
@@ -175,12 +195,16 @@ An example of an instruction that uses immediate values is the creation of a var
 Bytecode strings are how function names/variable names/etc. are represented in the bytecode.
 Their format is as follows
 ```
-(1 byte length) (characters)
+(length - 1 byte) (characters)
 ```
 An example string would look like this:
 ```
 0D 48 65 6C 6C 6F 2C 20 57 6F 72 6C 64 21
 ```
+
+The first byte `0D` represents the length of the string, in this case 13.
+The rest of the bytes are the text in byte form.
+
 This as text is
 ```
 Hello, World!
@@ -193,8 +217,8 @@ This section is placed at the end of the file.
 The format is as follows
 ```
 FC
-(name) (data type) (length bytes) (data length) (data)
-(name) (data type) (length bytes) (data length) (data)
+(name) (data type) (bytes needed for length) (length) (data)
+(name) (data type) (bytes needed for length) (length) (data)
 ...
 ```
 The amount of bytes in the data length is specified by the bytes beforehand.
@@ -204,14 +228,16 @@ Data constants are used for defining data inside of pointers/arrays in the bytec
 Data constants are treated as variables in the global scope.
 The format is as follows
 ```
-(name) (data type) (length bytes) (data length) (data)
+(name) (data type) (bytes needed for length) (length) (data)
 ```
 
 ## SCOPES
-Scopes can be defined anywhere in the bytecode. Scopes are defined using the reserved bytes FE (scope start) and FD (scope end) as listed above.
-TODO: add more info on scopes
+Scopes can be defined anywhere in the bytecode, except for inside structs. Scopes are defined using the reserved bytes FE (scope start) and FD (scope end) as listed above.
+Scopes can be defined recursively, with scopes inside scopes being possible.
 
 ## FUNCTIONS
+Functions can be defined anywhere in the bytecode, except for inside structs. You can have functions in functions if you want.
+
 The format for functions is as follows
 ```
 FF (return type) (function name) (args) FE
@@ -245,6 +271,9 @@ FB (name) FE
 ...
 FD
 ```
+
+The variables are defined as `(type) (name)`, where type is a type from the list of types, and the name is a bytecode string.
+
 An example struct would look like this
 ```
 FB 03 46 6F 6F FE ; struct Foo {
