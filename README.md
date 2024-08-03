@@ -63,3 +63,6 @@ The more things that can run on Rainbow the more things can talk to each other t
 Currently the only way to contribute to Rainbow is through making issues and pull requests.
 
 There is no contribution guidelines *yet*, but hopefully soon there will be.
+
+## Licensing
+This project is multi-licensed under both GPLv3, as well as a Non-AI usage license. Both licenses apply simultaneously.
