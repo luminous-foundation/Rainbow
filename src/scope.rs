@@ -204,12 +204,12 @@ macro_rules! mov {
 }
 
 macro_rules! get_type {
-    ($typ:expr, $type_var:expr, $stack:expr, $cur_frame:expr) => {
+    ($typ:expr, $type_var:expr, $stack:expr, $cur_frame:expr, $action:expr) => {
         let type_var = get_var($type_var, $stack, $cur_frame);
 
         match &type_var.val {
             Values::TYPE(t) => $typ = t.clone(),
-            _ => panic!("tried to create variable with dynamic type stored in variable, but given variable had type {:?}", type_var.typ)
+            _ => panic!("tried to {} with dynamic type stored in variable, but given variable had type {:?}", $action, type_var.typ)
         }
     }
 }
@@ -248,6 +248,76 @@ macro_rules! deref {
         
         let val = $stack[0].stack[index].val.clone();
         set_var($out, &val, $stack, $cur_frame);
+    }
+}
+
+macro_rules! get_usize {
+    ($index:expr, $amnt:expr, $action:expr, $type:expr) => {
+        $index = match($amnt.val) {
+            Values::SIGNED(n) => n as usize,
+            Values::UNSIGNED(n) => n as usize,
+            Values::DECIMAL(n) => n as usize,
+            Values::POINTER(n) => n,
+            _ => panic!("cannot {} with non-number value as {}", $action, $type),
+        };
+    }
+}
+
+macro_rules! pmov {
+    ($val:expr, $ptr:expr, $offset:expr, $stack:expr, $cur_frame:expr) => {
+        let ptr = get_var($ptr, $stack, $cur_frame);
+        let ptr = match(ptr.val) {
+            Values::POINTER(n) => n,
+            _ => panic!("cannot PMOV into a non-pointer variable")
+        };
+
+        let offset_index;
+        get_usize!(offset_index, $offset, "PMOV", "offset");
+
+        println!("{ptr} + {offset_index} = {index}", index = ptr + offset_index);
+
+        $stack[0].stack[ptr + offset_index].set(&$val.val);
+    }
+}
+
+macro_rules! alloc {
+    ($typ:expr, $amnt:expr, $out:expr, $stack:expr, $cur_frame:expr) => {
+        let amnt = match($amnt.val) {
+            Values::SIGNED(n) => n as u64,
+            Values::UNSIGNED(n) => n,
+            Values::DECIMAL(n) => n as u64,
+            _ => panic!("cannot allocate with non-number value as count"),
+        };
+
+        let index = $stack[0].stack.len();
+
+        $stack[$cur_frame].set_var($out, &Values::POINTER(index));
+
+        for _ in 0..amnt {
+            $stack[0].push_alloc($typ, $out.clone());
+        }
+    }
+}
+
+macro_rules! free_ {
+    ($ptr:expr, $amnt:expr, $stack:expr) => {
+        let mut index;
+        get_usize!(index, $ptr, "free", "pointer");
+
+        let size;
+        get_usize!(size, $amnt, "free", "size");
+
+        let start = index;
+
+        println!("{start}");
+
+        // TODO: this loop will get extremely slow with large allocs
+        //       replace this with full heap reconstruction, or somehow allow the heap to get fragmented
+        for _ in 0..size {
+            $stack[0].allocs.remove(start);
+            $stack[0].stack.remove(start);
+            index += 1;
+        }
     }
 }
 
@@ -718,28 +788,28 @@ pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, c
             }
 
             Opcode::VAR_TYPE_NAME(typ, name) => { // VAR [type] [name]
-                stack[cur_frame].push_var(name.clone(), typ.clone());
+                stack[cur_frame].create_var(name.clone(), typ.clone());
             }
             Opcode::VAR_VAR_NAME(type_var, name) => { // VAR [var] [name]
                 let typ;
-                get_type!(typ, type_var, stack, cur_frame);
+                get_type!(typ, type_var, stack, cur_frame, "create variable");
                 
-                stack[cur_frame].push_var(name.clone(), typ);
+                stack[cur_frame].create_var(name.clone(), typ);
             }
             Opcode::VAR_TYPE_VAR(typ, name_var) => { // VAR [type] [var]
                 let name;
                 get_name!(name, name_var, stack, cur_frame, "create");
 
-                stack[cur_frame].push_var(name, typ.clone())
+                stack[cur_frame].create_var(name, typ.clone())
             }
             Opcode::VAR_VAR_VAR(type_var, name_var) => { // VAR [var] [var]
                 let typ;
-                get_type!(typ, type_var, stack, cur_frame);
+                get_type!(typ, type_var, stack, cur_frame, "create variable");
 
                 let name;
                 get_name!(name, name_var, stack, cur_frame, "create");
 
-                stack[cur_frame].push_var(name, typ);
+                stack[cur_frame].create_var(name, typ);
             }
 
             // TODO: return type checking
@@ -777,8 +847,7 @@ pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, c
                     if stack[cur_frame].vars.contains_key(var) {
                         let orig_var = stack[cur_frame].get_var(var).clone();
 
-                        stack[0].push_var(var.clone(), orig_var.typ);
-                        stack[0].set_var(var, &orig_var.val);
+                        stack[0].push_var(var, orig_var.typ, orig_var.val);
                     } else {
                         panic!("attempted to create a reference to a variable that doesnt exist");
                     }
@@ -816,6 +885,83 @@ pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, c
                 modulo!(a, b, out, stack, cur_frame);
             }
 
+            Opcode::PMOV_IMM_IMM(val, ptr, offset) => {
+                pmov!(val, ptr, offset, stack, cur_frame);
+            }
+            Opcode::PMOV_VAR_IMM(val_var, ptr, offset) => {
+                let val = get_var(val_var, stack, cur_frame).clone();
+
+                pmov!(val, ptr, offset, stack, cur_frame);
+            }
+            Opcode::PMOV_IMM_VAR(val, ptr, offset_var) => {
+                let offset = get_var(offset_var, stack, cur_frame).clone();
+
+                pmov!(val, ptr, offset, stack, cur_frame);
+            }
+            Opcode::PMOV_VAR_VAR(val_var, ptr, offset_var) => {
+                let offset = get_var(offset_var, stack, cur_frame).clone();
+                let val = get_var(val_var, stack, cur_frame).clone();
+                
+                pmov!(val, ptr, offset, stack, cur_frame);
+            }
+
+            Opcode::ALLOC_TYPE_IMM(typ, amnt, out) => {
+                alloc!(typ, amnt, out, stack, cur_frame);
+            }
+            Opcode::ALLOC_VAR_IMM(type_var, amnt, out) => {
+                let typ;
+                get_type!(typ, type_var, stack, cur_frame, "allocate");
+
+                alloc!(&typ, amnt, out, stack, cur_frame);
+            }
+            Opcode::ALLOC_TYPE_VAR(typ, amnt_var, out) => {
+                let amnt = get_var(amnt_var, stack, cur_frame);
+
+                alloc!(typ, amnt, out, stack, cur_frame);
+            }
+            Opcode::ALLOC_VAR_VAR(type_var, amnt_var, out) => {
+                let typ;
+                get_type!(typ, type_var, stack, cur_frame, "allocate");
+
+                let amnt = get_var(amnt_var, stack, cur_frame);
+
+                alloc!(&typ, amnt, out, stack, cur_frame);
+            }
+
+            Opcode::FREE_VAR(ptr) => {
+                let mut index = *stack[0].vars.get(ptr).unwrap_or_else(|| panic!("attempted to free non-existant pointer {}", ptr));
+                let start = index;
+
+                stack[0].vars.remove(ptr);
+
+                // TODO: this loop will get extremely slow with large allocs
+                //       replace this with full heap reconstruction, or somehow allow the heap to get fragmented
+                while &stack[0].allocs[index] == ptr {
+                    stack[0].allocs.remove(start);
+                    stack[0].stack.remove(start);
+                    index += 1;
+                }
+            }
+            Opcode::FREE_IMM_IMM(ptr, amnt) => {
+                free_!(ptr, amnt, stack);
+            }
+            Opcode::FREE_VAR_IMM(ptr_var, amnt) => {
+                let ptr = get_var(ptr_var, stack, cur_frame).clone();
+
+                free_!(ptr, amnt, stack);
+            }
+            Opcode::FREE_IMM_VAR(ptr, amnt_var) => {
+                let amnt = get_var(amnt_var, stack, cur_frame).clone();
+
+                free_!(ptr, amnt, stack);
+            }
+            Opcode::FREE_VAR_VAR(ptr_var, amnt_var) => {
+                let ptr = get_var(ptr_var, stack, cur_frame).clone();
+                let amnt = get_var(amnt_var, stack, cur_frame).clone();
+
+                free_!(ptr, amnt, stack);
+            }
+
             _ => panic!("unknown instruction {:#04x} at {:#06x}", instr.opcode.to_u8(), instr.index)
         }
         
@@ -849,8 +995,7 @@ pub fn exec_func(func: &Function, global_scope: &Scope, stack: &mut Vec<Frame>) 
     for i in 0..func.arg_names.len() {
         // TODO: argument type checking
         let val = stack[len - 2].pop();
-        stack[len - 1].push_var(func.arg_names[i].clone(), func.arg_types[i].clone());
-        stack[len - 1].set_var(&func.arg_names[i], &val.val);
+        stack[len - 1].push_var(&func.arg_names[i], func.arg_types[i].clone(), val.val);
     }
 
     exec_scope(&func.scope, global_scope, stack, len - 1);
@@ -1356,6 +1501,68 @@ pub fn parse_instruction(bytes: &Vec<u8>, index: &mut usize) -> Result<Instructi
             parse_bytecode_string(bytes, index)?)
         }
 
+        0x77 => {
+            Opcode::PMOV_IMM_IMM(parse_immediate(bytes, index)?,
+            parse_bytecode_string(bytes, index)?,
+            parse_immediate(bytes, index)?)
+        }
+        0x78 => {
+            Opcode::PMOV_VAR_IMM(parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?,
+            parse_immediate(bytes, index)?)
+        }
+        0x79 => {
+            Opcode::PMOV_IMM_VAR(parse_immediate(bytes, index)?,
+            parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x7A => {
+            Opcode::PMOV_VAR_VAR(parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
+        }
+
+        0x7B => {
+            Opcode::ALLOC_TYPE_IMM(parse_type(bytes, index)?,
+            parse_immediate(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x7C => {
+            Opcode::ALLOC_VAR_IMM(parse_bytecode_string(bytes, index)?,
+            parse_immediate(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x7D => {
+            Opcode::ALLOC_TYPE_VAR(parse_type(bytes, index)?,
+            parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x7E => {
+            Opcode::ALLOC_VAR_VAR(parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
+        }
+
+        0x7F => {
+            Opcode::FREE_VAR(parse_bytecode_string(bytes, index)?)
+        }
+        0x80 => {
+            Opcode::FREE_IMM_IMM(parse_immediate(bytes, index)?, 
+            parse_immediate(bytes, index)?)
+        }
+        0x81 => {
+            Opcode::FREE_VAR_IMM(parse_bytecode_string(bytes, index)?, 
+            parse_immediate(bytes, index)?)
+        }
+        0x82 => {
+            Opcode::FREE_IMM_VAR(parse_immediate(bytes, index)?, 
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x83 => {
+            Opcode::FREE_VAR_VAR(parse_bytecode_string(bytes, index)?, 
+            parse_bytecode_string(bytes, index)?)
+        }
+
         _ => return Err(format!("unknown instruction {:#04x} at {:#06x}", opcode_byte, index))
     };
 
@@ -1404,6 +1611,10 @@ pub fn parse_bytecode_string(bytes: &[u8], index: &mut usize) -> Result<String, 
     let len = bytes[*index] as usize;
 
     *index += 1;
+
+    if *index + len > bytes.len() {
+        return Err(format!("bytecode string length at {:#06x} went out of bounds (length: {len})\neither the parser is incorrectly reading a string,\nor the length is set too high", *index-1));
+    }
 
     match String::from_utf8(bytes[*index..*index+len].to_vec()) {
         Ok(s) => {

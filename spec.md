@@ -116,15 +116,16 @@ Instantiate a struct named A and store in varaible B
 [x] 0x73-76     MOD     [imm/var]   [imm/var]   [var]
 Perform modulus on A and B and store in variable C
 
-[ ] 0x77-7A     PMOV    [imm/var]   [ptr var]   [imm/var]
+[x] 0x77-7A     PMOV    [imm/var]   [ptr var]   [imm/var]
 Moves the value A into where value B references, with the offset C
 
-[ ] 0x7B-7E     ALLOC   [type/var]  [imm/var]   [ptr var]
+[x] 0x7B-7E     ALLOC   [type/var]  [imm/var]   [ptr var]
 Allocates a pointer with type A, size B, and puts the address in variable C
 
-[ ] 0x7F-83     FREE    [imm/ptr]   {imm/var}
+[x] 0x7F-83     FREE    [imm/ptr]   {imm/var}
 Frees pointer A with size B
-(Size only needs to be provided when given immediate address, but still can be provided given pointer variable)
+Size only needs to be provided when given an immediate address, but still can be provided given a pointer variable
+If size is not provided with the given pointer variable the pointer will be deleted, if a size is provided the pointer will remain.
 ```
 
 0xXX-0xYY - instruction opcode range
@@ -167,6 +168,17 @@ Opcode range `0x22-29` (the JE instruction) corresponds to the following instruc
 - `0x29` [var] [var] [var]
 
 In this example, `imm` and `var` are just two of the possible argument types, with other combinations being possible. The types increment based on a fixed order, with each new opcode reflecting a new combination.
+
+For opcodes with optional arguments, the counting is very similar, however instructions with the optional argument are put first.
+
+### Example:
+Opcode range `0x7F-83` (the FREE instruction) corresponds to the following instructions:
+
+- `0x7F` [var]
+- `0x80` [imm] [imm]
+- `0x81` [var] [imm]
+- `0x82` [imm] [var]
+- `0x83` [var] [var]
 
 ## TYPES
 

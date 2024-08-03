@@ -1,0 +1,17 @@
+VAR u8* test1
+
+ALLOC u8 3 test1
+PMOV 1 test1 0
+PMOV 2 test1 1
+PMOV 3 test1 2
+
+VAR u8* test2
+
+ALLOC u8 5 test2
+PMOV 1 test2 0
+PMOV 2 test2 1
+PMOV 3 test2 2
+PMOV 4 test2 3
+PMOV 5 test2 4
+
+FREE test2 3
