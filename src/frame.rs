@@ -6,6 +6,14 @@ use crate::{_type::{Type, Types}, value::{Value, Values}};
 pub struct Frame {
     pub vars: HashMap<String, usize>,
     pub stack: Vec<Value>,
+
+    // TODO: the current allocs system will not work if multiple pointers point to one place,
+    //       as the new pointer will try to say it owns the space
+    //       i could just not track where pointers are pointing to, 
+    //       although that does risk null pointers and use-after-free problems
+    //       (however null pointers are still possible with this current system,
+    //        if someone uses FREE with the right size
+    //        the pointer will point to nothing but still exist)
     pub allocs: Vec<String>,
 }
 
