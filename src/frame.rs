@@ -6,15 +6,27 @@ use crate::{_type::{Type, Types}, value::{Value, Values}};
 pub struct Frame {
     pub vars: HashMap<String, usize>,
     pub stack: Vec<Value>,
+    pub allocs: Vec<String>,
 }
 
 impl Frame {
     pub fn push(self: &mut Frame, val: Value) {
         self.stack.push(val);
+        self.allocs.push(String::new());
     }
     
     // TODO: have this remove any variables that say they live at this location
     pub fn pop(&mut self) -> Value {
+        let alloc = self.allocs.pop().expect("attempted to pop empty stack");
+        if alloc.len() > 0 {
+            if self.vars.contains_key(&alloc) {
+                self.vars.remove(&alloc);
+            } else {
+                println!("https://github.com/luminous-foundation/Rainbow");
+                panic!("something has gone terribly wrong here, create an issue if you see this");
+            }
+        }
+
         return self.stack.pop().expect("attempted to pop empty stack");
     }
 
@@ -57,6 +69,7 @@ impl Frame {
             let index = self.stack.len();
             self.stack.push(value);
             self.vars.insert(name.clone(), index);
+            self.allocs.push(name.clone());
         }
     }
 }

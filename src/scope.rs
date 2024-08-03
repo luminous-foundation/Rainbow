@@ -812,10 +812,12 @@ pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, c
         pc += 1;
     }
 
-    // TODO: i want to clear everything created by the scope
-    //       but this on its own leaves dangling variables which will be null refs!
-    //       also this probably shouldn't clear if it's working with the global space...
-    // stack[cur_frame].stack = stack[cur_frame].stack[0..scope_stack_start].to_vec();
+    // clear everything from the stack created by the scope if we are not the global scope
+    if cur_frame != 0 {
+        while stack[cur_frame].stack.len() > scope_stack_start {
+            stack[cur_frame].pop();
+        }
+    }
     
     println!("scope took {:.2}ms", start.elapsed().as_secs_f32() * 1000f32);
 
@@ -827,7 +829,7 @@ pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, c
 }
 
 pub fn exec_func(func: &Function, global_scope: &Scope, stack: &mut Vec<Frame>) {
-    stack.push(Frame { vars: HashMap::new(), stack: Vec::new() });
+    stack.push(Frame { vars: HashMap::new(), stack: Vec::new(), allocs: Vec::new() });
 
     let len = stack.len();
 

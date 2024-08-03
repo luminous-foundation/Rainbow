@@ -30,7 +30,7 @@ fn main() {
 
     let mut stack: Vec<Frame> = Vec::new();
 
-    stack.push(Frame { vars: HashMap::new(), stack: Vec::new() });
+    stack.push(Frame { vars: HashMap::new(), stack: Vec::new(), allocs: Vec::new() });
 
     let exec_start = std::time::Instant::now();
     exec_scope(&global_scope, &global_scope, &mut stack, 0);
