@@ -757,7 +757,6 @@ pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, c
                 break;
             }
 
-            // TODO: make REF_IMM and turn this into REF_VAR
             Opcode::REF_IMM(val, out_var) => {
                 let index = stack[0].stack.len();
 
