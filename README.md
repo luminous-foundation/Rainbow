@@ -66,3 +66,6 @@ There is no contribution guidelines *yet*, but hopefully soon there will be.
 
 ## Licensing
 This project is multi-licensed under both GPLv3, as well as a Non-AI usage license. Both licenses apply simultaneously.
+
+To use the source code in a closed-source project, or for other licensing related questions please contact us at
+**luminousfoundation@protonmail.com**
