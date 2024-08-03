@@ -186,7 +186,7 @@ Their format is as follows
 ```
 An example of an instruction that uses immediate values is the creation of a variable with type i32 and value 5 is below.
 ```
-62 03 01 61
+66 03 01 61
 4A 03 00 00 00 05 01 61
 ```
 
