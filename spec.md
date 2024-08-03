@@ -7,6 +7,17 @@
 0xFD - scope end
 0xFC - data section start
 0xFB - struct start
+0xFA - file import (not yet implemented)
+0xF9 - extern function (not yet implemented)
+0xF8 - unused
+0xF7 - unused
+0xF6 - unused
+0xF5 - unused
+0xF4 - unused
+0xF3 - unused
+0xF2 - unused
+0xF1 - unused
+0xF0 - unused
 ```
 
 ## INSTRUCTIONS
@@ -95,23 +106,23 @@ Return value A from a function
 Dereference pointer A and store in variable B
 (note: deref clones the value that you are dereferencing)
 
-[x] 0x6F        REF     [var]       [ptr var]
+[x] 0x6F-70     REF     [imm/var]   [ptr var]
 Create a reference to variable A and store in variable B
 
-[ ] 0x70-71     INST    [name/var]  [var]
+[ ] 0x71-72     INST    [name/var]  [var]
 Instantiate a struct named A and store in varaible B
 (Struct will be filled with 0s or empty values)
 
-[x] 0x72-75     MOD     [imm/var]   [imm/var]   [var]
+[x] 0x73-76     MOD     [imm/var]   [imm/var]   [var]
 Perform modulus on A and B and store in variable C
 
-[ ] 0x76-79     PMOV    [imm/var]   [ptr var]   [imm/var]
+[ ] 0x77-7A     PMOV    [imm/var]   [ptr var]   [imm/var]
 Moves the value A into where value B references, with the offset C
 
-[ ] 0x7A-7D     ALLOC   [type/var]  [imm/var]   [ptr var]
+[ ] 0x7B-7E     ALLOC   [type/var]  [imm/var]   [ptr var]
 Allocates a pointer with type A, size B, and puts the address in variable C
 
-[ ] 0x7E-82     FREE    [imm/ptr]   {imm/var}
+[ ] 0x7F-83     FREE    [imm/ptr]   {imm/var}
 Frees pointer A with size B
 (Size only needs to be provided when given immediate address, but still can be provided given pointer variable)
 ```

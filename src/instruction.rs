@@ -115,13 +115,14 @@ pub enum Opcode { // very large enum
     RET_VAR(String)                   = 0x6C,
     DEREF_IMM(Value, String)          = 0x6D,
     DEREF_VAR(String, String)         = 0x6E,
-    REF(String, String)               = 0x6F,
-    INST_NAME(String)                 = 0x70,
-    INST_VAR(String)                  = 0x71,
-    MOD_I_I(Value, Value, String)     = 0x72,
-    MOD_V_I(String, Value, String)    = 0x73,
-    MOD_I_V(Value, String, String)    = 0x74,
-    MOD_V_V(String, String, String)   = 0x75,
+    REF_IMM(Value, String)            = 0x6F,
+    REF_VAR(String, String)           = 0x70,
+    INST_NAME(String)                 = 0x71,
+    INST_VAR(String)                  = 0x72,
+    MOD_I_I(Value, Value, String)     = 0x73,
+    MOD_V_I(String, Value, String)    = 0x74,
+    MOD_I_V(Value, String, String)    = 0x75,
+    MOD_V_V(String, String, String)   = 0x76,
 }
 
 impl Opcode {
@@ -238,13 +239,14 @@ impl Opcode {
             Opcode::RET_VAR(_)          => 0x6C,
             Opcode::DEREF_IMM(_, _)     => 0x6D,
             Opcode::DEREF_VAR(_, _)     => 0x6E,
-            Opcode::REF(_, _)           => 0x6F,
-            Opcode::INST_NAME(_)        => 0x70,
-            Opcode::INST_VAR(_)         => 0x71,
-            Opcode::MOD_I_I(_, _, _)    => 0x72,
-            Opcode::MOD_V_I(_, _, _)    => 0x73,
-            Opcode::MOD_I_V(_, _, _)    => 0x74,
-            Opcode::MOD_V_V(_, _, _)    => 0x75,
+            Opcode::REF_IMM(_, _)       => 0x6F,
+            Opcode::REF_VAR(_, _)       => 0x70,
+            Opcode::INST_NAME(_)        => 0x71,
+            Opcode::INST_VAR(_)         => 0x72,
+            Opcode::MOD_I_I(_, _, _)    => 0x73,
+            Opcode::MOD_V_I(_, _, _)    => 0x74,
+            Opcode::MOD_I_V(_, _, _)    => 0x75,
+            Opcode::MOD_V_V(_, _, _)    => 0x76,
         }
     }
 }

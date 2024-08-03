@@ -224,6 +224,20 @@ macro_rules! get_name {
     }
 }
 
+
+macro_rules! ref_ {
+    ($index:expr, $out_var:expr, $stack:expr, $cur_frame:expr) => {
+        // ugly line
+        let out_var_type = get_var($out_var, $stack, $cur_frame).typ.typ[0].clone();
+        match out_var_type {
+            Types::POINTER => {
+                set_var($out_var, &Values::POINTER($index), $stack, $cur_frame);
+            }
+            _ => panic!("attempted set a variable with type {:?} to a reference", out_var_type)
+        }
+    }
+}
+
 macro_rules! deref {
     ($ptr:expr, $out:expr, $stack:expr, $cur_frame:expr) => {
         let index;
@@ -744,7 +758,14 @@ pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, c
             }
 
             // TODO: make REF_IMM and turn this into REF_VAR
-            Opcode::REF(var, out_var) => {
+            Opcode::REF_IMM(val, out_var) => {
+                let index = stack[0].stack.len();
+
+                stack[0].push(val.clone());
+
+                ref_!(index, out_var, stack, cur_frame);
+            }
+            Opcode::REF_VAR(var, out_var) => {
                 let index = stack[0].stack.len();
 
                 // we only need to move the variable to the heap if it isnt already on the heap
@@ -764,14 +785,7 @@ pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, c
                     }
                 }
                 
-                // ugly line
-                let out_var_type = get_var(out_var, stack, cur_frame).typ.typ[0].clone();
-                match out_var_type {
-                    Types::POINTER => {
-                        set_var(out_var, &Values::POINTER(index), stack, cur_frame);
-                    }
-                    _ => panic!("attempted set a variable with type {:?} to a reference", out_var_type)
-                }
+                ref_!(index, out_var, stack, cur_frame);
             }
 
             Opcode::DEREF_IMM(ptr, out) => {
@@ -1314,26 +1328,30 @@ pub fn parse_instruction(bytes: &Vec<u8>, index: &mut usize) -> Result<Instructi
         }
 
         0x6F => {
-            Opcode::REF(parse_bytecode_string(bytes, index)?,
+            Opcode::REF_IMM(parse_immediate(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x70 => {
+            Opcode::REF_VAR(parse_bytecode_string(bytes, index)?,
             parse_bytecode_string(bytes, index)?)
         }
 
-        0x72 => {
+        0x73 => {
             Opcode::MOD_I_I(parse_immediate(bytes, index)?,
             parse_immediate(bytes, index)?,
             parse_bytecode_string(bytes, index)?)
         }
-        0x73 => {
+        0x74 => {
             Opcode::MOD_V_I(parse_bytecode_string(bytes, index)?,
             parse_immediate(bytes, index)?,
             parse_bytecode_string(bytes, index)?)
         }
-        0x74 => {
+        0x75 => {
             Opcode::MOD_I_V(parse_immediate(bytes, index)?,
             parse_bytecode_string(bytes, index)?,
             parse_bytecode_string(bytes, index)?)
         }
-        0x75 => {
+        0x76 => {
             Opcode::MOD_V_V(parse_bytecode_string(bytes, index)?,
             parse_bytecode_string(bytes, index)?,
             parse_bytecode_string(bytes, index)?)
