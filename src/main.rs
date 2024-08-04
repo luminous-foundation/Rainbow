@@ -2,10 +2,14 @@ use std::{collections::HashMap, env, fs};
 
 use frame::Frame;
 use function::Function;
-use scope::{exec_func, exec_scope, parse_scope, Scope};
+use scope::Scope;
+use parse_scope::parse_scope;
+use exec_scope::{exec_func, exec_scope};
 use value::{Value, Values};
 
 mod scope;
+mod parse_scope;
+mod exec_scope;
 mod instruction;
 mod function;
 mod _type;
