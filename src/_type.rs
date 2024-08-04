@@ -1,3 +1,4 @@
+// TODO: enum type
 #[derive(Debug, Clone)]
 #[repr(u8)]
 pub enum Types {

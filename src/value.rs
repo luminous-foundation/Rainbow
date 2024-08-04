@@ -1,5 +1,6 @@
 use crate::_type::Type;
 
+// TODO: enum type
 #[derive(Debug, Clone)]
 pub enum Values {
     VOID,

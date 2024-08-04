@@ -2,11 +2,11 @@ use std::collections::HashMap;
 
 use half::f16;
 
-use crate::{_type::{Type, Types}, function::Function, instruction::{Instruction, Opcode}, scope::Scope, value::{Value, Values}};
+use crate::{_type::{Type, Types}, function::{Extern, Function}, instruction::{Instruction, Opcode}, scope::Scope, value::{Value, Values}};
 
 // expects `index` to be at the start of the scope body
 pub fn parse_scope(bytes: &Vec<u8>, index: &mut usize) -> Result<Scope, String> {
-    let mut scope: Scope = Scope {instructions: Vec::new(), scopes: Vec::new(), functions: HashMap::new()};
+    let mut scope: Scope = Scope { instructions: Vec::new(), scopes: Vec::new(), functions: HashMap::new(), externs: HashMap::new() };
 
     while *index < bytes.len() {
         match bytes[*index] {
@@ -24,6 +24,12 @@ pub fn parse_scope(bytes: &Vec<u8>, index: &mut usize) -> Result<Scope, String> 
                 *index += 1;
                 break;
             }
+            0xF9 => {
+                *index += 1;
+
+                let func = parse_extern(bytes, index)?;
+                scope.externs.insert(func.name.clone(), func);
+            }
             _ => {
                 scope.instructions.push(parse_instruction(bytes, index)?);
             }
@@ -31,6 +37,27 @@ pub fn parse_scope(bytes: &Vec<u8>, index: &mut usize) -> Result<Scope, String> 
     }
 
     return Ok(scope);
+}
+
+// expects `index` to be at the start of the extern
+// leaves `index` to be the byte after the extern
+pub fn parse_extern(bytes: &Vec<u8>, index: &mut usize) -> Result<Extern, String> {
+    let ret_type = parse_type(bytes, index)?;
+
+    let name = parse_bytecode_string(bytes, index)?;
+
+    let mut arg_types: Vec<Type> = Vec::new();
+    let mut arg_names: Vec<String> = Vec::new();
+    while bytes[*index] != 0xF8 {
+        arg_types.push(parse_type(bytes, index)?);
+        arg_names.push(parse_bytecode_string(bytes, index)?);
+    }
+
+    *index += 1;
+
+    let dll = parse_bytecode_string(bytes, index)?;
+
+    return Ok(Extern { name, ret_type, arg_types, arg_names, dll });
 }
 
 // expects `index` to be at the start of the instruction
@@ -564,7 +591,7 @@ pub fn parse_instruction(bytes: &Vec<u8>, index: &mut usize) -> Result<Instructi
             parse_bytecode_string(bytes, index)?)
         }
 
-        _ => return Err(format!("unknown instruction {:#04x} at {:#06x}", opcode_byte, index))
+        _ => return Err(format!("unknown instruction {:#04x} at {:#06x}", opcode_byte, start_index))
     };
 
     return Ok(Instruction { index: start_index, opcode: opcode });
