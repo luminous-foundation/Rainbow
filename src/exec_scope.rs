@@ -264,8 +264,6 @@ macro_rules! pmov {
         let offset_index;
         get_usize!(offset_index, $offset, "PMOV", "offset");
 
-        println!("{ptr} + {offset_index} = {index}", index = ptr + offset_index);
-
         $stack[0].stack[ptr + offset_index].set(&$val.val);
     }
 }
@@ -298,8 +296,6 @@ macro_rules! free_ {
         get_usize!(size, $amnt, "free", "size");
 
         let start = index;
-
-        println!("{start}");
 
         // TODO: this loop will get extremely slow with large allocs
         //       replace this with full heap reconstruction, or somehow allow the heap to get fragmented
