@@ -38,12 +38,21 @@ impl Frame {
         return self.stack.pop().expect("attempted to pop empty stack");
     }
 
+    pub fn pop_args(&mut self, amnt: usize) -> Vec<Value> {
+        if amnt > self.stack.len() {
+            panic!("stack overflow while popping {} args off stack", amnt);
+        }
+
+        self.allocs.truncate(self.allocs.len() - amnt);
+        return self.stack.split_off(self.stack.len() - amnt);
+    }
+
     pub fn get_var(self: &Frame, name: &String) -> &Value {
         let index = self.vars.get(name);
         if index.is_none() {
             panic!("tried to get undefined variable {}", name);
         }
-        return &self.stack[*index.expect("unreachable")];
+        return &self.stack[*index.unwrap()];
     }
 
     pub fn set_var(self: &mut Frame, name: &String, value: &Values) {

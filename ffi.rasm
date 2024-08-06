@@ -1,3 +1,0 @@
-.extern i32 test() @"test.dll"
-
-CALL test

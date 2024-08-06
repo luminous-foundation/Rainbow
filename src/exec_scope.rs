@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{frame::Frame, function::Function, get_var, instruction::Opcode, scope::Scope, set_var, value::Values, get_func, _type::Types};
+use crate::{frame::Frame, function::Function, get_var, instruction::Opcode, scope::Scope, set_var, value::Values, get_func, _type::Types, func_exists, get_extern, ffi::call_ffi};
 
 // instruction macros
 macro_rules! peek {
@@ -20,9 +20,14 @@ macro_rules! peek {
 }
 
 macro_rules! call {
-    ($func:expr, $scope:expr, $global_scope:expr, $stack:expr) => {
-        let func = get_func($func, $scope, $global_scope);
-        exec_func(func, $global_scope, $stack);
+    ($func:expr, $scope:expr, $global_scope:expr, $stack:expr, $cur_frame:expr) => {
+        if func_exists($func, $scope, $global_scope) {
+            let func = get_func($func, $scope, $global_scope);
+            exec_func(func, $global_scope, $stack);
+        } else {
+            let func = get_extern($func, $scope, $global_scope);
+            call_ffi(func, $stack, $cur_frame);
+        }
     }
 }
 
@@ -359,7 +364,7 @@ pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, c
             }
 
             Opcode::CALL_FUNC(func) => { // CALL [func]
-                call!(func, scope, global_scope, stack);
+                call!(func, scope, global_scope, stack, cur_frame);
             }
             Opcode::CALL_VAR(func_var) => { // CALL [var]
                 let func_var = get_var(func_var, stack, cur_frame);
@@ -370,7 +375,7 @@ pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, c
                     _ => panic!("tried to call function with name stored in variable, but given variable had type {:?}", func_var.typ)
                 }
 
-                call!(func, scope, global_scope, stack);
+                call!(func, scope, global_scope, stack, cur_frame);
             }
 
             Opcode::ADD_I_I(a, b, out) => { // ADD [imm] [imm] [var]

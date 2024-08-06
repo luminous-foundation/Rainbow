@@ -5,11 +5,11 @@
 0xFF - function start
 0xFE - scope start
 0xFD - scope end
-0xFC - data section start
-0xFB - struct start
+0xFC - data section start (not yet implemented)
+0xFB - struct start (not yet implemented)
 0xFA - file import (not yet implemented)
-0xF9 - extern function (not yet implemented)
-0xF8 - unused
+0xF9 - extern function
+0xF8 - extern args end
 0xF7 - unused
 0xF6 - unused
 0xF5 - unused

@@ -1,7 +1,7 @@
 use std::{collections::HashMap, env, fs};
 
 use frame::Frame;
-use function::Function;
+use function::{Extern, Function};
 use scope::Scope;
 use parse_scope::parse_scope;
 use exec_scope::{exec_func, exec_scope};
@@ -15,6 +15,7 @@ mod function;
 mod _type;
 mod frame;
 mod value;
+mod ffi;
 
 // TODO: better error handling
 // TODO: result type
@@ -50,14 +51,30 @@ fn main() {
 
 // this function expects the function to exist
 // if it doesnt, it will crash
-fn get_func<'a>(name: &String, scope: &'a Scope, global_scope: &'a Scope) -> &'a Function{
+fn get_func<'a>(name: &String, scope: &'a Scope, global_scope: &'a Scope) -> &'a Function {
     if scope.functions.contains_key(name) {
-        return scope.functions.get(name).expect("unreachable");
+        return scope.functions.get(name).unwrap();
     } else if global_scope.functions.contains_key(name) {
-        return global_scope.functions.get(name).expect("unreachable");
+        return global_scope.functions.get(name).unwrap();
     } else {
         panic!("tried to call undefined function {}", name);
     }
+}
+
+// this function expects the extern to exist
+// if it doesnt, it will crash
+fn get_extern<'a>(name: &String, scope: &'a Scope, global_scope: &'a Scope) -> &'a Extern {
+    if scope.externs.contains_key(name) {
+        return scope.externs.get(name).unwrap();
+    } else if global_scope.externs.contains_key(name) {
+        return global_scope.externs.get(name).unwrap();
+    } else {
+        panic!("tried to call undefined function {}", name);
+    }
+}
+
+fn func_exists(name: &String, scope: &Scope, global_scope: &Scope) -> bool {
+    return scope.functions.contains_key(name) || global_scope.functions.contains_key(name);
 }
 
 // these functions expect the variable to exist

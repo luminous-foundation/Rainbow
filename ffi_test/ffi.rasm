@@ -1,0 +1,7 @@
+.extern i32 test() @"ffi_test/test.dll" ; for now due to a lack of a linker i have to specify path
+.extern i32 test2(i32 a) @"ffi_test/test.dll"
+
+CALL test
+
+PUSH 12
+CALL test2
