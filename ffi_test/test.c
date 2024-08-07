@@ -1,7 +1,7 @@
-int test() {
-    return 87;
-}
+#include <stdio.h>
 
-int test2(int a) {
-    return a + 100;
+char* test(char* a) {
+    printf("C: ptr = %p\n", a);
+
+    return a;
 }

@@ -1,7 +1,8 @@
-.extern i32 test() @"ffi_test/test.dll" ; for now due to a lack of a linker i have to specify path
-.extern i32 test2(i32 a) @"ffi_test/test.dll"
+.extern u64 test(u8* a) @"ffi_test/test.dll"
 
+VAR u8* text
+ALLOC u8 1 text
+PMOV 17 text 0
+
+PUSH text
 CALL test
-
-PUSH 12
-CALL test2

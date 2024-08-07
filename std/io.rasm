@@ -1,0 +1,23 @@
+.extern u64 GetStdHandle(i32 nStdHandle) @"Kernel32.dll"
+.extern i32 WriteConsoleA(u64 hConsoleOutput u8* lpBuffer i32 nNumberOfCharsToWrite i64 lpNumberOfCharsWritten i64 lpReserved) @"Kernel32.dll"
+.extern i32 GetLastError() @"Kernel32.dll"
+
+VAR u8* text
+ALLOC u8 2 text
+PMOV 97 text 0
+PMOV 0 text 1
+
+VAR u64 stdOut
+
+PUSH -11
+CALL GetStdHandle
+POP stdOut
+
+PUSH stdOut
+PUSH text
+PUSH 1
+PUSH 0
+PUSH 0
+CALL WriteConsoleA
+
+CALL GetLastError
