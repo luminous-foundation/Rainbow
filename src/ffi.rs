@@ -1,21 +1,44 @@
 use libloading::{Library, Symbol};
-use libffi::low::*;
+use libffi::{low::*, raw::ffi_abi_FFI_GNUW64};
 use std::{ffi::c_void, ptr::addr_of_mut};
-use crate::{_type::{Type, Types}, frame::Frame, function::Extern, value::{Value, Values}};
+use crate::{_type::{Type, Types}, ffi, frame::Frame, function::Extern, value::{Value, Values}};
 
 pub unsafe fn type_to_type(typ: &Type) -> ffi_type {
     match typ.typ[0] {
-        Types::I8  => types::sint8,
-        Types::I16 => types::sint16,
-        Types::I32 => types::sint32,
-        Types::I64 => types::sint64,
-        Types::U8  => types::uint8,
-        Types::U16 => types::uint16,
-        Types::U32 => types::uint32,
-        Types::U64 => types::uint64,
-        Types::F32 => types::float,
-        Types::F64 => types::double,
+        Types::VOID    => types::void,
+        Types::I8      => types::sint8,
+        Types::I16     => types::sint16,
+        Types::I32     => types::sint32,
+        Types::I64     => types::sint64,
+        Types::U8      => types::uint8,
+        Types::U16     => types::uint16,
+        Types::U32     => types::uint32,
+        Types::U64     => types::uint64,
+        Types::F32     => types::float,
+        Types::F64     => types::double,
+        Types::POINTER => types::pointer,
         _ => panic!("unsupported type {:?} for externs", typ.typ[0])
+    }
+}
+
+pub unsafe fn get_pointer(val: &Value, sp: &mut Vec<i64>, up: &mut Vec<u64>, dp: &mut Vec<f64>, pp: &mut Vec<*mut c_void>) -> *mut c_void {
+    match val.val {
+        Values::SIGNED(n) => {
+            sp.push(n);
+            pp.push(sp.last_mut().unwrap() as *mut _ as *mut c_void);
+            pp.last_mut().unwrap() as *mut _ as *mut c_void
+        }
+        Values::UNSIGNED(n) => {
+            up.push(n);
+            pp.push(up.last_mut().unwrap() as *mut _ as *mut c_void);
+            pp.last_mut().unwrap() as *mut _ as *mut c_void
+        }
+        Values::DECIMAL(n) => {
+            dp.push(n);
+            pp.push(dp.last_mut().unwrap() as *mut _ as *mut c_void);
+            pp.last_mut().unwrap() as *mut _ as *mut c_void
+        }
+        _ => panic!("unsupported type {:?} for extern pointers", val.typ),
     }
 }
 
@@ -29,10 +52,13 @@ pub fn call_ffi(_extern: &Extern, stack: &mut Vec<Frame>, cur_frame: usize) {
 
         let args = stack[cur_frame].pop_args(_extern.arg_types.len());
 
+        let mut types: Vec<ffi_type> = Vec::new();
+
         let mut arg_types: Vec<*mut ffi_type> = Vec::new();
         for typ in &_extern.arg_types {
-            let mut arg_type = type_to_type(typ);
-            arg_types.push(addr_of_mut!(arg_type));
+            let arg_type = type_to_type(typ);
+            types.push(arg_type);
+            arg_types.push(types.last_mut().unwrap() as *mut ffi_type);
         }
 
         let mut cif: ffi_cif = Default::default();
@@ -44,6 +70,11 @@ pub fn call_ffi(_extern: &Extern, stack: &mut Vec<Frame>, cur_frame: usize) {
         let mut signed_args: Vec<i64> = Vec::new();
         let mut unsigned_args: Vec<u64> = Vec::new();
         let mut decimal_args: Vec<f64> = Vec::new();
+
+        let mut sp: Vec<i64> = Vec::new();
+        let mut up: Vec<u64> = Vec::new();
+        let mut dp: Vec<f64> = Vec::new();
+        let mut pp: Vec<*mut c_void> = Vec::new();
 
         for arg in &args {
             match &arg.val {
@@ -59,10 +90,15 @@ pub fn call_ffi(_extern: &Extern, stack: &mut Vec<Frame>, cur_frame: usize) {
                     decimal_args.push(*n);
                     raw_args.push(decimal_args.last_mut().unwrap() as *mut _ as *mut c_void);
                 }
+                Values::POINTER(p) => {
+                    let val = stack[0].stack[*p].clone();
+                    let ptr = get_pointer(&val, &mut sp, &mut up, &mut dp, &mut pp);
+                    raw_args.push(ptr);
+                }
                 _ => panic!("unsupported type {:?} for externs", arg.typ),
             }
         }
-
+        
         prep_cif(&mut cif, ffi_abi_FFI_DEFAULT_ABI, _extern.arg_types.len(), addr_of_mut!(ret_type), arg_types.as_mut_ptr()).unwrap();
 
         let val = match _extern.ret_type.typ[0] {
@@ -110,7 +146,16 @@ pub fn call_ffi(_extern: &Extern, stack: &mut Vec<Frame>, cur_frame: usize) {
                 let result: f64 = call::<f64>(&mut cif, code_ptr, raw_args.as_mut_ptr());
                 Values::DECIMAL(result)
             },
-            _ => panic!("Unsupported return type"),
+            Types::POINTER => {
+                match _extern.ret_type.typ[1] {
+                    Types::VOID => {
+                        let result: *const c_void = call::<*const c_void>(&mut cif, code_ptr, raw_args.as_mut_ptr());
+                        Values::UNSIGNED(result as u64)
+                    }
+                    _ => panic!("unsupported return type {:?}", _extern.ret_type),
+                }
+            }
+            _ => panic!("unsupported return type {:?}", _extern.ret_type),
         };
 
         stack[cur_frame].push(Value { typ: _extern.ret_type.clone(), val });
