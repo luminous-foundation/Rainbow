@@ -44,7 +44,7 @@ fn main() {
         exec_func(func, &global_scope, &mut stack);
     }
     // println!("execution took {:.2}ms", exec_start.elapsed().as_secs_f32() * 1000f32);
-    println!("whole program took {:.2}ms", start.elapsed().as_secs_f32() * 1000f32);
+    println!("whole program took {:.6}s", start.elapsed().as_secs_f32());
 
     println!("{:#?}", stack);
 }
