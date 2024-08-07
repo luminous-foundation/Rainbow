@@ -31,7 +31,7 @@ fn main() {
         Err(error) => panic!("failed to parse program:\n{}", error)
     };
 
-    println!("parsing took {:.2}ms", start.elapsed().as_secs_f32() * 1000f32);
+    // println!("parsing took {:.2}ms", start.elapsed().as_secs_f32() * 1000f32);
 
     let mut stack: Vec<Frame> = Vec::new();
 
