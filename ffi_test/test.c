@@ -1,7 +1,9 @@
-#include <stdio.h>
+#include <windows.h>
 
-char* test(char* a) {
-    printf("C: ptr = %p\n", a);
+int test(char* a, unsigned long long stdOut) {
+    return WriteConsoleA(stdOut, a, 1, 0, 0);
+}
 
-    return a;
+int test2(int a, int b) {
+    return a - b;
 }

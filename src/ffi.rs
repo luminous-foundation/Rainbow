@@ -5,6 +5,7 @@ use crate::{_type::{Type, Types}, ffi, frame::Frame, function::Extern, value::{V
 
 pub unsafe fn type_to_type(typ: &Type) -> ffi_type {
     match typ.typ[0] {
+        Types::VOID    => types::void,
         Types::I8      => types::sint8,
         Types::I16     => types::sint16,
         Types::I32     => types::sint32,
@@ -51,10 +52,13 @@ pub fn call_ffi(_extern: &Extern, stack: &mut Vec<Frame>, cur_frame: usize) {
 
         let args = stack[cur_frame].pop_args(_extern.arg_types.len());
 
+        let mut types: Vec<ffi_type> = Vec::new();
+
         let mut arg_types: Vec<*mut ffi_type> = Vec::new();
         for typ in &_extern.arg_types {
-            let mut arg_type = type_to_type(typ);
-            arg_types.push(addr_of_mut!(arg_type));
+            let arg_type = type_to_type(typ);
+            types.push(arg_type);
+            arg_types.push(types.last_mut().unwrap() as *mut ffi_type);
         }
 
         let mut cif: ffi_cif = Default::default();
@@ -89,19 +93,13 @@ pub fn call_ffi(_extern: &Extern, stack: &mut Vec<Frame>, cur_frame: usize) {
                 Values::POINTER(p) => {
                     let val = stack[0].stack[*p].clone();
                     let ptr = get_pointer(&val, &mut sp, &mut up, &mut dp, &mut pp);
-                    println!("{:?} {:?}", ptr, *(ptr as *mut *mut u8));
                     raw_args.push(ptr);
                 }
                 _ => panic!("unsupported type {:?} for externs", arg.typ),
             }
         }
         
-        // println!("{}", _extern.arg_types.len());
         prep_cif(&mut cif, ffi_abi_FFI_DEFAULT_ABI, _extern.arg_types.len(), addr_of_mut!(ret_type), arg_types.as_mut_ptr()).unwrap();
-
-        // for arg in &raw_args {
-        //     println!("{:?} {:?}", *arg, *(*arg as *mut u8));
-        // }
 
         let val = match _extern.ret_type.typ[0] {
             Types::VOID => {
@@ -148,12 +146,17 @@ pub fn call_ffi(_extern: &Extern, stack: &mut Vec<Frame>, cur_frame: usize) {
                 let result: f64 = call::<f64>(&mut cif, code_ptr, raw_args.as_mut_ptr());
                 Values::DECIMAL(result)
             },
-            _ => panic!("unsupported return type"),
+            Types::POINTER => {
+                match _extern.ret_type.typ[1] {
+                    Types::VOID => {
+                        let result: *const c_void = call::<*const c_void>(&mut cif, code_ptr, raw_args.as_mut_ptr());
+                        Values::UNSIGNED(result as u64)
+                    }
+                    _ => panic!("unsupported return type {:?}", _extern.ret_type),
+                }
+            }
+            _ => panic!("unsupported return type {:?}", _extern.ret_type),
         };
-
-        let ptr = raw_args[0];
-        println!("rust: ptr = {:?}", *(ptr as *mut *mut u64));
-        println!("{}", *(*(ptr as *mut *mut u64) as *mut u8));
 
         stack[cur_frame].push(Value { typ: _extern.ret_type.clone(), val });
     }
