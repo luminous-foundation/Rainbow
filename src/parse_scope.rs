@@ -24,6 +24,9 @@ pub fn parse_scope(bytes: &Vec<u8>, index: &mut usize) -> Result<Scope, String> 
                 *index += 1;
                 break;
             }
+            0xFC => {
+                break;
+            }
             0xF9 => {
                 *index += 1;
 
@@ -651,6 +654,34 @@ pub fn parse_bytecode_string(bytes: &[u8], index: &mut usize) -> Result<String, 
         }
         Err(error) => Err(error.to_string())
     }
+}
+
+pub fn parse_dyn_number(bytes: &[u8], index: &mut usize) -> Result<usize, String> {
+    let typ = bytes[*index];
+    *index += 1;
+
+    let res;
+    match typ {
+        5 => {
+            res = Ok(bytes[*index] as usize);
+            *index += 1;
+        }
+        6 => {
+            res = Ok(u16::from_be_bytes(bytes[*index..*index+2].try_into().unwrap()) as usize);
+            *index += 2;
+        }
+        7 => {
+            res = Ok(u32::from_be_bytes(bytes[*index..*index+4].try_into().unwrap()) as usize);
+            *index += 4;
+        }
+        8 => {
+            res = Ok(u64::from_be_bytes(bytes[*index..*index+8].try_into().unwrap()) as usize);
+            *index += 8;
+        }
+        _ => res = Err(format!("unsupported byte length {typ}"))
+    }
+
+    return res;
 }
 
 // expects `index` to be at the start of the immediate

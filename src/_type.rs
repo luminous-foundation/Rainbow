@@ -48,3 +48,9 @@ impl Types {
 pub struct Type {
     pub typ: Vec<Types>,
 }
+
+impl Type {
+    pub fn pop(self) -> Type {
+        return Type { typ: self.typ[1..self.typ.len()].to_vec() };
+    }
+}

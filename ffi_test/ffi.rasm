@@ -1,11 +1,6 @@
 .extern i32 writeConsole(u64 stdOut u8* a i32 count) @"ffi_test/test.dll"
 .extern void* GetStdHandle(i32 nStdHandle) @"Kernel32.dll"
 
-VAR u8* text
-ALLOC u8 2 text
-PMOV 65 text 0
-PMOV 66 text 1
-
 VAR u64 handle
 
 PUSH -11
@@ -14,5 +9,8 @@ POP handle
 
 PUSH handle
 PUSH text
-PUSH 2
+PUSH 13
 CALL writeConsole
+
+.data
+text u8* "Hello, World!"

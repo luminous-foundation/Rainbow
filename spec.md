@@ -5,7 +5,7 @@
 0xFF - function start
 0xFE - scope start
 0xFD - scope end
-0xFC - data section start (not yet implemented)
+0xFC - data section start
 0xFB - struct start (not yet implemented)
 0xFA - file import (not yet implemented)
 0xF9 - extern function
@@ -239,8 +239,8 @@ This section is placed at the end of the file.
 The format is as follows
 ```
 FC
-(name) (data type) (bytes needed for length) (length) (data)
-(name) (data type) (bytes needed for length) (length) (data)
+(name) (data type) (length type) (length) (data)
+(name) (data type) (length type) (length) (data)
 ...
 ```
 The amount of bytes in the data length is specified by the bytes beforehand.

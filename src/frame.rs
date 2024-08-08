@@ -67,6 +67,12 @@ impl Frame {
         self.allocs.push(alloc);
     }
 
+    pub fn push_typ(self: &mut Frame, typ: &Type) {
+        let value = Self::get_default_val(typ);
+        
+        self.stack.push(Value { typ: typ.clone(), val: value });
+    }
+
     pub fn push_var(self: &mut Frame, name: &String, typ: Type, value: Values) {
         if self.vars.contains_key(name) {
             // TODO: handle this if the type changes
