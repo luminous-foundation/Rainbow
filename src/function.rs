@@ -17,7 +17,6 @@ pub struct Extern {
     pub ret_type: Type,
 
     pub arg_types: Vec<Type>,
-    pub arg_names: Vec<String>,
 
     pub dll: String,
 }

@@ -10,7 +10,7 @@ macro_rules! peek {
             Values::SIGNED(n) => index = n as usize,
             Values::UNSIGNED(n) => index = n as usize,
             Values::DECIMAL(n) => index = n as usize,
-            Values::POINTER(n) => index = n as usize,
+            Values::POINTER(n, _) => index = n as usize,
             _ => panic!("cannot peek using a non-numeral value index"),
         }
 
@@ -226,7 +226,7 @@ macro_rules! ref_ {
         let out_var_type = get_var($out_var, $stack, $cur_frame).typ.typ[0].clone();
         match out_var_type {
             Types::POINTER => {
-                set_var($out_var, &Values::POINTER($index), $stack, $cur_frame);
+                set_var($out_var, &Values::POINTER($index, 1), $stack, $cur_frame);
             }
             _ => panic!("attempted set a variable with type {:?} to a reference", out_var_type)
         }
@@ -237,7 +237,7 @@ macro_rules! deref {
     ($ptr:expr, $out:expr, $stack:expr, $cur_frame:expr) => {
         let index;
         match $ptr.val {
-            Values::POINTER(p) => index = p,
+            Values::POINTER(p, 1) => index = p,
             _ => panic!("attempted to deref non-pointer value")
         }
         
@@ -252,7 +252,7 @@ macro_rules! get_usize {
             Values::SIGNED(n) => n as usize,
             Values::UNSIGNED(n) => n as usize,
             Values::DECIMAL(n) => n as usize,
-            Values::POINTER(n) => n,
+            Values::POINTER(n, _) => n,
             _ => panic!("cannot {} with non-number value as {}", $action, $type),
         };
     }
@@ -262,7 +262,7 @@ macro_rules! pmov {
     ($val:expr, $ptr:expr, $offset:expr, $stack:expr, $cur_frame:expr) => {
         let ptr = get_var($ptr, $stack, $cur_frame);
         let ptr = match(ptr.val) {
-            Values::POINTER(n) => n,
+            Values::POINTER(n, _) => n,
             _ => panic!("cannot PMOV into a non-pointer variable")
         };
 
@@ -284,7 +284,7 @@ macro_rules! alloc {
 
         let index = $stack[0].stack.len();
 
-        $stack[$cur_frame].set_var($out, &Values::POINTER(index));
+        $stack[$cur_frame].set_var($out, &Values::POINTER(index, amnt as usize));
 
         for _ in 0..amnt {
             $stack[0].push_alloc($typ, $out.clone());

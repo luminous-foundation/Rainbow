@@ -20,7 +20,7 @@ mod ffi;
 // TODO: better error handling
 // TODO: result type
 fn main() {
-    let start = std::time::Instant::now();
+    // let start = std::time::Instant::now();
     let args: Vec<String> = env::args().collect();
 
     let program = fs::read(args[1].clone()).expect("failed to read program");
@@ -37,16 +37,17 @@ fn main() {
 
     stack.push(Frame { vars: HashMap::new(), stack: Vec::new(), allocs: Vec::new() });
 
-    let exec_start = std::time::Instant::now();
+    // let exec_start = std::time::Instant::now();
     exec_scope(&global_scope, &global_scope, &mut stack, 0);
     
     if let Some(func) = global_scope.functions.get("main") { // main functions are not required
         exec_func(func, &global_scope, &mut stack);
     }
-    // println!("execution took {:.2}ms", exec_start.elapsed().as_secs_f32() * 1000f32);
-    println!("whole program took {:.6}s", start.elapsed().as_secs_f32());
 
-    println!("{:#?}", stack);
+    // println!("execution took {:.2}ms", exec_start.elapsed().as_secs_f32() * 1000f32);
+    // println!("whole program took {:.6}s", start.elapsed().as_secs_f32());
+
+    // println!("{:#?}", stack);
 }
 
 // this function expects the function to exist

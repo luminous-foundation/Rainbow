@@ -92,8 +92,8 @@ impl Frame {
             Types::F16 => Values::DECIMAL(0f64),
             Types::F32 => Values::DECIMAL(0f64),
             Types::F64 => Values::DECIMAL(0f64),
-            Types::POINTER => Values::POINTER(0),
-            Types::TYPE => Values::TYPE(Type { typ: todo!() }),
+            Types::POINTER => Values::POINTER(0, 0),
+            Types::TYPE => todo!(),
             Types::STRUCT => todo!(),
             Types::NAME => Values::NAME("".to_string()),
         }

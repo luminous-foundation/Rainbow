@@ -47,17 +47,16 @@ pub fn parse_extern(bytes: &Vec<u8>, index: &mut usize) -> Result<Extern, String
     let name = parse_bytecode_string(bytes, index)?;
 
     let mut arg_types: Vec<Type> = Vec::new();
-    let mut arg_names: Vec<String> = Vec::new();
     while bytes[*index] != 0xF8 {
         arg_types.push(parse_type(bytes, index)?);
-        arg_names.push(parse_bytecode_string(bytes, index)?);
+        let _ = parse_bytecode_string(bytes, index)?; // :)
     }
 
     *index += 1;
 
     let dll = parse_bytecode_string(bytes, index)?;
 
-    return Ok(Extern { name, ret_type, arg_types, arg_names, dll });
+    return Ok(Extern { name, ret_type, arg_types, dll });
 }
 
 // expects `index` to be at the start of the instruction
