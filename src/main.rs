@@ -1,5 +1,3 @@
-#![allow(warnings, unused)]
-
 use std::{collections::HashMap, env, fs};
 
 use _type::Types;
