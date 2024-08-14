@@ -969,11 +969,11 @@ pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, c
         }
     }
     
-    println!("scope took {:.2}ms", start.elapsed().as_secs_f32() * 1000f32);
+    println!("scope took {:.4}ms", start.elapsed().as_secs_f32() * 1000f32);
 
     for x in 0x00..0xff {
         if counts[x] > 0 {
-            println!("{:#04x}: {:.4}ms avg | {:.4}ms total", x, times[x] / counts[x] as f32, times[x]);
+            println!("{:#04x}: {:.6}ms avg | {:.6}ms total", x, times[x] / counts[x] as f32, times[x]);
         }
     }
 }
