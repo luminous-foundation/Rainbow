@@ -325,16 +325,16 @@ macro_rules! free_ {
 pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
     let mut pc = 0;
 
-    // let mut times: [f32; 256] = [0f32; 256];
-    // let mut counts: [u32; 256] = [0; 256];
+    let mut times: [f32; 256] = [0f32; 256];
+    let mut counts: [u32; 256] = [0; 256];
 
     let scope_stack_start = stack[cur_frame].stack.len();
 
-    // let start = std::time::Instant::now();
+    let start = std::time::Instant::now();
     while pc < scope.instructions.len() {
         let instr = &scope.instructions[pc];
 
-        // let instr_start = std::time::Instant::now();
+        let instr_start = std::time::Instant::now();
         match &instr.opcode {
             Opcode::NOP => { // NOP
                 // do nothing
@@ -956,8 +956,8 @@ pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, c
             _ => panic!("unknown instruction {:#04x} at {:#06x}", instr.opcode.to_u8(), instr.index)
         }
         
-        // times[instr.opcode.to_u8() as usize] += instr_start.elapsed().as_secs_f32() * 1000f32;
-        // counts[instr.opcode.to_u8() as usize] += 1;
+        times[instr.opcode.to_u8() as usize] += instr_start.elapsed().as_secs_f32() * 1000f32;
+        counts[instr.opcode.to_u8() as usize] += 1;
         
         pc += 1;
     }
@@ -969,13 +969,13 @@ pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, c
         }
     }
     
-    // println!("scope took {:.2}ms", start.elapsed().as_secs_f32() * 1000f32);
+    println!("scope took {:.2}ms", start.elapsed().as_secs_f32() * 1000f32);
 
-    // for x in 0x00..0xff {
-        // if counts[x] > 0 {
-            // println!("{:#04x}: {:.4}ms avg | {:.4}ms total", x, times[x] / counts[x] as f32, times[x]);
-        // }
-    // }
+    for x in 0x00..0xff {
+        if counts[x] > 0 {
+            println!("{:#04x}: {:.4}ms avg | {:.4}ms total", x, times[x] / counts[x] as f32, times[x]);
+        }
+    }
 }
 
 pub fn exec_func(func: &Function, global_scope: &Scope, stack: &mut Vec<Frame>) {
