@@ -325,7 +325,7 @@ macro_rules! free_ {
 pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
     let mut pc = 0;
 
-    let mut times: [f32; 256] = [0f32; 256];
+    let mut times: [f64; 256] = [0f64; 256];
     let mut counts: [u32; 256] = [0; 256];
 
     let scope_stack_start = stack[cur_frame].stack.len();
@@ -956,7 +956,7 @@ pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, c
             _ => panic!("unknown instruction {:#04x} at {:#06x}", instr.opcode.to_u8(), instr.index)
         }
         
-        times[instr.opcode.to_u8() as usize] += instr_start.elapsed().as_secs_f32() * 1000f32;
+        times[instr.opcode.to_u8() as usize] += instr_start.elapsed().as_secs_f64() * 1000f64;
         counts[instr.opcode.to_u8() as usize] += 1;
         
         pc += 1;
@@ -973,7 +973,7 @@ pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, c
 
     for x in 0x00..0xff {
         if counts[x] > 0 {
-            println!("{:#04x}: {:.6}ms avg | {:.6}ms total", x, times[x] / counts[x] as f32, times[x]);
+            println!("{:#04x}: {:.6}ms avg | {:.6}ms total", x, times[x] / counts[x] as f64, times[x]);
         }
     }
 }
