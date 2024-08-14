@@ -662,8 +662,24 @@ pub fn parse_dyn_number(bytes: &[u8], index: &mut usize) -> Result<usize, String
 
     let res;
     match typ {
+        1 => {
+            res = Ok(i8::from_be_bytes(bytes[*index..*index+1].try_into().unwrap()) as usize);
+            *index += 1;
+        }
+        2 => {
+            res = Ok(i16::from_be_bytes(bytes[*index..*index+2].try_into().unwrap()) as usize);
+            *index += 2;
+        }
+        3 => {
+            res = Ok(i32::from_be_bytes(bytes[*index..*index+4].try_into().unwrap()) as usize);
+            *index += 4;
+        }
+        4 => {
+            res = Ok(i64::from_be_bytes(bytes[*index..*index+8].try_into().unwrap()) as usize);
+            *index += 8;
+        }
         5 => {
-            res = Ok(bytes[*index] as usize);
+            res = Ok(u8::from_be_bytes(bytes[*index..*index+1].try_into().unwrap()) as usize);
             *index += 1;
         }
         6 => {

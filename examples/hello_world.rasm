@@ -1,0 +1,25 @@
+.extern u64 GetStdHandle(i32 nStdHandle) @"Kernel32.dll"
+.extern u32 WriteConsoleA(u64 a u8* a i32 a u64 a u64 a) @"Kernel32.dll"
+
+VAR u64 handle
+
+PUSH -11
+CALL GetStdHandle
+POP handle
+
+VAR u32 writeConsoleRes
+PUSH handle
+PUSH text
+PUSH 13
+PUSH 0
+PUSH 0
+CALL WriteConsoleA
+POP writeConsoleRes
+
+; for some reason we need to just keep trying until it works
+; why you may ask?
+; ¯\_(ツ)_/¯
+JE writeConsoleRes 0 5
+
+.data
+text u8* "Hello, World!"
