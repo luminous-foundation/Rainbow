@@ -57,7 +57,7 @@ macro_rules! div {
 }
 macro_rules! modulo {
     ($a:expr, $b:expr, $out:expr, $stack:expr, $cur_frame:expr) => {
-        let val = $a.val.div(&$b.val);
+        let val = $a.val.modulo(&$b.val);
         set_var($out, &val, $stack, $cur_frame);
     };
 }
@@ -320,21 +320,22 @@ macro_rules! free_ {
 //   but as it stands they are executed last
 // }
 // ...
-// TODO: variable scoping that's more precise than function scope
-// ^ the above todo will be resolved when a below todo is resolved
 pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
     let mut pc = 0;
 
-    let mut times: [f64; 256] = [0f64; 256];
-    let mut counts: [u32; 256] = [0; 256];
+    // i want to make per-instruction timing toggleable
+    // but i also want to do it in a way that doesnt have any performance impact
+    // i'll have to figure out a way
+    // let mut times: [f64; 256] = [0f64; 256];
+    // let mut counts: [u32; 256] = [0; 256];
 
     let scope_stack_start = stack[cur_frame].stack.len();
 
-    let start = std::time::Instant::now();
+    // let start = std::time::Instant::now();
     while pc < scope.instructions.len() {
         let instr = &scope.instructions[pc];
 
-        let instr_start = std::time::Instant::now();
+        // let instr_start = std::time::Instant::now();
         match &instr.opcode {
             Opcode::NOP => { // NOP
                 // do nothing
@@ -956,8 +957,8 @@ pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, c
             _ => panic!("unknown instruction {:#04x} at {:#06x}", instr.opcode.to_u8(), instr.index)
         }
         
-        times[instr.opcode.to_u8() as usize] += instr_start.elapsed().as_secs_f64() * 1000f64;
-        counts[instr.opcode.to_u8() as usize] += 1;
+        // times[instr.opcode.to_u8() as usize] += instr_start.elapsed().as_secs_f64() * 1000f64;
+        // counts[instr.opcode.to_u8() as usize] += 1;
         
         pc += 1;
     }
@@ -969,13 +970,13 @@ pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, c
         }
     }
     
-    println!("scope took {:.4}ms", start.elapsed().as_secs_f32() * 1000f32);
+    // println!("scope took {:.4}ms", start.elapsed().as_secs_f32() * 1000f32);
 
-    for x in 0x00..0xff {
-        if counts[x] > 0 {
-            println!("{:#04x}: {:.6}ms avg | {:.6}ms total", x, times[x] / counts[x] as f64, times[x]);
-        }
-    }
+    // for x in 0x00..0xff {
+    //     if counts[x] > 0 {
+    //         println!("{:#04x}: {:.6}ms avg | {:.6}ms total", x, times[x] / counts[x] as f64, times[x]);
+    //     }
+    // }
 }
 
 pub fn exec_func(func: &Function, global_scope: &Scope, stack: &mut Vec<Frame>) {

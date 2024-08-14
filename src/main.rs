@@ -1,4 +1,4 @@
-use std::{collections::HashMap, env, fs};
+use std::{collections::HashMap, env, fs, path::Path, process};
 
 use _type::Types;
 use frame::Frame;
@@ -22,18 +22,76 @@ mod ffi;
 // TODO: better error handling
 // TODO: result type
 fn main() {
-    // let start = std::time::Instant::now();
     let args: Vec<String> = env::args().collect();
 
-    let program = fs::read(args[1].clone()).expect("failed to read program");
+    if args.len() == 1 {
+        usage();
+        println!("no subcommand provided");
+        process::exit(1);
+    }
 
+    let mut timing = false;
+
+    let mut i = 1;
+
+    let mut program = String::new();
+    while i < args.len() {
+        match args[i].as_str() {
+            "--time"  | "-t" => timing = true,
+            "--link"  | "-l" => todo!(),
+            "help" => {
+                usage();
+                process::exit(0);
+            }
+            "run" | "r" => {
+                if args.len() <= i + 1 {
+                    println!(".rbb file expected");
+                    process::exit(1);
+                }
+
+                i += 1;
+                program = args[i].clone();
+            }
+            _ => {
+                usage();
+                println!("unknown subcommand {}", args[i]);
+                process::exit(1);
+            }
+        }
+        i += 1;
+    }
+
+    if program.is_empty() {
+        println!("no program provided");
+        process::exit(1);
+    }
+
+    if !program.ends_with(".rbb") {
+        println!(".rbb file expected");
+        process::exit(1);
+    }
+
+    if !Path::new(&program).exists() {
+        println!("program provided does not exist");
+        process::exit(1);
+    }
+
+    let program = fs::read(program).expect("failed to read program");
+
+    let start = std::time::Instant::now();
+    run_program(&program);
+    if timing {
+        println!();
+        println!("program execution took {:.6}s ({:.4}ms)", start.elapsed().as_secs_f32(), start.elapsed().as_secs_f32() * 1000f32);
+    }
+}
+
+pub fn run_program(program: &Vec<u8>) {
     let mut index = 0;
     let global_scope = match parse_scope(&program, &mut index) {
         Ok(scope) => scope,
         Err(error) => panic!("failed to parse program:\n{}", error)
     };
-
-    // println!("parsing took {:.2}ms", start.elapsed().as_secs_f32() * 1000f32);
 
     let mut stack: Vec<Frame> = Vec::new();
 
@@ -44,17 +102,21 @@ fn main() {
         Err(error) => panic!("failed to parse data:\n{error}")
     }
 
-    // let exec_start = std::time::Instant::now();
     exec_scope(&global_scope, &global_scope, &mut stack, 0);
     
     if let Some(func) = global_scope.functions.get("main") { // main functions are not required
         exec_func(func, &global_scope, &mut stack);
     }
+}
 
-    // println!("execution took {:.2}ms", exec_start.elapsed().as_secs_f32() * 1000f32);
-    // println!("whole program took {:.6}s", start.elapsed().as_secs_f32());
-
-    // println!("{:#?}", stack);
+fn usage() {
+    println!("Usage:");
+    println!("Flags");
+    println!("  --time/-t                       enables assembly timing");
+    println!("  --link/-l  [path]               provide a linking path");
+    println!("Subcommands");
+    println!("  help                            prints this subcommand list");
+    println!("  run/r      [file]               runs the given program");
 }
 
 fn parse_data_section(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize) -> Result<(), String> {
