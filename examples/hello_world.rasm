@@ -7,6 +7,7 @@ PUSH -11
 CALL GetStdHandle
 POP handle
 
+:loop
 VAR u32 writeConsoleRes
 PUSH handle
 PUSH text
@@ -19,7 +20,7 @@ POP writeConsoleRes
 ; for some reason we need to just keep trying until it works
 ; why you may ask?
 ; ¯\_(ツ)_/¯
-JE writeConsoleRes 0 5
+JE writeConsoleRes 0 :loop
 
 .data
 text u8* "Hello, World!"

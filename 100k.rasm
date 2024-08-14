@@ -1,4 +1,0 @@
-VAR i64 a
-
-ADD 1 a a
-JL a 100_000 1

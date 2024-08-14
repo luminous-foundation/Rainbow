@@ -1,0 +1,5 @@
+VAR i64 a
+
+:loop
+ADD 1 a a
+JL a 100_000 :loop
