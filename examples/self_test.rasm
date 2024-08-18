@@ -1,0 +1,201 @@
+.include "io.rasm"
+
+; This program is designed to test every basic feature in Rainbow.
+; Eventually a *full* self test will be created, which tests every opcode.
+; (WIP, very incomplete)
+
+.macro PRINTLN text {
+    PUSH text
+    PUSH 23
+    CALL @io_println
+}
+
+void main() {
+    ; Pushing and popping from the stack
+    ; -------------------------
+    PRINTLN seperator
+    VAR i32 a
+    PUSH 1
+    POP a
+
+    ; TODO: figure out how to make tests into macros
+    JNE a 1 :test1_fail
+    PRINTLN test1_success
+    JMP :test1_end
+
+    :test1_fail
+    PRINTLN test1_fail
+    JMP :test1_end
+    :test1_end
+    ; -------------------------
+
+    ; Function calling
+    ; -------------------------
+    PRINTLN seperator
+    CALL test_func
+    POP a
+
+    JNE a 2 :test2_fail
+    PRINTLN test2_success
+    JMP :test2_end
+
+    :test2_fail
+    PRINTLN test2_fail
+    :test2_end
+    ; -------------------------
+
+    ; Math
+    ; -------------------------
+    VAR u8 test3_status
+    MOV 1 test3_status
+
+    PRINTLN seperator
+
+        ; Addition
+        ; ---------------------
+        ADD 30 1 a
+        JNE a 31 :test3_1_fail
+        PRINTLN test3_1_success
+        JMP :test_3_1_end
+
+        :test3_1_fail
+        PRINTLN test3_1_fail
+        MOV 0 test3_status
+        :test_3_1_end
+        ; ---------------------
+
+        ; Subtraction
+        ; ---------------------
+        SUB 37 5 a
+        JNE a 32 :test3_2_fail
+        PRINTLN test3_2_success
+        JMP :test_3_2_end
+
+        :test3_2_fail
+        PRINTLN test3_2_fail
+        MOV 0 test3_status
+        :test_3_2_end
+        ; ---------------------
+
+        ; Multiplication
+        ; ---------------------
+        MUL 11 3 a
+        JNE a 33 :test3_3_fail
+        PRINTLN test3_3_success
+        JMP :test_3_3_end
+
+        :test3_3_fail
+        PRINTLN test3_3_fail
+        MOV 0 test3_status
+        :test_3_3_end
+        ; ---------------------
+
+        ; Division
+        ; ---------------------
+        DIV 170 5 a
+        JNE a 34 :test3_4_fail
+        PRINTLN test3_4_success
+        JMP :test_3_4_end
+
+        :test3_4_fail
+        PRINTLN test3_4_fail
+        MOV 0 test3_status
+        :test_3_4_end
+        ; ---------------------
+    
+    JNE test3_status 1 :test3_fail
+    PRINTLN test3_success
+    JMP :test3_end
+
+    :test3_fail
+    PRINTLN test3_fail
+    :test3_end
+    ; -------------------------
+
+    ; Jumping
+    ; -------------------------
+    VAR u8 test4_status
+    MOV 1 test4_status
+
+    PRINTLN seperator
+        ; JMP
+        ; --------------------
+        JMP :test4_1_success
+        PRINTLN test4_1_fail
+        MOV 0 test4_status
+        :test4_1_success
+        PRINTLN test4_1_success
+        ; --------------------
+
+        ; JNE
+        ; --------------------
+        MOV 42 a
+
+        JNE 43 a :test4_2_success
+        PRINTLN test4_2_fail
+        MOV 0 test4_status
+        :test4_2_success
+        PRINTLN test4_2_success
+        ; --------------------
+
+        ; JE
+        ; --------------------
+        MOV 42 a
+
+        JE 42 a :test4_3_success
+        PRINTLN test4_3_fail
+        MOV 0 test4_status
+        :test4_3_success
+        PRINTLN test4_3_success
+        ; --------------------
+
+    JNE test4_status 1 :test3_fail
+    PRINTLN test4_success
+    JMP :test4_end
+
+    :test4_fail
+    PRINTLN test3_fail
+    :test4_end
+    ; -------------------------
+
+
+    PRINTLN seperator
+    PUSH tests_done
+    PUSH 18
+    CALL @io_println
+}
+
+u8 test_func() {
+    RET 2
+}
+
+.data
+seperator       u8* "-----------------------"
+
+test1_success   u8* "Pushing/Popping:   PASS"
+test1_fail      u8* "Pushing/Popping:   FAIL"
+
+test2_success   u8* "Function Calling:  PASS"
+test2_fail      u8* "Function Calling:  FAIL"
+
+test3_success   u8* "Basic Math:        PASS"
+test3_fail      u8* "Basic Math:        FAIL"
+test3_1_success u8* "  Addition:        PASS"
+test3_1_fail    u8* "  Addition:        FAIL"
+test3_2_success u8* "  Subtraction:     PASS"
+test3_2_fail    u8* "  Subtraction:     FAIL"
+test3_3_success u8* "  Multiplication:  PASS"
+test3_3_fail    u8* "  Multiplication:  FAIL"
+test3_4_success u8* "  Division:        PASS"
+test3_4_fail    u8* "  Division:        FAIL"
+
+test4_success   u8* "Jumping:           PASS"
+test4_fail      u8* "Jumping:           FAIL"
+test4_1_success u8* "    JMP:           PASS"
+test4_1_fail    u8* "    JMP:           FAIL"
+test4_2_success u8* "    JNE:           PASS"
+test4_2_fail    u8* "    JNE:           FAIL"
+test4_3_success u8* "     JE:           PASS"
+test4_3_fail    u8* "     JE:           FAIL"
+
+tests_done    u8* "All Tests Complete"
