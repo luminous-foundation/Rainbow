@@ -1,11 +1,11 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::Debug, fs};
 
 use half::f16;
 
-use crate::{_type::{Type, Types}, function::{Extern, Function}, instruction::{Instruction, Opcode}, scope::Scope, value::{Value, Values}};
+use crate::{_type::{Type, Types}, frame::Frame, function::{Extern, Function}, instruction::{Instruction, Opcode}, parse_program, scope::Scope, value::{Value, Values}};
 
 // expects `index` to be at the start of the scope body
-pub fn parse_scope(bytes: &Vec<u8>, index: &mut usize) -> Result<Scope, String> {
+pub fn parse_scope(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, linker_paths: &Vec<String>) -> Result<Scope, String> {
     let mut scope: Scope = Scope { instructions: Vec::new(), scopes: Vec::new(), functions: HashMap::new(), externs: HashMap::new() };
 
     while *index < bytes.len() {
@@ -13,12 +13,12 @@ pub fn parse_scope(bytes: &Vec<u8>, index: &mut usize) -> Result<Scope, String> 
             0xFF => {
                 *index += 1;
 
-                let func = parse_function(bytes, index)?;
+                let func = parse_function(bytes, stack, index, linker_paths)?;
                 scope.functions.insert(func.name.clone(), func);
             }
             0xFE => {
                 *index += 1;
-                scope.scopes.push(parse_scope(bytes, index)?);
+                scope.scopes.push(parse_scope(bytes, stack, index, linker_paths)?);
             }
             0xFD => {
                 *index += 1;
@@ -26,6 +26,10 @@ pub fn parse_scope(bytes: &Vec<u8>, index: &mut usize) -> Result<Scope, String> 
             }
             0xFC => {
                 break;
+            }
+            0xFA => {
+                *index += 1;
+                parse_import(bytes, stack, &mut scope, index, linker_paths)?;
             }
             0xF9 => {
                 *index += 1;
@@ -40,6 +44,41 @@ pub fn parse_scope(bytes: &Vec<u8>, index: &mut usize) -> Result<Scope, String> 
     }
 
     return Ok(scope);
+}
+
+// expects `index` to be at the start of the import
+// leaves `index` to be the byte after the import
+fn parse_import(bytes: &Vec<u8>, stack: &mut Vec<Frame>, scope: &mut Scope, index: &mut usize, linker_paths: &Vec<String>) -> Result<(), String> {
+    let import = parse_bytecode_string(bytes, index)?;
+
+    let mut import_path = String::new();
+    for path in linker_paths {
+        let paths = match fs::read_dir(path) {
+            Ok(p) => p,
+            Err(e) => return Err(e.to_string()),
+        };
+
+        for path in paths {
+            let dir_entry = path.unwrap();
+            let path = &dir_entry.path();
+            let path_str = path.as_os_str().to_str().unwrap();
+            if path_str.ends_with(&import) {
+                if import_path == "" {
+                    import_path = path_str.to_owned();
+                } else {
+                    return Err(format!("ambiguous import {import}"));
+                }
+            }
+        }
+    }
+    let mut new_scope = Scope::new();
+
+    let program = fs::read(import_path).expect("failed to read import");
+    parse_program(&program, stack, &mut new_scope, linker_paths);
+
+    scope.merge(new_scope);
+
+    return Ok(());
 }
 
 // expects `index` to be at the start of the extern
@@ -601,7 +640,7 @@ pub fn parse_instruction(bytes: &Vec<u8>, index: &mut usize) -> Result<Instructi
 
 // expects `index` to be at the start of the function definition
 // leaves `index` to be the byte after the function
-pub fn parse_function(bytes: &Vec<u8>, index: &mut usize) -> Result<Function, String> {
+pub fn parse_function(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, linker_paths: &Vec<String>) -> Result<Function, String> {
     let ret_type = parse_type(bytes, index)?;
 
     let name = parse_bytecode_string(bytes, index)?;
@@ -614,7 +653,7 @@ pub fn parse_function(bytes: &Vec<u8>, index: &mut usize) -> Result<Function, St
     }
 
     *index += 1;
-    let scope = parse_scope(bytes, index)?;
+    let scope = parse_scope(bytes, stack, index, linker_paths)?;
 
     return Ok(Function { name: name, ret_type: ret_type, arg_types: arg_types, arg_names: arg_names, scope: scope });
 }

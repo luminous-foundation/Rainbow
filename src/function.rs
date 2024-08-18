@@ -1,6 +1,6 @@
 use crate::{_type::Type, scope::Scope};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Function {
     pub name: String,
     pub ret_type: Type,
@@ -11,7 +11,7 @@ pub struct Function {
     pub scope: Scope,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Extern {
     pub name: String,
     pub ret_type: Type,

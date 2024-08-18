@@ -34,11 +34,20 @@ fn main() {
 
     let mut i = 1;
 
+    let mut linker_paths: Vec<String> = Vec::new();
     let mut program = String::new();
     while i < args.len() {
         match args[i].as_str() {
             "--time"  | "-t" => timing = true,
-            "--link"  | "-l" => todo!(),
+            "--link"  | "-l" => {
+                if args.len() <= i + 1 {
+                    println!("linker path expected");
+                    process::exit(1);
+                }
+
+                i += 1;
+                linker_paths.push(args[i].clone());
+            },
             "help" => {
                 usage();
                 process::exit(0);
@@ -79,34 +88,29 @@ fn main() {
     let program = fs::read(program).expect("failed to read program");
 
     let start = std::time::Instant::now();
-    run_program(&program);
+    run_program(&program, linker_paths);
     if timing {
         println!();
         println!("program execution took {:.6}s ({:.4}ms)", start.elapsed().as_secs_f32(), start.elapsed().as_secs_f32() * 1000f32);
     }
 }
 
-pub fn run_program(program: &Vec<u8>) {
-    let mut index = 0;
-    let global_scope = match parse_scope(&program, &mut index) {
-        Ok(scope) => scope,
-        Err(error) => panic!("failed to parse program:\n{}", error)
-    };
-
+pub fn run_program(program: &Vec<u8>, linker_paths: Vec<String>) {
     let mut stack: Vec<Frame> = Vec::new();
 
     stack.push(Frame { vars: HashMap::new(), stack: Vec::new(), allocs: Vec::new() });
 
-    match parse_data_section(&program, &mut stack, &mut index) {
-        Ok(_) => (),
-        Err(error) => panic!("failed to parse data:\n{error}")
-    }
+    let mut global_scope = Scope::new();
+
+    parse_program(program, &mut stack, &mut global_scope, &linker_paths);
 
     exec_scope(&global_scope, &global_scope, &mut stack, 0);
     
     if let Some(func) = global_scope.functions.get("main") { // main functions are not required
         exec_func(func, &global_scope, &mut stack);
     }
+
+    // dbg!(stack);
 }
 
 fn usage() {
@@ -117,6 +121,20 @@ fn usage() {
     println!("Subcommands");
     println!("  help                            prints this subcommand list");
     println!("  run/r      [file]               runs the given program");
+}
+
+fn parse_program(program: &Vec<u8>, stack: &mut Vec<Frame>, scope: &mut Scope, linker_paths: &Vec<String>) {
+    let mut index = 0;
+
+    *scope = match parse_scope(&program, stack, &mut index, linker_paths) {
+        Ok(scope) => scope,
+        Err(error) => panic!("failed to parse program:\n{error}")
+    };
+
+    match parse_data_section(&program, stack, &mut index) {
+        Ok(_) => (),
+        Err(error) => panic!("failed to parse data:\n{error}")
+    }
 }
 
 fn parse_data_section(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize) -> Result<(), String> {
@@ -252,10 +270,10 @@ fn func_exists(name: &String, scope: &Scope, global_scope: &Scope) -> bool {
 // these functions expect the variable to exist
 // if it doesnt, it will crash (it was going to crash later anyways)
 fn get_var<'a>(name: &String, stack: &'a mut [Frame], cur_frame: usize) -> &'a Value {
-    if stack[0].vars.contains_key(name) {
-        return stack[0].get_var(name);
-    } else {
+    if stack[cur_frame].vars.contains_key(name) {
         return stack[cur_frame].get_var(name);
+    } else {
+        return stack[0].get_var(name);
     }
 }
 
@@ -264,11 +282,11 @@ fn set_var(name: &String, value: &Values, stack: &mut [Frame], cur_frame: usize)
         return;
     }
 
-    if stack[0].vars.contains_key(name) {
-        stack[0].set_var(name, value);
+    if stack[cur_frame].vars.contains_key(name) {
+        stack[cur_frame].set_var(name, value);
     } else {
-        if stack[cur_frame].vars.contains_key(name) {
-            stack[cur_frame].set_var(name, value);
+        if stack[0].vars.contains_key(name) {
+            stack[0].set_var(name, value);
         } else {
             panic!("tried to set undefined variable {}", name);
         }

@@ -60,7 +60,7 @@ pub fn call_ffi(_extern: &Extern, stack: &mut Vec<Frame>, cur_frame: usize) {
         let func: Symbol<*mut c_void> = lib.get(_extern.name.as_bytes()).unwrap();
 
         let code_ptr = CodePtr::from_ptr(func.clone().into_raw().as_raw_ptr());
-
+        
         let args = stack[cur_frame].pop_args(_extern.arg_types.len());
 
         let mut types: Vec<ffi_type> = Vec::new();
