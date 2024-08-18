@@ -317,6 +317,10 @@ The values within structs are accessed through the normal instructions used for 
 (struct instance name).(field)
 ```
 
+## IMPORTS
+The format of imports is
+`FA (imported file as bytecode string)`
+
 ## ERRORS
 Error handling is currently undefined in Rainbow.
 
