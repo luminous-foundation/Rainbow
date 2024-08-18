@@ -1,23 +1,52 @@
-.extern void* GetStdHandle(i32 nStdHandle) @"Kernel32.dll"
-.extern i32 WriteConsoleA(u64 hConsoleOutput u8* lpBuffer i32 nNumberOfCharsToWrite u64 lpNumberOfCharsWritten u64 lpReserved) @"Kernel32.dll"
-.extern i32 GetLastError() @"Kernel32.dll"
+.extern u64 GetStdHandle(i32 nStdHandle) @"Kernel32.dll"
+.extern u32 WriteConsoleA(u64 a u8* a i32 a u64 a u64 a) @"Kernel32.dll"
 
-VAR u8* text
-ALLOC u8 2 text
-PMOV 97 text 0
-PMOV 0 text 1
+VAR u64 STD_OUT
+MOV 0 STD_OUT
 
-VAR u64 stdOut
+VAR u8* NEWLINE
+ALLOC u8 1 NEWLINE
+PMOV 10 NEWLINE 0
 
-PUSH -11
-CALL GetStdHandle
-POP stdOut
+void io_print(u8* text u32 len) {
+    VAR u32 writeConsoleRes
 
-PUSH stdOut
-PUSH text
-PUSH 1
-PUSH 0
-PUSH 0
-CALL WriteConsoleA
+    JNE STD_OUT 0 :loop ; if STD_OUT already has a value we don't need to re-init
 
-CALL GetLastError
+    ; init STD_OUT handle
+    PUSH -11
+    CALL GetStdHandle
+    POP STD_OUT
+
+    :loop    
+    ; TODO: figure out why i need to do this to prevent a stack underflow
+    ;       because that really shouldn't be happening
+    PUSH STD_OUT
+    PUSH text
+    PUSH len
+    PUSH 0
+    PUSH 0
+    
+    PUSH STD_OUT
+    PUSH text
+    PUSH len
+    PUSH 0
+    PUSH 0
+    CALL WriteConsoleA
+    POP writeConsoleRes
+
+    ; for some reason we need to just keep trying until it works
+    ; why you may ask?
+    ; ¯\_(ツ)_/¯
+    JE writeConsoleRes 0 :loop
+}
+
+void io_println(u8* text u32 len) {
+    PUSH text
+    PUSH len
+    CALL io_print
+
+    PUSH NEWLINE
+    PUSH 1
+    CALL io_print
+}
