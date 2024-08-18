@@ -987,7 +987,8 @@ pub fn exec_func(func: &Function, global_scope: &Scope, stack: &mut Vec<Frame>) 
     for i in 0..func.arg_names.len() {
         // TODO: argument type checking
         let val = stack[len - 2].pop();
-        stack[len - 1].push_var(&func.arg_names[i], func.arg_types[i].clone(), val.val);
+        let index = func.arg_names.len() - 1 - i;
+        stack[len - 1].push_var(&func.arg_names[index], func.arg_types[index].clone(), val.val);
     }
 
     exec_scope(&func.scope, global_scope, stack, len - 1);
