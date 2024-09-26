@@ -1,5 +1,5 @@
-.extern u64 GetStdHandle(i32 nStdHandle) @"Kernel32.dll"
-.extern u32 WriteConsoleA(u64 a u8* a i32 a u64 a u64 a) @"Kernel32.dll"
+.extern u64 GetStdHandle(i32) @"Kernel32.dll"
+.extern u32 WriteConsoleA(u64 u8* i32 u64 u64) @"Kernel32.dll"
 
 VAR u64 handle
 

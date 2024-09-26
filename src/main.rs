@@ -21,6 +21,8 @@ mod ffi;
 
 // TODO: better error handling
 // TODO: result type
+// TODO: actual type checking
+// TODO: pointers to stack
 fn main() {
     let args: Vec<String> = env::args().collect();
 

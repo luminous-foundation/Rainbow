@@ -91,7 +91,6 @@ pub fn parse_extern(bytes: &Vec<u8>, index: &mut usize) -> Result<Extern, String
     let mut arg_types: Vec<Type> = Vec::new();
     while bytes[*index] != 0xF8 {
         arg_types.push(parse_type(bytes, index)?);
-        let _ = parse_bytecode_string(bytes, index)?; // :)
     }
 
     *index += 1;
