@@ -110,10 +110,12 @@ pub fn parse_instruction(bytes: &Vec<u8>, index: &mut usize) -> Result<Instructi
     *index += 1;
 
     let opcode = match opcode_byte {
+        // nop
         0x00 => {
             Opcode::NOP
         }
 
+        // stack operations
         0x01 => {
             Opcode::PUSH_IMM(parse_immediate(bytes, index)?)
         }
@@ -134,6 +136,7 @@ pub fn parse_instruction(bytes: &Vec<u8>, index: &mut usize) -> Result<Instructi
             parse_bytecode_string(bytes, index)?)
         }
 
+        // function calling
         0x06 => {
             Opcode::CALL_FUNC(parse_bytecode_string(bytes, index)?)
         }
@@ -141,6 +144,7 @@ pub fn parse_instruction(bytes: &Vec<u8>, index: &mut usize) -> Result<Instructi
             Opcode::CALL_VAR(parse_bytecode_string(bytes, index)?)
         }
 
+        // math operations
         0x08 => {
             Opcode::ADD_I_I(parse_immediate(bytes, index)?,
             parse_immediate(bytes, index)?,
@@ -225,6 +229,7 @@ pub fn parse_instruction(bytes: &Vec<u8>, index: &mut usize) -> Result<Instructi
             parse_bytecode_string(bytes, index)?)
         }
 
+        // jumps
         0x18 => {
             Opcode::JMP_IMM(parse_immediate(bytes, index)?)
         }
@@ -478,6 +483,7 @@ pub fn parse_instruction(bytes: &Vec<u8>, index: &mut usize) -> Result<Instructi
             parse_bytecode_string(bytes, index)?)
         }
         
+        // move instructions
         0x4A => {
             Opcode::MOV_I_V(parse_immediate(bytes, index)?,
             parse_bytecode_string(bytes, index)?)
@@ -503,6 +509,122 @@ pub fn parse_instruction(bytes: &Vec<u8>, index: &mut usize) -> Result<Instructi
             parse_bytecode_string(bytes, index)?)
         }
 
+        // bitwise operations
+        0x50 => {
+            Opcode::AND_I_I(parse_immediate(bytes, index)?,
+            parse_immediate(bytes, index)?, 
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x51 => {
+            Opcode::AND_V_I(parse_bytecode_string(bytes, index)?,
+            parse_immediate(bytes, index)?, 
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x52 => {
+            Opcode::AND_I_V(parse_immediate(bytes, index)?,
+            parse_bytecode_string(bytes, index)?, 
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x53 => {
+            Opcode::AND_V_V(parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?, 
+            parse_bytecode_string(bytes, index)?)
+        }
+        
+        0x54 => {
+            Opcode::OR_I_I(parse_immediate(bytes, index)?,
+            parse_immediate(bytes, index)?, 
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x55 => {
+            Opcode::OR_V_I(parse_bytecode_string(bytes, index)?,
+            parse_immediate(bytes, index)?, 
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x56 => {
+            Opcode::OR_I_V(parse_immediate(bytes, index)?,
+            parse_bytecode_string(bytes, index)?, 
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x57 => {
+            Opcode::OR_V_V(parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?, 
+            parse_bytecode_string(bytes, index)?)
+        }
+        
+        0x58 => {
+            Opcode::NOT_IMM(parse_immediate(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x59 => {
+            Opcode::NOT_VAR(parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
+        }
+        
+        0x5A => {
+            Opcode::XOR_I_I(parse_immediate(bytes, index)?,
+            parse_immediate(bytes, index)?, 
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x5B => {
+            Opcode::XOR_V_I(parse_bytecode_string(bytes, index)?,
+            parse_immediate(bytes, index)?, 
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x5C => {
+            Opcode::XOR_I_V(parse_immediate(bytes, index)?,
+            parse_bytecode_string(bytes, index)?, 
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x5D => {
+            Opcode::XOR_V_V(parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?, 
+            parse_bytecode_string(bytes, index)?)
+        }
+        
+        0x5E => {
+            Opcode::LSH_I_I(parse_immediate(bytes, index)?,
+            parse_immediate(bytes, index)?, 
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x5F => {
+            Opcode::LSH_V_I(parse_bytecode_string(bytes, index)?,
+            parse_immediate(bytes, index)?, 
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x60 => {
+            Opcode::LSH_I_V(parse_immediate(bytes, index)?,
+            parse_bytecode_string(bytes, index)?, 
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x61 => {
+            Opcode::LSH_V_V(parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?, 
+            parse_bytecode_string(bytes, index)?)
+        }
+        
+        0x62 => {
+            Opcode::RSH_I_I(parse_immediate(bytes, index)?,
+            parse_immediate(bytes, index)?, 
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x63 => {
+            Opcode::RSH_V_I(parse_bytecode_string(bytes, index)?,
+            parse_immediate(bytes, index)?, 
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x64 => {
+            Opcode::RSH_I_V(parse_immediate(bytes, index)?,
+            parse_bytecode_string(bytes, index)?, 
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x65 => {
+            Opcode::RSH_V_V(parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?, 
+            parse_bytecode_string(bytes, index)?)
+        }
+
+        // variable instructions
         0x66 => {
             Opcode::VAR_TYPE_NAME(parse_type(bytes, index)?,
             parse_bytecode_string(bytes, index)?)
@@ -520,6 +642,7 @@ pub fn parse_instruction(bytes: &Vec<u8>, index: &mut usize) -> Result<Instructi
             parse_bytecode_string(bytes, index)?)
         }
 
+        // return
         0x6A => {
             Opcode::RET
         }
@@ -530,6 +653,7 @@ pub fn parse_instruction(bytes: &Vec<u8>, index: &mut usize) -> Result<Instructi
             Opcode::RET_VAR(parse_bytecode_string(bytes, index)?)
         }
 
+        // pointer instructions
         0x6D => {
             Opcode::DEREF_IMM(parse_immediate(bytes, index)?,
             parse_bytecode_string(bytes, index)?)
@@ -548,6 +672,15 @@ pub fn parse_instruction(bytes: &Vec<u8>, index: &mut usize) -> Result<Instructi
             parse_bytecode_string(bytes, index)?)
         }
 
+        // struct instantiation
+        0x71 => {
+            Opcode::INST_NAME(parse_bytecode_string(bytes, index)?)
+        }
+        0x72 => {
+            Opcode::INST_VAR(parse_bytecode_string(bytes, index)?)
+        }
+
+        // modulo
         0x73 => {
             Opcode::MOD_I_I(parse_immediate(bytes, index)?,
             parse_immediate(bytes, index)?,
@@ -569,6 +702,7 @@ pub fn parse_instruction(bytes: &Vec<u8>, index: &mut usize) -> Result<Instructi
             parse_bytecode_string(bytes, index)?)
         }
 
+        // more pointer instructions
         0x77 => {
             Opcode::PMOV_IMM_IMM(parse_immediate(bytes, index)?,
             parse_bytecode_string(bytes, index)?,
@@ -628,6 +762,48 @@ pub fn parse_instruction(bytes: &Vec<u8>, index: &mut usize) -> Result<Instructi
         }
         0x83 => {
             Opcode::FREE_VAR_VAR(parse_bytecode_string(bytes, index)?, 
+            parse_bytecode_string(bytes, index)?)
+        }
+
+        // callc instructions
+        0x84 => {
+            Opcode::CALLC_I_T_I(parse_immediate(bytes, index)?,
+            parse_type(bytes, index)?,
+            parse_immediate(bytes, index)?)
+        }
+        0x85 => {
+            Opcode::CALLC_V_T_I(parse_bytecode_string(bytes, index)?,
+            parse_type(bytes, index)?,
+            parse_immediate(bytes, index)?)
+        }
+        0x86 => {
+            Opcode::CALLC_I_V_I(parse_immediate(bytes, index)?,
+            parse_bytecode_string(bytes, index)?,
+            parse_immediate(bytes, index)?)
+        }
+        0x87 => {
+            Opcode::CALLC_V_V_I(parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?,
+            parse_immediate(bytes, index)?)
+        }
+        0x88 => {
+            Opcode::CALLC_I_T_V(parse_immediate(bytes, index)?,
+            parse_type(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x89 => {
+            Opcode::CALLC_V_T_V(parse_bytecode_string(bytes, index)?,
+            parse_type(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x8A => {
+            Opcode::CALLC_I_V_V(parse_immediate(bytes, index)?,
+            parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x8B => {
+            Opcode::CALLC_V_V_V(parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?,
             parse_bytecode_string(bytes, index)?)
         }
 
