@@ -1,4 +1,0 @@
-VAR u64 count
-
-ADD 1 count count
-JL count 100_000 1
