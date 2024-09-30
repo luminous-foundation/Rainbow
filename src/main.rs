@@ -23,6 +23,7 @@ mod ffi;
 // TODO: result type
 // TODO: actual type checking
 // TODO: pointers to stack
+// TODO: structs
 fn main() {
     let args: Vec<String> = env::args().collect();
 
@@ -32,11 +33,21 @@ fn main() {
         process::exit(1);
     }
 
+    let mut linker_paths: Vec<String> = Vec::new();
+
     let mut timing = false;
+
+    if args.len() == 2 {
+        if Path::new(&args[1]).exists() {
+            let program = fs::read(args[1].clone()).expect("failed to read program");
+
+            run_program(&program, linker_paths.clone());
+            return;
+        }
+    }
 
     let mut i = 1;
 
-    let mut linker_paths: Vec<String> = Vec::new();
     let mut program = String::new();
     while i < args.len() {
         match args[i].as_str() {
