@@ -198,6 +198,48 @@ macro_rules! mov {
     }
 }
 
+macro_rules! and {
+    ($a:expr, $b:expr, $out:expr, $stack:expr, $cur_frame:expr) => {
+        let val = $a.val.and(&$b.val);
+        set_var($out, &val, $stack, $cur_frame);
+    };
+}
+
+macro_rules! or {
+    ($a:expr, $b:expr, $out:expr, $stack:expr, $cur_frame:expr) => {
+        let val = $a.val.or(&$b.val);
+        set_var($out, &val, $stack, $cur_frame);
+    };
+}
+
+macro_rules! xor {
+    ($a:expr, $b:expr, $out:expr, $stack:expr, $cur_frame:expr) => {
+        let val = $a.val.xor(&$b.val);
+        set_var($out, &val, $stack, $cur_frame);
+    };
+}
+
+macro_rules! not {
+    ($a:expr, $out:expr, $stack:expr, $cur_frame:expr) => {
+        let val = $a.val.not();
+        set_var($out, &val, $stack, $cur_frame);
+    };
+}
+
+macro_rules! lsh {
+    ($a:expr, $b:expr, $out:expr, $stack:expr, $cur_frame:expr) => {
+        let val = $a.val.lsh(&$b.val);
+        set_var($out, &val, $stack, $cur_frame);
+    };
+}
+
+macro_rules! rsh {
+    ($a:expr, $b:expr, $out:expr, $stack:expr, $cur_frame:expr) => {
+        let val = $a.val.rsh(&$b.val);
+        set_var($out, &val, $stack, $cur_frame);
+    };
+}
+
 macro_rules! get_type {
     ($typ:expr, $type_var:expr, $stack:expr, $cur_frame:expr, $action:expr) => {
         let type_var = get_var($type_var, $stack, $cur_frame);
@@ -779,6 +821,75 @@ pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, c
                 mov!(a, &b, stack, cur_frame);
             }
 
+            Opcode::AND_I_I(a, b, out) => { // AND [imm] [imm]
+                and!(a, b, out, stack, cur_frame);
+            }
+            Opcode::AND_V_I(a_name, b, out) => { // AND [var] [imm]
+                let a = get_var(a_name, stack, cur_frame).clone();
+                
+                and!(a, b, out, stack, cur_frame);
+            }
+            Opcode::AND_I_V(a, b_name, out) => { // AND [imm] [var]
+                let b = get_var(b_name, stack, cur_frame).clone();
+
+                and!(a, b, out, stack, cur_frame);
+            }
+            Opcode::AND_V_V(a_name, b_name, out) => { // AND [var] [var]
+                let a = get_var(a_name, stack, cur_frame).clone();
+                let b = get_var(b_name, stack, cur_frame).clone();
+
+                and!(a, b, out, stack, cur_frame);
+            }
+
+            Opcode::OR_I_I(a, b, out) => { // OR [imm] [imm]
+                or!(a, b, out, stack, cur_frame);
+            }
+            Opcode::OR_V_I(a_name, b, out) => { // OR [var] [imm]
+                let a = get_var(a_name, stack, cur_frame).clone();
+                
+                or!(a, b, out, stack, cur_frame);
+            }
+            Opcode::OR_I_V(a, b_name, out) => { // OR [imm] [var]
+                let b = get_var(b_name, stack, cur_frame).clone();
+
+                or!(a, b, out, stack, cur_frame);
+            }
+            Opcode::OR_V_V(a_name, b_name, out) => { // OR [var] [var]
+                let a = get_var(a_name, stack, cur_frame).clone();
+                let b = get_var(b_name, stack, cur_frame).clone();
+
+                or!(a, b, out, stack, cur_frame);
+            }
+
+            Opcode::XOR_I_I(a, b, out) => { // XOR [imm] [imm]
+                xor!(a, b, out, stack, cur_frame);
+            }
+            Opcode::XOR_V_I(a_name, b, out) => { // XOR [var] [imm]
+                let a = get_var(a_name, stack, cur_frame).clone();
+                
+                xor!(a, b, out, stack, cur_frame);
+            }
+            Opcode::XOR_I_V(a, b_name, out) => { // XOR [imm] [var]
+                let b = get_var(b_name, stack, cur_frame).clone();
+
+                xor!(a, b, out, stack, cur_frame);
+            }
+            Opcode::XOR_V_V(a_name, b_name, out) => { // XOR [var] [var]
+                let a = get_var(a_name, stack, cur_frame).clone();
+                let b = get_var(b_name, stack, cur_frame).clone();
+
+                xor!(a, b, out, stack, cur_frame);
+            }
+
+            Opcode::NOT_IMM(a, out) => { // NOT [imm]
+                not!(a, out, stack, cur_frame);
+            }
+            Opcode::NOT_VAR(a_name, out) => { // NOT [var]
+                let a = get_var(a_name, stack, cur_frame).clone();
+                
+                not!(a, out, stack, cur_frame);
+            }
+            
             Opcode::VAR_TYPE_NAME(typ, name) => { // VAR [type] [name]
                 stack[cur_frame].create_var(name.clone(), typ.clone());
             }

@@ -69,6 +69,49 @@ macro_rules! math {
     };
 }
 
+macro_rules! bitwise {
+    ($self:expr, $other:expr, $op:tt, $op_name:expr, $op_plural:expr) => {
+        return match($self, $other) {
+            (Values::VOID, _) => Values::VOID,
+            (Values::SIGNED(s), Values::VOID) => Values::SIGNED(*s),
+            (Values::SIGNED(s), Values::SIGNED(v)) => Values::SIGNED(*s $op *v),
+            (Values::SIGNED(s), Values::UNSIGNED(v)) => Values::SIGNED(*s $op *v as i64),
+            (Values::SIGNED(s), Values::DECIMAL(v)) => Values::SIGNED(*s $op f64::to_bits(*v) as i64),
+            (Values::SIGNED(s), Values::POINTER(v, _)) => Values::SIGNED(*s $op *v as i64),
+            (Values::SIGNED(_), Values::STRUCT) => panic!("cannot {} struct and a number", $op_name),
+            (Values::SIGNED(_), Values::TYPE(_)) => panic!("cannot {} type and a number", $op_name),
+            (Values::SIGNED(_), Values::NAME(_)) => panic!("cannot {} name and a number", $op_name),
+            (Values::UNSIGNED(s), Values::VOID) => Values::UNSIGNED(*s),
+            (Values::UNSIGNED(s), Values::SIGNED(v)) => Values::UNSIGNED(*s $op *v as u64),
+            (Values::UNSIGNED(s), Values::UNSIGNED(v)) => Values::UNSIGNED(*s $op *v),
+            (Values::UNSIGNED(s), Values::DECIMAL(v)) => Values::UNSIGNED(*s $op f64::to_bits(*v)),
+            (Values::UNSIGNED(s), Values::POINTER(v, _)) => Values::UNSIGNED(*s $op *v as u64),
+            (Values::UNSIGNED(_), Values::STRUCT) => panic!("cannot {} struct and a number", $op_name),
+            (Values::UNSIGNED(_), Values::TYPE(_)) => panic!("cannot {} type and a number", $op_name),
+            (Values::UNSIGNED(_), Values::NAME(_)) => panic!("cannot {} name and a number", $op_name),
+            (Values::DECIMAL(s), Values::VOID) => Values::DECIMAL(*s),
+            (Values::DECIMAL(s), Values::SIGNED(v)) => Values::DECIMAL(f64::from_bits((f64::to_bits(*s) $op *v as u64))),
+            (Values::DECIMAL(s), Values::UNSIGNED(v)) => Values::DECIMAL(f64::from_bits(f64::to_bits(*s) $op *v)),
+            (Values::DECIMAL(s), Values::DECIMAL(v)) => Values::DECIMAL(f64::from_bits(f64::to_bits(*s) $op f64::to_bits(*v))),
+            (Values::DECIMAL(s), Values::POINTER(v, _)) => Values::DECIMAL(f64::from_bits(f64::to_bits(*s) $op *v as u64)),
+            (Values::DECIMAL(_), Values::STRUCT) => panic!("cannot {} struct and a number", $op_name),
+            (Values::DECIMAL(_), Values::TYPE(_)) => panic!("cannot {} type and a number", $op_name),
+            (Values::DECIMAL(_), Values::NAME(_)) => panic!("cannot {} name and a number", $op_name),
+            (Values::POINTER(p, s), Values::VOID) => Values::POINTER(*p, *s),
+            (Values::POINTER(p, s), Values::SIGNED(v)) => Values::POINTER(*p $op *v as usize, *s),
+            (Values::POINTER(p, s), Values::UNSIGNED(v)) => Values::POINTER(*p $op *v as usize, *s),
+            (Values::POINTER(p, s), Values::DECIMAL(v)) => Values::POINTER(*p $op f64::to_bits(*v) as usize, *s),
+            (Values::POINTER(p, s), Values::POINTER(v, _)) => Values::POINTER(*p $op *v, *s),
+            (Values::POINTER(_, _), Values::STRUCT) => panic!("cannot {} struct and a pointer", $op_name),
+            (Values::POINTER(_, _), Values::TYPE(_)) => panic!("cannot {} type and a pointer", $op_name),
+            (Values::POINTER(_, _), Values::NAME(_)) => panic!("cannot {} name and a pointer", $op_name),
+            (Values::STRUCT, _) => panic!("struct cannot be {} to", $op_plural),
+            (Values::TYPE(_), _) => panic!("type cannot be {} to", $op_plural),
+            (Values::NAME(_), _) => panic!("name cannot be {} to", $op_plural),
+        }
+    };
+}
+
 // TODO: actually make sure resulting numbers can fit in the types they're supposed to be
 impl Values {
     pub fn set(&mut self, other: &Values) { // basically auto-type casting
@@ -133,6 +176,7 @@ impl Values {
         }    
     }
 
+    // math operations
     pub fn add(&self, other: &Values) -> Values {
         math!(self, other, +, "add", "added");
     }
@@ -151,5 +195,39 @@ impl Values {
 
     pub fn modulo(&self, other: &Values) -> Values {
         math!(self, other, %, "modulo", "modulo");
+    }
+
+    // bitwise operations
+    pub fn and(&self, other: &Values) -> Values {
+        bitwise!(self, other, &, "AND", "ANDed");
+    }
+    
+    pub fn or(&self, other: &Values) -> Values {
+        bitwise!(self, other, &, "OR", "ORed");
+    }
+    
+    pub fn xor(&self, other: &Values) -> Values {
+        bitwise!(self, other, &, "XOR", "XORed");
+    }
+    
+    pub fn not(&self) -> Values {
+        match self {
+            Values::VOID => Values::VOID,
+            Values::SIGNED(v) => Values::SIGNED(!v),
+            Values::UNSIGNED(v) => Values::UNSIGNED(!v),
+            Values::DECIMAL(v) => Values::DECIMAL(f64::from_bits(!f64::to_bits(*v))),
+            Values::POINTER(v, s) => Values::POINTER(!v, *s),
+            Values::STRUCT => panic!("cannot NOT a struct"),
+            Values::TYPE(_) => panic!("cannot NOT a type"),
+            Values::NAME(_) => panic!("cannot NOT a name"),
+        }
+    }
+
+    pub fn lsh(&self, other: &Values) -> Values {
+        bitwise!(self, other, <<, "left shift", "left shifted");
+    }
+    
+    pub fn rsh(&self, other: &Values) -> Values {
+        bitwise!(self, other, >>, "right shift", "right shifted");
     }
 }

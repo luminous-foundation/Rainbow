@@ -35,7 +35,7 @@ Pushes value A onto the stack
 Pops a value off of the stack and stores it in variable A
 With a stack underflow, the program will crash
 
-[ ] 0x04-0x05   PEEK    [imm/var]   [var]
+[x] 0x04-0x05   PEEK    [imm/var]   [var]
 Copies value from the stack at index A and stores it in variable B
 
 [x] 0x06-07     CALL    [func/var]
@@ -77,13 +77,13 @@ Jump to location C within the current scope if value A is less than to B
 [x] 0x4A-4F     MOV     [imm/*var]   [*var]
 Move value A into variable B
 
-[ ] 0x50-53     AND     [imm/var]   [imm/var]   [var]
+[x] 0x50-53     AND     [imm/var]   [imm/var]   [var]
 Perform bitwise AND on A and B and store in variable C
 
-[ ] 0x54-57     OR      [imm/var]   [imm/var]   [var]
+[x] 0x54-57     OR      [imm/var]   [imm/var]   [var]
 Perform bitwise OR on A and B and store in variable C
 
-[ ] 0x58-5B     XOR     [imm/var]   [imm/var]   [var]
+[x] 0x58-5B     XOR     [imm/var]   [imm/var]   [var]
 Perform bitwise XOR on A and B and store in variable C
 
 [ ] 0x5C-5D     NOT     [imm/var]   [var]
@@ -126,6 +126,9 @@ Allocates a pointer with type A, size B, and puts the address in variable C
 Frees pointer A with size B
 Size only needs to be provided when given an immediate address, but still can be provided given a pointer variable
 If size is not provided with the given pointer variable the pointer will be deleted, if a size is provided the pointer will remain.
+
+[ ] 0x84-8C     CALLC   [imm/var]   [type/var]  [imm/var]
+Calls the function in memory at address A, return type B, and argument count C.
 ```
 
 0xXX-0xYY - instruction opcode range
