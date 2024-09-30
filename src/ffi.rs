@@ -113,10 +113,6 @@ pub fn call_ffi(_extern: &Extern, stack: &mut Vec<Frame>, cur_frame: usize) {
                     let val = &stack[0].stack[*p..*p+*s];
                     let ptr = get_pointer(val, &mut pp, &mut s8p, &mut s16p, &mut s32p, &mut s64p, &mut u8p, &mut u16p, &mut u32p, &mut u64p, &mut f32p, &mut f64p);
 
-                    // dbg!(*(*(ptr as *mut *mut u8) as *mut u8));
-                    // dbg!(*(ptr as *mut *mut u8) as *mut u8);
-                    // dbg!(ptr as *mut *mut u8);
-
                     raw_args.push(ptr);
                 }
                 _ => panic!("unsupported type {:?} for externs", arg.typ),
@@ -183,12 +179,5 @@ pub fn call_ffi(_extern: &Extern, stack: &mut Vec<Frame>, cur_frame: usize) {
         };
 
         stack[cur_frame].push(Value { typ: _extern.ret_type.clone(), val });
-
-        // if args.len() > 2 {
-        //     let ptr = raw_args[1];
-        //     dbg!(*(*(ptr as *mut *mut u8) as *mut u8));
-        //     dbg!(*(ptr as *mut *mut u8) as *mut u8);
-        //     dbg!(ptr as *mut *mut u8);
-        // }
     }
 }
