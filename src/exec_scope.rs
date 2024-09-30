@@ -889,6 +889,46 @@ pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, c
                 
                 not!(a, out, stack, cur_frame);
             }
+
+            Opcode::LSH_I_I(a, b, out) => { // LSH [imm] [imm]
+                lsh!(a, b, out, stack, cur_frame);
+            }
+            Opcode::LSH_V_I(a_name, b, out) => { // LSH [var] [imm]
+                let a = get_var(a_name, stack, cur_frame).clone();
+                
+                lsh!(a, b, out, stack, cur_frame);
+            }
+            Opcode::LSH_I_V(a, b_name, out) => { // LSH [imm] [var]
+                let b = get_var(b_name, stack, cur_frame).clone();
+
+                lsh!(a, b, out, stack, cur_frame);
+            }
+            Opcode::LSH_V_V(a_name, b_name, out) => { // LSH [var] [var]
+                let a = get_var(a_name, stack, cur_frame).clone();
+                let b = get_var(b_name, stack, cur_frame).clone();
+
+                lsh!(a, b, out, stack, cur_frame);
+            }
+
+            Opcode::RSH_I_I(a, b, out) => { // RSH [imm] [imm]
+                rsh!(a, b, out, stack, cur_frame);
+            }
+            Opcode::RSH_V_I(a_name, b, out) => { // RSH [var] [imm]
+                let a = get_var(a_name, stack, cur_frame).clone();
+                
+                rsh!(a, b, out, stack, cur_frame);
+            }
+            Opcode::RSH_I_V(a, b_name, out) => { // RSH [imm] [var]
+                let b = get_var(b_name, stack, cur_frame).clone();
+
+                rsh!(a, b, out, stack, cur_frame);
+            }
+            Opcode::RSH_V_V(a_name, b_name, out) => { // RSH [var] [var]
+                let a = get_var(a_name, stack, cur_frame).clone();
+                let b = get_var(b_name, stack, cur_frame).clone();
+
+                rsh!(a, b, out, stack, cur_frame);
+            }
             
             Opcode::VAR_TYPE_NAME(typ, name) => { // VAR [type] [name]
                 stack[cur_frame].create_var(name.clone(), typ.clone());
