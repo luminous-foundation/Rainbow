@@ -80,6 +80,7 @@ void main() {
         ; Multiplication
         ; ---------------------
         MUL 11 3 a
+        
         JNE a 33 :test3_3_fail
         PRINTLN test3_3_success
         JMP :test_3_3_end
