@@ -86,13 +86,13 @@ Perform bitwise OR on A and B and store in variable C
 [x] 0x58-5B     XOR     [imm/var]   [imm/var]   [var]
 Perform bitwise XOR on A and B and store in variable C
 
-[ ] 0x5C-5D     NOT     [imm/var]   [var]
+[x] 0x5C-5D     NOT     [imm/var]   [var]
 Perform bitwise NOT on A and B and store in variable C
 
-[ ] 0x5E-61     LSH     [imm/var]   [imm/var]   [var]
+[x] 0x5E-61     LSH     [imm/var]   [imm/var]   [var]
 Left shift A by B bits and store in variable C
 
-[ ] 0x62-65     RSH     [imm/var]   [imm/var]   [var]
+[x] 0x62-65     RSH     [imm/var]   [imm/var]   [var]
 Right shift A by B bits and store in variable C
 
 [x] 0x66-69     VAR     [type/var]  [name/var]
