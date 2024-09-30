@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, usize};
 
 use crate::{_type::{Type, Types}, value::{Value, Values}};
 
@@ -18,7 +18,7 @@ pub struct Frame {
 }
 
 impl Frame {
-    pub fn push(self: &mut Frame, val: Value) {
+    pub fn push(&mut self, val: Value) {
         self.stack.push(val);
         self.allocs.push(String::new());
     }
@@ -47,7 +47,7 @@ impl Frame {
         return self.stack.split_off(self.stack.len() - amnt);
     }
 
-    pub fn get_var(self: &Frame, name: &String) -> &Value {
+    pub fn get_var(&self, name: &String) -> &Value {
         let index = self.vars.get(name);
         if index.is_none() {
             panic!("tried to get undefined variable {}", name);
@@ -55,9 +55,17 @@ impl Frame {
         return &self.stack[*index.unwrap()];
     }
 
-    pub fn set_var(self: &mut Frame, name: &String, value: &Values) {
+    pub fn set_var(&mut self, name: &String, value: &Values) {
         let val = *self.vars.get(name).unwrap_or_else(|| panic!("attempted to set value of undefined variable {}", name));
         self.stack[val].set(value);
+    }
+
+    pub fn set(&mut self, index: usize, value: &Values) {
+        self.stack[index].set(value);
+    }
+
+    pub fn get(&self, index: usize) -> &Value {
+        return &self.stack[index];
     }
 
     pub fn push_alloc(self: &mut Frame, typ: &Type, alloc: String) {
@@ -67,18 +75,20 @@ impl Frame {
         self.allocs.push(alloc);
     }
 
-    pub fn push_typ(self: &mut Frame, typ: &Type) {
+    pub fn push_type(self: &mut Frame, typ: &Type) {
         let value = Self::get_default_val(typ);
         
         self.stack.push(Value { typ: typ.clone(), val: value });
+        self.allocs.push(String::new());
     }
 
-    pub fn push_var(self: &mut Frame, name: &String, typ: Type, value: Values) {
+    pub fn push_var(&mut self, name: &String, typ: Type, value: Values) {
         if self.vars.contains_key(name) {
             // TODO: handle this if the type changes
+            todo!();
         } else {
             let index = self.stack.len();
-            self.stack.push(Value {typ: typ, val: value});
+            self.stack.push(Value { typ: typ, val: value });
             self.vars.insert(name.clone(), index);
             self.allocs.push(name.clone());
         }
@@ -98,19 +108,20 @@ impl Frame {
             Types::F16 => Values::DECIMAL(0f64),
             Types::F32 => Values::DECIMAL(0f64),
             Types::F64 => Values::DECIMAL(0f64),
-            Types::POINTER => Values::POINTER(0, 0),
-            Types::TYPE => todo!(),
-            Types::STRUCT => todo!(),
+            Types::POINTER => Values::POINTER(usize::MAX, 0),
+            Types::TYPE => Values::TYPE(Type { typ: vec![Types::VOID] }),
+            Types::STRUCT => Values::STRUCT("null".to_string(), usize::MAX),
             Types::NAME => Values::NAME("".to_string()),
         }
     }
 
-    pub fn create_var(self: &mut Frame, name: String, typ: Type) {
+    pub fn create_var(&mut self, name: String, typ: Type) {
         if self.vars.contains_key(&name) {
             // TODO: handle this if the type changes
+            todo!();
         } else {
             let val = Self::get_default_val(&typ);
-            let value = Value {typ: typ, val: val };
+            let value = Value { typ: typ, val: val };
     
             let index = self.stack.len();
             self.stack.push(value);

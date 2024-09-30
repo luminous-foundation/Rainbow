@@ -155,8 +155,8 @@ pub enum Opcode { // very large enum
     REF_VAR(String, String)               = 0x70,
     
     // struct instantiation
-    INST_NAME(String)                     = 0x71,
-    INST_VAR(String)                      = 0x72,
+    INST_NAME(String, String)             = 0x71,
+    INST_VAR(String, String)              = 0x72,
     
     // modulo
     MOD_I_I(Value, Value, String)         = 0x73,
@@ -307,8 +307,8 @@ impl Opcode {
             Opcode::DEREF_VAR(_, _)         => 0x6E,
             Opcode::REF_IMM(_, _)           => 0x6F,
             Opcode::REF_VAR(_, _)           => 0x70,
-            Opcode::INST_NAME(_)            => 0x71,
-            Opcode::INST_VAR(_)             => 0x72,
+            Opcode::INST_NAME(_, _)         => 0x71,
+            Opcode::INST_VAR(_, _)          => 0x72,
             Opcode::MOD_I_I(_, _, _)        => 0x73,
             Opcode::MOD_V_I(_, _, _)        => 0x74,
             Opcode::MOD_I_V(_, _, _)        => 0x75,

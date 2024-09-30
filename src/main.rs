@@ -1,5 +1,6 @@
 use std::{collections::HashMap, env, fs, path::Path, process};
 
+use _struct::Struct;
 use _type::Types;
 use frame::Frame;
 use function::{Extern, Function};
@@ -18,6 +19,7 @@ mod _type;
 mod frame;
 mod value;
 mod ffi;
+mod _struct;
 
 // TODO: better error handling
 // TODO: result type
@@ -282,15 +284,25 @@ fn func_exists(name: &String, scope: &Scope, global_scope: &Scope) -> bool {
 
 // these functions expect the variable to exist
 // if it doesnt, it will crash (it was going to crash later anyways)
-fn get_var<'a>(name: &String, stack: &'a mut [Frame], cur_frame: usize) -> &'a Value {
+fn get_var<'a>(name: &String, global_scope: &'a Scope, stack: &'a mut [Frame], cur_frame: usize) -> &'a Value {
     if stack[cur_frame].vars.contains_key(name) {
         return stack[cur_frame].get_var(name);
     } else {
+        if name.contains(".") {
+            // println!("{:?}", );
+            let split = name.split(".").collect::<Vec<&str>>();
+            
+            let struct_name = &split[0].to_string();
+            let parent_struct = get_var(struct_name, global_scope, stack, cur_frame).clone();
+
+            return get_struct_var(&parent_struct, &split[1].to_string(), global_scope, stack, cur_frame);
+        }
+        
         return stack[0].get_var(name);
     }
 }
 
-fn set_var(name: &String, value: &Values, stack: &mut [Frame], cur_frame: usize) {
+fn set_var(name: &String, value: &Values, global_scope: &Scope, stack: &mut [Frame], cur_frame: usize) {
     if name == "_" {
         return;
     }
@@ -301,7 +313,57 @@ fn set_var(name: &String, value: &Values, stack: &mut [Frame], cur_frame: usize)
         if stack[0].vars.contains_key(name) {
             stack[0].set_var(name, value);
         } else {
+            if name.contains(".") {
+                // println!("{:?}", );
+                let split = name.split(".").collect::<Vec<&str>>();
+                
+                let struct_name = &split[0].to_string();
+                let parent_struct = get_var(struct_name, global_scope, stack, cur_frame).clone();
+
+                set_struct_var(&parent_struct, &split[1].to_string(), value, global_scope, stack, cur_frame);
+                return;
+            }
+
             panic!("tried to set undefined variable {}", name);
         }
     }
+}
+
+// TODO: structs that arent in the global scope
+fn get_struct<'a>(name: &String, scope: &'a Scope) -> &'a Struct {
+    if scope.structs.contains_key(name) {
+        return scope.structs.get(name).unwrap();
+    } else {
+        panic!("tried to get value from struct that somehow doesn't exist");
+    }
+}
+
+fn set_struct_var(parent_struct: &Value, name: &String, value: &Values, global_scope: &Scope, stack: &mut [Frame], cur_frame: usize) {
+    let struct_val = match &parent_struct.val {
+        Values::STRUCT(name, index) => (name, index),
+        _ => panic!("cannot set a variable in a value that is not a struct"),
+    };
+
+    let _struct = get_struct(&struct_val.0, global_scope);
+
+    let var_offset = _struct.var_offsets.get(name).
+                            expect(format!("attempted to set non-existant variable {name} in struct {}", _struct.name).as_str());
+
+    // TODO: but what if the struct does *not* exist on the current frame?
+    stack[cur_frame].set(struct_val.1+var_offset, value);
+}
+
+fn get_struct_var<'a>(parent_struct: &Value, name: &String, global_scope: &'a Scope, stack: &'a mut [Frame], cur_frame: usize) -> &'a Value {    
+    let struct_val = match &parent_struct.val {
+        Values::STRUCT(name, index) => (name, index),
+        _ => panic!("cannot set a variable in a value that is not a struct"),
+    };
+
+    let _struct = get_struct(&struct_val.0, global_scope);
+
+    let var_offset = _struct.var_offsets.get(name).
+                            expect(format!("attempted to set non-existant variable {name} in struct {}", _struct.name).as_str());
+
+    // TODO: but what if the struct does *not* exist on the current frame?
+    return stack[cur_frame].get(struct_val.1+var_offset);
 }

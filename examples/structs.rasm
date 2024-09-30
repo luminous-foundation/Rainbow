@@ -1,0 +1,23 @@
+.include "io.rasm"
+
+.struct Foo {
+    i32 a
+    f32 b
+    char* text
+}
+
+void main() {
+    VAR struct foo
+    INST Foo foo
+    
+    MOV 123 foo.a
+    MOV 64.5 foo.b
+    MOV struct_text foo.text
+
+    PUSH foo.text
+    PUSH 13
+    CALL @io_println
+}
+
+.data
+struct_text u8* "Hello, World!"

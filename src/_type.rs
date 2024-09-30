@@ -42,6 +42,27 @@ impl Types {
             _ => panic!("unknown type {:#04x}", typ)
         }
     }
+
+    pub fn get_size(&self) -> usize {
+        match self {
+            Types::VOID => 0,
+            Types::I8 => 1,
+            Types::I16 => 2,
+            Types::I32 => 4,
+            Types::I64 => 8,
+            Types::U8 => 1,
+            Types::U16 => 2,
+            Types::U32 => 4,
+            Types::U64 => 8,
+            Types::F16 => 2,
+            Types::F32 => 4,
+            Types::F64 => 8,
+            Types::POINTER => std::mem::size_of::<usize>(),
+            Types::TYPE => 1,
+            Types::STRUCT => 0, // struct does not have a known size
+            Types::NAME => 0, // struct does not have a known size
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -52,5 +73,9 @@ pub struct Type {
 impl Type {
     pub fn pop(self) -> Type {
         return Type { typ: self.typ[1..self.typ.len()].to_vec() };
+    }
+
+    pub fn get_size(&self) -> usize {
+        return self.typ[0].get_size();
     }
 }

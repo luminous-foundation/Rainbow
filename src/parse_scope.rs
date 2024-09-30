@@ -1,12 +1,12 @@
-use std::{collections::HashMap, fmt::Debug, fs};
+use std::{collections::HashMap, fs};
 
 use half::f16;
 
-use crate::{_type::{Type, Types}, frame::Frame, function::{Extern, Function}, instruction::{Instruction, Opcode}, parse_program, scope::Scope, value::{Value, Values}};
+use crate::{_struct::Struct, _type::{Type, Types}, frame::Frame, function::{Extern, Function}, instruction::{Instruction, Opcode}, parse_program, scope::Scope, value::{Value, Values}};
 
 // expects `index` to be at the start of the scope body
 pub fn parse_scope(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, linker_paths: &Vec<String>) -> Result<Scope, String> {
-    let mut scope: Scope = Scope { instructions: Vec::new(), scopes: Vec::new(), functions: HashMap::new(), externs: HashMap::new() };
+    let mut scope: Scope = Scope::new();
 
     while *index < bytes.len() {
         match bytes[*index] {
@@ -27,6 +27,12 @@ pub fn parse_scope(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, l
             0xFC => {
                 break;
             }
+            0xFB => {
+                *index += 1;
+
+                let strct = parse_struct(bytes, index)?;
+                scope.structs.insert(strct.name.clone(), strct);
+            }
             0xFA => {
                 *index += 1;
                 parse_import(bytes, stack, &mut scope, index, linker_paths)?;
@@ -44,6 +50,35 @@ pub fn parse_scope(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, l
     }
 
     return Ok(scope);
+}
+
+// expects `index` to be at the start of the struct definition
+// leaves `index` to be the byte after the struct
+fn parse_struct(bytes: &Vec<u8>, index: &mut usize) -> Result<Struct, String> {
+    let name = parse_bytecode_string(bytes, index)?;
+
+    let mut strct = Struct { name, size: 0, var_names: Vec::new(), var_types: Vec::new(), var_offsets: HashMap::new() };
+
+    *index += 1;
+
+    let mut offset = 0;
+    while bytes[*index] != 0xFD {
+        let typ = parse_type(bytes, index)?;
+        let name = parse_bytecode_string(bytes, index)?;
+        
+        // TODO: replace this with the size in bytes when byte-wise memory accesses are implemented
+        strct.size += 1; //typ.get_size(); // TODO: structs are of unknown size! should we even handle this?
+
+        strct.var_types.push(typ);
+        strct.var_names.push(name.clone());
+        strct.var_offsets.insert(name, offset);
+
+        offset += 1;
+    }
+
+    *index += 1;
+
+    return Ok(strct);
 }
 
 // expects `index` to be at the start of the import
@@ -674,10 +709,12 @@ pub fn parse_instruction(bytes: &Vec<u8>, index: &mut usize) -> Result<Instructi
 
         // struct instantiation
         0x71 => {
-            Opcode::INST_NAME(parse_bytecode_string(bytes, index)?)
+            Opcode::INST_NAME(parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
         }
         0x72 => {
-            Opcode::INST_VAR(parse_bytecode_string(bytes, index)?)
+            Opcode::INST_VAR(parse_bytecode_string(bytes, index)?,
+            parse_bytecode_string(bytes, index)?)
         }
 
         // modulo
@@ -866,7 +903,7 @@ pub fn parse_bytecode_string(bytes: &[u8], index: &mut usize) -> Result<String, 
 
             Ok(s)
         }
-        Err(error) => Err(error.to_string())
+        Err(error) => Err(format!("error at {:#06x}: {}", *index-1, error.to_string()))
     }
 }
 
