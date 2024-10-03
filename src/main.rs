@@ -43,7 +43,10 @@ fn main() {
         if Path::new(&args[1]).exists() {
             let program = fs::read(args[1].clone()).expect("failed to read program");
 
-            run_program(&program, linker_paths.clone());
+            let retval = run_program(&program, linker_paths.clone());
+            if retval != 0 {
+                std::process::exit(retval);
+            }
             return;
         }
     }
@@ -103,14 +106,18 @@ fn main() {
     let program = fs::read(program).expect("failed to read program");
 
     let start = std::time::Instant::now();
-    run_program(&program, linker_paths);
+    let retval = run_program(&program, linker_paths);
     if timing {
         println!();
         println!("program execution took {:.6}s ({:.4}ms)", start.elapsed().as_secs_f32(), start.elapsed().as_secs_f32() * 1000f32);
     }
+
+    if retval != 0 {
+        std::process::exit(retval);
+    }
 }
 
-pub fn run_program(program: &Vec<u8>, linker_paths: Vec<String>) {
+pub fn run_program(program: &Vec<u8>, linker_paths: Vec<String>) -> i32 {
     let mut stack: Vec<Frame> = Vec::new();
 
     stack.push(Frame { vars: HashMap::new(), stack: Vec::new(), allocs: Vec::new() });
@@ -119,11 +126,17 @@ pub fn run_program(program: &Vec<u8>, linker_paths: Vec<String>) {
 
     parse_program(program, &mut stack, &mut global_scope, &linker_paths);
 
-    exec_scope(&global_scope, &global_scope, &mut stack, 0);
+    let retval = exec_scope(&global_scope, &global_scope, &mut stack, 0);
+
+    if retval != 0 {
+        return retval;
+    }
     
     if let Some(func) = global_scope.functions.get("main") { // main functions are not required
-        exec_func(func, &global_scope, &mut stack);
+        return exec_func(func, &global_scope, &mut stack);
     }
+
+    return 0;
 
     // dbg!(stack);
 }

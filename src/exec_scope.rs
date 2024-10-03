@@ -362,7 +362,7 @@ macro_rules! free_ {
 //   but as it stands they are executed last
 // }
 // ...
-pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) {
+pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) -> i32 {
     let mut pc = 0;
 
     // i want to make per-instruction timing toggleable
@@ -960,13 +960,39 @@ pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, c
                 break;
             }
             Opcode::RET_IMM(v) => { // RET [imm]
-                stack[cur_frame - 1].push(v.clone());
+                if cur_frame != 0 {
+                    stack[cur_frame - 1].push(v.clone());
+                } else {
+                    match v.val {
+                        Values::VOID => return 0,
+                        Values::SIGNED(n) => return n as i32,
+                        Values::UNSIGNED(n) => return n as i32,
+                        Values::DECIMAL(n) => return n as i32,
+                        Values::POINTER(n, _) => return n as i32,
+                        Values::STRUCT(_, _) => return 0,
+                        Values::TYPE(_) => return 0,
+                        Values::NAME(_) => return 0,
+                    }
+                }
                 break;
             }
             Opcode::RET_VAR(var) => { // RET [var]
                 let v = get_var(var, global_scope, stack, cur_frame).clone();
-
-                stack[cur_frame - 1].push(v);
+                
+                if cur_frame != 0 {
+                    stack[cur_frame - 1].push(v);
+                } else {
+                    match v.val {
+                        Values::VOID => return 0,
+                        Values::SIGNED(n) => return n as i32,
+                        Values::UNSIGNED(n) => return n as i32,
+                        Values::DECIMAL(n) => return n as i32,
+                        Values::POINTER(n, _) => return n as i32,
+                        Values::STRUCT(_, _) => return 0,
+                        Values::TYPE(_) => return 0,
+                        Values::NAME(_) => return 0,
+                    }
+                }
                 break;
             }
 
@@ -1129,12 +1155,12 @@ pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, c
         pc += 1;
     }
 
-    // clear everything from the stack created by the scope if we are not the global scope
-    if cur_frame != 0 {
-        while stack[cur_frame].stack.len() > scope_stack_start {
-            stack[cur_frame].pop();
-        }
+    // clear everything from the stack created by the scope
+    while stack[cur_frame].stack.len() > scope_stack_start {
+        stack[cur_frame].pop();
     }
+
+    return 0;
     
     // println!("scope took {:.4}ms", start.elapsed().as_secs_f32() * 1000f32);
 
@@ -1145,7 +1171,7 @@ pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, c
     // }
 }
 
-pub fn exec_func(func: &Function, global_scope: &Scope, stack: &mut Vec<Frame>) {
+pub fn exec_func(func: &Function, global_scope: &Scope, stack: &mut Vec<Frame>) -> i32 {
     stack.push(Frame { vars: HashMap::new(), stack: Vec::new(), allocs: Vec::new() });
 
     let len = stack.len();
@@ -1157,7 +1183,9 @@ pub fn exec_func(func: &Function, global_scope: &Scope, stack: &mut Vec<Frame>) 
         stack[len - 1].push_var(&func.arg_names[index], func.arg_types[index].clone(), val.val);
     }
 
-    exec_scope(&func.scope, global_scope, stack, len - 1);
+    let retval = exec_scope(&func.scope, global_scope, stack, len - 1);
 
     stack.pop();
+
+    return retval;
 }
