@@ -362,7 +362,7 @@ macro_rules! free_ {
 //   but as it stands they are executed last
 // }
 // ...
-pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) -> i32 {
+pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize, pop_stack: bool) -> i32 {
     let mut pc = 0;
 
     // i want to make per-instruction timing toggleable
@@ -1156,8 +1156,10 @@ pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, c
     }
 
     // clear everything from the stack created by the scope
-    while stack[cur_frame].stack.len() > scope_stack_start {
-        stack[cur_frame].pop();
+    if pop_stack {
+        while stack[cur_frame].stack.len() > scope_stack_start {
+            stack[cur_frame].pop();
+        }
     }
 
     return 0;
@@ -1183,7 +1185,7 @@ pub fn exec_func(func: &Function, global_scope: &Scope, stack: &mut Vec<Frame>) 
         stack[len - 1].push_var(&func.arg_names[index], func.arg_types[index].clone(), val.val);
     }
 
-    let retval = exec_scope(&func.scope, global_scope, stack, len - 1);
+    let retval = exec_scope(&func.scope, global_scope, stack, len - 1, true);
 
     stack.pop();
 

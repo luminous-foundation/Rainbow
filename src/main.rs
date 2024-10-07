@@ -38,12 +38,13 @@ fn main() {
     let mut linker_paths: Vec<String> = Vec::new();
 
     let mut timing = false;
+    let mut debug = false;
 
     if args.len() == 2 {
         if Path::new(&args[1]).exists() {
             let program = fs::read(args[1].clone()).expect("failed to read program");
 
-            let retval = run_program(&program, linker_paths.clone());
+            let retval = run_program(&program, linker_paths.clone(), debug);
             if retval != 0 {
                 std::process::exit(retval);
             }
@@ -65,7 +66,10 @@ fn main() {
 
                 i += 1;
                 linker_paths.push(args[i].clone());
-            },
+            }
+            "--debug" | "-d" => {
+                debug = true;
+            }
             "help" => {
                 usage();
                 process::exit(0);
@@ -106,7 +110,7 @@ fn main() {
     let program = fs::read(program).expect("failed to read program");
 
     let start = std::time::Instant::now();
-    let retval = run_program(&program, linker_paths);
+    let retval = run_program(&program, linker_paths, debug);
     if timing {
         println!();
         println!("program execution took {:.6}s ({:.4}ms)", start.elapsed().as_secs_f32(), start.elapsed().as_secs_f32() * 1000f32);
@@ -117,16 +121,16 @@ fn main() {
     }
 }
 
-pub fn run_program(program: &Vec<u8>, linker_paths: Vec<String>) -> i32 {
+pub fn run_program(program: &Vec<u8>, linker_paths: Vec<String>, debug: bool) -> i32 {
     let mut stack: Vec<Frame> = Vec::new();
 
     stack.push(Frame { vars: HashMap::new(), stack: Vec::new(), allocs: Vec::new() });
 
     let mut global_scope = Scope::new();
 
-    parse_program(program, &mut stack, &mut global_scope, &linker_paths);
+    parse_program(program, &mut stack, &mut global_scope, &linker_paths, debug);
 
-    let retval = exec_scope(&global_scope, &global_scope, &mut stack, 0);
+    let retval = exec_scope(&global_scope, &global_scope, &mut stack, 0, false);
 
     if retval != 0 {
         return retval;
@@ -151,10 +155,10 @@ fn usage() {
     println!("  run/r      [file]               runs the given program");
 }
 
-fn parse_program(program: &Vec<u8>, stack: &mut Vec<Frame>, scope: &mut Scope, linker_paths: &Vec<String>) {
+fn parse_program(program: &Vec<u8>, stack: &mut Vec<Frame>, scope: &mut Scope, linker_paths: &Vec<String>, debug: bool) {
     let mut index = 0;
 
-    *scope = match parse_scope(&program, stack, &mut index, linker_paths) {
+    *scope = match parse_scope(&program, stack, &mut index, linker_paths, debug) {
         Ok(scope) => scope,
         Err(error) => panic!("failed to parse program:\n{error}")
     };
@@ -162,6 +166,11 @@ fn parse_program(program: &Vec<u8>, stack: &mut Vec<Frame>, scope: &mut Scope, l
     match parse_data_section(&program, stack, &mut index) {
         Ok(_) => (),
         Err(error) => panic!("failed to parse data:\n{error}")
+    }
+
+    if debug {
+        println!("global scope: ");
+        println!("{scope:#?}");
     }
 }
 

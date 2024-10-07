@@ -5,7 +5,7 @@ use half::f16;
 use crate::{_struct::Struct, _type::{Type, Types}, frame::Frame, function::{Extern, Function}, instruction::{Instruction, Opcode}, parse_program, scope::Scope, value::{Value, Values}};
 
 // expects `index` to be at the start of the scope body
-pub fn parse_scope(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, linker_paths: &Vec<String>) -> Result<Scope, String> {
+pub fn parse_scope(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, linker_paths: &Vec<String>, debug: bool) -> Result<Scope, String> {
     let mut scope: Scope = Scope::new();
 
     while *index < bytes.len() {
@@ -13,12 +13,12 @@ pub fn parse_scope(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, l
             0xFF => {
                 *index += 1;
 
-                let func = parse_function(bytes, stack, index, linker_paths)?;
+                let func = parse_function(bytes, stack, index, linker_paths, debug)?;
                 scope.functions.insert(func.name.clone(), func);
             }
             0xFE => {
                 *index += 1;
-                scope.scopes.push(parse_scope(bytes, stack, index, linker_paths)?);
+                scope.scopes.push(parse_scope(bytes, stack, index, linker_paths, debug)?);
             }
             0xFD => {
                 *index += 1;
@@ -35,7 +35,7 @@ pub fn parse_scope(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, l
             }
             0xFA => {
                 *index += 1;
-                parse_import(bytes, stack, &mut scope, index, linker_paths)?;
+                parse_import(bytes, stack, &mut scope, index, linker_paths, debug)?;
             }
             0xF9 => {
                 *index += 1;
@@ -83,7 +83,7 @@ fn parse_struct(bytes: &Vec<u8>, index: &mut usize) -> Result<Struct, String> {
 
 // expects `index` to be at the start of the import
 // leaves `index` to be the byte after the import
-fn parse_import(bytes: &Vec<u8>, stack: &mut Vec<Frame>, scope: &mut Scope, index: &mut usize, linker_paths: &Vec<String>) -> Result<(), String> {
+fn parse_import(bytes: &Vec<u8>, stack: &mut Vec<Frame>, scope: &mut Scope, index: &mut usize, linker_paths: &Vec<String>, debug: bool) -> Result<(), String> {
     let import = parse_bytecode_string(bytes, index)?;
 
     let mut import_path = String::new();
@@ -109,7 +109,7 @@ fn parse_import(bytes: &Vec<u8>, stack: &mut Vec<Frame>, scope: &mut Scope, inde
     let mut new_scope = Scope::new();
 
     let program = fs::read(import_path).expect("failed to read import");
-    parse_program(&program, stack, &mut new_scope, linker_paths);
+    parse_program(&program, stack, &mut new_scope, linker_paths, debug);
 
     scope.merge(new_scope);
 
@@ -852,7 +852,7 @@ pub fn parse_instruction(bytes: &Vec<u8>, index: &mut usize) -> Result<Instructi
 
 // expects `index` to be at the start of the function definition
 // leaves `index` to be the byte after the function
-pub fn parse_function(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, linker_paths: &Vec<String>) -> Result<Function, String> {
+pub fn parse_function(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, linker_paths: &Vec<String>, debug: bool) -> Result<Function, String> {
     let ret_type = parse_type(bytes, index)?;
 
     let name = parse_bytecode_string(bytes, index)?;
@@ -865,7 +865,7 @@ pub fn parse_function(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize
     }
 
     *index += 1;
-    let scope = parse_scope(bytes, stack, index, linker_paths)?;
+    let scope = parse_scope(bytes, stack, index, linker_paths, debug)?;
 
     return Ok(Function { name: name, ret_type: ret_type, arg_types: arg_types, arg_names: arg_names, scope: scope });
 }
