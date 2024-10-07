@@ -7,10 +7,10 @@
 0xFD - scope end
 0xFC - data section start
 0xFB - struct start
-0xFA - file import (not yet implemented)
+0xFA - file import
 0xF9 - extern function
 0xF8 - extern args end
-0xF7 - unused
+0xF7 - conditional parse
 0xF6 - unused
 0xF5 - unused
 0xF4 - unused
@@ -107,9 +107,9 @@ Dereference pointer A and store in variable B
 (note: deref clones the value that you are dereferencing)
 
 [x] 0x6F-70     REF     [imm/var]   [ptr var]
-Create a reference to variable A and store in variable B
+Create a reference to value A and store in variable B
 
-[ ] 0x71-72     INST    [name/var]  [var]
+[x] 0x71-72     INST    [name/var]  [var]
 Instantiate a struct named A and store in varaible B
 (Struct will be filled with 0s or empty values)
 
@@ -323,6 +323,28 @@ The values within structs are accessed through the normal instructions used for 
 ## IMPORTS
 The format of imports is
 `FA (imported file as bytecode string)`
+
+## CONDITIONAL PARSING
+Conditional parsing allows you to toggle any part of your code based off of constant variables. These varaibles are provided by either the runtime or the user.
+```c#
+.if PLATFORM == PLATFORM_WINDOWS
+    {code}
+.elseif PLATFORM == PLATFORM_LINUX
+    {code}
+.end
+```
+
+becomes
+
+```
+F7 00 08 50 4C 41 54 46 4F 52 4D 00 0F 50 4C 41 54 46 4F 52 4D 5F 57 49 4E 44 4F 57 53 
+    ...
+F7 01 08 50 4C 41 54 46 4F 52 4D 00 0D 50 4C 41 54 46 4F 52 4D 5F 4C 49 4E 55 58
+    ...
+F7 03
+```
+
+To pass in constant variables use `--const FOO=123` or `-c FOO=456`
 
 ## ERRORS
 Error handling is currently undefined in Rainbow.

@@ -4,7 +4,7 @@
 The Rainbow Bytecode Runtime (referred to as just Rainbow, the Rainbow Bytecode, the Rainbow Runtime, or some other combination that involves Rainbow) is a bytecode runtime built with the philosiphy of giving the developer ultimate freedom, while still remaining as fast as possible.
 
 ## How do I use it?
-If you just want to run a Rainbow file (.rbb), either run `cargo run --release [your .rbb file]` or run the compiled target file with `rainbow [your .rbb file]`
+If you just want to run a Rainbow file (.rbb), either run `cargo run --release r [your .rbb file]` or run the compiled target file with `rainbow r [your .rbb file]`
 
 ### If you want to develop programs for Rainbow however
 The current recommended method for programming for Rainbow is to use [RASM](https://github.com/luminous-foundation/rasm).
