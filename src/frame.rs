@@ -118,7 +118,7 @@ impl Frame {
     pub fn create_var(&mut self, name: String, typ: Type) {
         if self.vars.contains_key(&name) {
             // TODO: handle this if the type changes
-            todo!();
+            // todo!();
         } else {
             let val = Self::get_default_val(&typ);
             let value = Value { typ: typ, val: val };
