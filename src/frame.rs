@@ -85,7 +85,7 @@ impl Frame {
     pub fn push_var(&mut self, name: &String, typ: Type, value: Values) {
         if self.vars.contains_key(name) {
             // TODO: handle this if the type changes
-            todo!();
+            // todo!();
         } else {
             let index = self.stack.len();
             self.stack.push(Value { typ: typ, val: value });
