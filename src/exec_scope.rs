@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{_type::Types, ffi::call_ffi, frame::Frame, func_exists, function::Function, get_extern, get_func, get_struct, get_var, instruction::Opcode, scope::Scope, set_var, value::Values};
+use crate::{_type::Types, ffi::call_ffi, frame::Frame, func_exists, function::Function, get_extern, get_func, get_struct, get_var, instruction::{Instruction, Opcode}, scope::Scope, set_var, value::Values};
 
 // instruction macros
 macro_rules! peek {
@@ -357,15 +357,7 @@ macro_rules! free_ {
     }
 }
 
-// TODO: make scopes in scopes preserve instruction order
-// example:
-// ...
-// {
-//   these instructions should be executed where they are
-//   but as it stands they are executed last
-// }
-// ...
-pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize, pop_stack: bool) -> i32 {
+pub fn exec_block(scope: &Scope, block: &Vec<Instruction>, global_scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize) -> i32 {
     let mut pc = 0;
 
     // i want to make per-instruction timing toggleable
@@ -374,11 +366,9 @@ pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, c
     // let mut times: [f64; 256] = [0f64; 256];
     // let mut counts: [u32; 256] = [0; 256];
 
-    let scope_stack_start = stack[cur_frame].stack.len();
-
     // let start = std::time::Instant::now();
-    while pc < scope.instructions.len() {
-        let instr = &scope.instructions[pc];
+    while pc < block.len() {
+        let instr = &block[pc];
 
         // let instr_start = std::time::Instant::now();
         match &instr.opcode {
@@ -1159,11 +1149,6 @@ pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, c
     }
 
     // clear everything from the stack created by the scope
-    if pop_stack {
-        while stack[cur_frame].stack.len() > scope_stack_start {
-            stack[cur_frame].pop();
-        }
-    }
 
     return 0;
     
@@ -1174,6 +1159,29 @@ pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, c
     //         println!("{:#04x}: {:.6}ms avg | {:.6}ms total", x, times[x] / counts[x] as f64, times[x]);
     //     }
     // }
+}
+
+pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize, pop_stack: bool) -> i32 {
+    let scope_stack_start = stack[cur_frame].stack.len();
+
+    for block in &scope.blocks {
+        let ret = match block {
+            crate::block::Block::CODE(vec) => exec_block(scope, vec, global_scope, stack, cur_frame),
+            crate::block::Block::SCOPE(scope) => exec_scope(&scope, global_scope, stack, cur_frame, pop_stack),
+        };
+
+        if ret != 0 {
+            return ret;
+        }
+    }
+
+    if pop_stack {
+        while stack[cur_frame].stack.len() > scope_stack_start {
+            stack[cur_frame].pop();
+        }
+    }
+
+    return 0;
 }
 
 pub fn exec_func(func: &Function, global_scope: &Scope, stack: &mut Vec<Frame>) -> i32 {

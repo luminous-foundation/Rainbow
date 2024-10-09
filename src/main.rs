@@ -20,6 +20,7 @@ mod frame;
 mod value;
 mod ffi;
 mod _struct;
+mod block;
 
 // TODO: better error handling
 // TODO: result type

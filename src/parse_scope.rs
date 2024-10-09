@@ -1,8 +1,8 @@
-use std::{collections::HashMap, fs};
+use std::{collections::HashMap, fs, path::Path};
 
 use half::f16;
 
-use crate::{_struct::Struct, _type::{Type, Types}, frame::Frame, function::{Extern, Function}, instruction::{Instruction, Opcode}, parse_program, scope::Scope, value::{Value, Values}};
+use crate::{_struct::Struct, _type::{Type, Types}, block::Block, frame::Frame, function::{Extern, Function}, instruction::{Instruction, Opcode}, parse_program, scope::Scope, value::{Value, Values}};
 
 // expects `index` to be at the start of the scope body
 pub fn parse_scope(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, linker_paths: &Vec<String>, debug: bool) -> Result<Scope, String> {
@@ -18,7 +18,7 @@ pub fn parse_scope(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, l
             }
             0xFE => {
                 *index += 1;
-                scope.scopes.push(parse_scope(bytes, stack, index, linker_paths, debug)?);
+                scope.blocks.push(Block::SCOPE(parse_scope(bytes, stack, index, linker_paths, debug)?));
             }
             0xFD => {
                 *index += 1;
@@ -44,7 +44,15 @@ pub fn parse_scope(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, l
                 scope.externs.insert(func.name.clone(), func);
             }
             _ => {
-                scope.instructions.push(parse_instruction(bytes, index)?);
+                if scope.blocks.len() == 0 {
+                    scope.blocks.push(Block::CODE(Vec::new()));
+                }
+
+                let len = scope.blocks.len();
+                match &mut scope.blocks[len-1] {
+                    Block::CODE(vec) => vec.push(parse_instruction(bytes, index)?),
+                    _ => scope.blocks.push(Block::CODE(Vec::new()))
+                }
             }
         }
     }
@@ -87,6 +95,10 @@ fn parse_import(bytes: &Vec<u8>, stack: &mut Vec<Frame>, scope: &mut Scope, inde
     let import = parse_bytecode_string(bytes, index)?;
 
     let mut import_path = String::new();
+    if Path::exists(Path::new(&import)) {
+        import_path = import.clone();
+    }
+
     for path in linker_paths {
         let paths = match fs::read_dir(path) {
             Ok(p) => p,
@@ -108,7 +120,7 @@ fn parse_import(bytes: &Vec<u8>, stack: &mut Vec<Frame>, scope: &mut Scope, inde
     }
     let mut new_scope = Scope::new();
 
-    let program = fs::read(import_path).expect("failed to read import");
+    let program = fs::read(import_path.clone()).expect(&format!("failed to read import `{import}`"));
     parse_program(&program, stack, &mut new_scope, linker_paths, debug);
 
     scope.merge(new_scope);
