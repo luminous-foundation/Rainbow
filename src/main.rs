@@ -26,7 +26,6 @@ mod block;
 // TODO: result type
 // TODO: actual type checking
 // TODO: pointers to stack
-// TODO: structs
 fn main() {
     let args: Vec<String> = env::args().collect();
 
