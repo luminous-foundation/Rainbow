@@ -8,13 +8,13 @@
 
 void main() {
     VAR struct foo
-    INST Foo foo
+    INST Foo $foo
     
-    MOV 123 foo.a
-    MOV 64.5 foo.b
-    MOV struct_text foo.text
+    MOV 123 $foo.a
+    MOV 64.5 $foo.b
+    MOV $struct_text $foo.text
 
-    PUSH foo.text
+    PUSH $foo.text
     PUSH 13
     CALL @io_println
 }

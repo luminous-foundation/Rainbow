@@ -346,6 +346,24 @@ F7 03
 
 To pass in constant variables use `--const FOO=123` or `-c FOO=456`
 
+## EXTERNS
+Externs are ways of importing functions from compiled code into your Rainbow code.
+
+The format is
+```
+F9 (return type) (name) (arg types) F8 (extern file)
+```
+
+```
+extern u64 GetStdHandle(i32) @"Kernel32.dll"
+```
+
+becomes
+
+```
+F9 08 0C 47 65 74 53 74 64 48 61 6E 64 6C 65 03 F8 0C 4B 65 72 6E 65 6C 33 32 2E 64 6C 6C
+```
+
 ## ERRORS
 Error handling is currently undefined in Rainbow.
 

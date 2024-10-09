@@ -1,10 +1,7 @@
 .include "io.rasm"
 
 void main() {
-    PUSH text
+    PUSH "Hello, World!"
     PUSH 13
     CALL @io_println
 }
-
-.data
-text u8* "Hello, World!"
