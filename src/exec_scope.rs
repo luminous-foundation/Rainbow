@@ -279,7 +279,10 @@ macro_rules! deref {
     ($ptr:expr, $out:expr, $global_scope:expr, $stack:expr, $cur_frame:expr) => {
         let index;
         match $ptr.val {
-            Values::POINTER(p, 1) => index = p,
+            Values::SIGNED(p) => index = p as usize,
+            Values::UNSIGNED(p) => index = p as usize,
+            Values::DECIMAL(p) => index = p as usize,
+            Values::POINTER(p, _) => index = p,
             _ => panic!("attempted to deref non-pointer value")
         }
         
