@@ -325,9 +325,36 @@ The format of imports is
 `FA (imported file as bytecode string)`
 
 ## CONDITIONAL PARSING
-Conditional parsing allows you to toggle any part of your code based off of constant variables. These varaibles are provided by either the runtime or the user.
+Conditional parsing allows you to toggle any part of your code based off of constant variables. These variables are provided by either the runtime or the user.
+The format is
+```
+F7 (type) (variable name) (condition) (variable name)
+    FE
+        (body)
+    FD
+...repeat...
+```
+
+the types are
+```
+00: if
+01: else if
+02: else
+03: end
+```
+
+the conditions are
+```
+00: ==
+01: !=
+02: >=
+03: >
+04: <=
+05: <
+```
+
 ```c#
-.if PLATFORM == PLATFORM_WINDOWS
+.if PLATFORM == PLATFORM_WIN32
     {code}
 .elseif PLATFORM == PLATFORM_LINUX
     {code}
@@ -338,9 +365,13 @@ becomes
 
 ```
 F7 00 08 50 4C 41 54 46 4F 52 4D 00 0F 50 4C 41 54 46 4F 52 4D 5F 57 49 4E 44 4F 57 53 
-    ...
-F7 01 08 50 4C 41 54 46 4F 52 4D 00 0D 50 4C 41 54 46 4F 52 4D 5F 4C 49 4E 55 58
-    ...
+    FE
+        ...
+    FD
+F7 01 08 50 4C 41 54 46 4F 52 4D 00 0D 50 4C 41 54 46 4F 52 4D 5F 4C 49 4E 55 58 
+    FE
+        ...
+    FD
 F7 03
 ```
 
