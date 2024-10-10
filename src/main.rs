@@ -31,7 +31,7 @@ fn main() {
 
     if args.len() == 1 {
         usage();
-        println!("no subcommand provided");
+        println!("no file or subcommand provided");
         process::exit(1);
     }
 
@@ -39,18 +39,6 @@ fn main() {
 
     let mut timing = false;
     let mut debug = false;
-
-    if args.len() == 2 {
-        if Path::new(&args[1]).exists() {
-            let program = fs::read(args[1].clone()).expect("failed to read program");
-
-            let retval = run_program(&program, linker_paths.clone(), debug);
-            if retval != 0 {
-                std::process::exit(retval);
-            }
-            return;
-        }
-    }
 
     let mut i = 1;
 
@@ -84,15 +72,14 @@ fn main() {
                 program = args[i].clone();
             }
             _ => {
-                usage();
-                println!("unknown subcommand {}", args[i]);
-                process::exit(1);
+                program = args[i].clone();
             }
         }
         i += 1;
     }
 
     if program.is_empty() {
+        usage();
         println!("no program provided");
         process::exit(1);
     }
@@ -148,11 +135,13 @@ pub fn run_program(program: &Vec<u8>, linker_paths: Vec<String>, debug: bool) ->
 fn usage() {
     println!("Usage:");
     println!("Flags");
-    println!("  --time/-t                       enables assembly timing");
+    println!("  --time/-t                       enables execution timing");
     println!("  --link/-l  [path]               provide a linking path");
+    println!("  --debug/-d                      enables debug mode");
     println!("Subcommands");
     println!("  help                            prints this subcommand list");
     println!("  run/r      [file]               runs the given program");
+    println!("  [file]                          runs the given program");
 }
 
 fn parse_program(program: &Vec<u8>, stack: &mut Vec<Frame>, scope: &mut Scope, linker_paths: &Vec<String>, debug: bool) {
