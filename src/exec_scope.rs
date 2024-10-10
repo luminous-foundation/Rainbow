@@ -307,7 +307,10 @@ macro_rules! pmov {
     ($val:expr, $ptr:expr, $offset:expr, $global_scope:expr, $stack:expr, $cur_frame:expr) => {
         let ptr = get_var($ptr, $global_scope, $stack, $cur_frame);
         let ptr = match(ptr.val) {
-            Values::POINTER(n, _) => n,
+            Values::SIGNED(p) => p as usize,
+            Values::UNSIGNED(p) => p as usize,
+            Values::DECIMAL(p) => p as usize,
+            Values::POINTER(p, _) => p,
             _ => panic!("cannot PMOV into a non-pointer variable")
         };
 
