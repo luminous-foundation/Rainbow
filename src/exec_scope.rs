@@ -317,6 +317,10 @@ macro_rules! pmov {
         let offset_index;
         get_usize!(offset_index, $offset, "PMOV", "offset");
 
+        if ptr + offset_index > $stack[0].stack.len() {
+            panic!("`PMOV` index out of bounds: {} > {}", ptr + offset_index, $stack[0].stack.len() - 1);
+        }
+
         $stack[0].stack[ptr + offset_index].set(&$val.val);
     }
 }
