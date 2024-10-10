@@ -12,12 +12,9 @@ void main() {
     
     MOV 123 $foo.a
     MOV 64.5 $foo.b
-    MOV $struct_text $foo.text
+    MOV "Hello, World!" $foo.text
 
     PUSH $foo.text
     PUSH 13
-    CALL @io_println
+    CALL io_println
 }
-
-.data
-struct_text u8* "Hello, World!"

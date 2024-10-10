@@ -3,5 +3,5 @@
 void main() {
     PUSH "Hello, World!"
     PUSH 13
-    CALL @io_println
+    CALL io_println
 }
