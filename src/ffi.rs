@@ -17,7 +17,7 @@ pub unsafe fn type_to_type(typ: &Type) -> ffi_type {
         Types::F32     => types::float,
         Types::F64     => types::double,
         Types::POINTER => types::pointer,
-        _ => panic!("unsupported type {:?} for externs", typ.typ[0])
+        _ => panic!("unsupported type `{:?}` for externs", typ.typ[0])
     }
 }
 
@@ -49,7 +49,7 @@ pub unsafe fn get_pointer(vals: &[Value], pp: &mut Vec<*mut c_void>, s8p: &mut V
         Types::U64 => { push_ptr!(u64, vals, u64p, pp, UNSIGNED); }
         Types::F32 => { push_ptr!(f32, vals, f32p, pp, DECIMAL);  }
         Types::F64 => { push_ptr!(f64, vals, f64p, pp, DECIMAL);  }
-        _ => panic!("unsupported type {:?} for extern pointers", vals[0].typ.typ),
+        _ => panic!("unsupported type `{:?}` for extern pointers", vals[0].typ.typ),
     }
 }
 
@@ -115,7 +115,7 @@ pub fn call_ffi(_extern: &Extern, stack: &mut Vec<Frame>, cur_frame: usize) {
 
                     raw_args.push(ptr);
                 }
-                _ => panic!("unsupported type {:?} for externs", arg.typ),
+                _ => panic!("unsupported type `{:?}` for externs", arg.typ),
             }
         }
         
@@ -172,10 +172,10 @@ pub fn call_ffi(_extern: &Extern, stack: &mut Vec<Frame>, cur_frame: usize) {
                         let result: *const c_void = call::<*const c_void>(&mut cif, code_ptr, raw_args.as_mut_ptr());
                         Values::UNSIGNED(result as u64)
                     }
-                    _ => panic!("unsupported return type {:?}", _extern.ret_type),
+                    _ => panic!("unsupported return type `{:?}`", _extern.ret_type),
                 }
             }
-            _ => panic!("unsupported return type {:?}", _extern.ret_type),
+            _ => panic!("unsupported return type `{:?}`", _extern.ret_type),
         };
 
         stack[cur_frame].push(Value { typ: _extern.ret_type.clone(), val });

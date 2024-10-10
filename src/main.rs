@@ -254,11 +254,11 @@ fn parse_data_section(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize
 
                             stack[0].push(Value { typ: typ.clone().pop(), val: Values::DECIMAL(val as f64) });
                         }
-                        _ => panic!("unsupported data section type {:?}", typ.typ),
+                        _ => panic!("unsupported data section type `{:?}`", typ.typ),
                     }
                 }
             }
-            _ => panic!("unsupported data section type {:?}", typ.typ),
+            _ => panic!("unsupported data section type `{:?}`", typ.typ),
         }
     }
 
@@ -273,7 +273,7 @@ fn get_func<'a>(name: &String, scope: &'a Scope, global_scope: &'a Scope) -> &'a
     } else if global_scope.functions.contains_key(name) {
         return global_scope.functions.get(name).unwrap();
     } else {
-        panic!("tried to call undefined function {}", name);
+        panic!("tried to call undefined function `{}`", name);
     }
 }
 
@@ -285,7 +285,7 @@ fn get_extern<'a>(name: &String, scope: &'a Scope, global_scope: &'a Scope) -> &
     } else if global_scope.externs.contains_key(name) {
         return global_scope.externs.get(name).unwrap();
     } else {
-        panic!("tried to call undefined function {}", name);
+        panic!("tried to call undefined function `{}`", name);
     }
 }
 
@@ -335,7 +335,7 @@ fn set_var(name: &String, value: &Values, global_scope: &Scope, stack: &mut [Fra
                 return;
             }
 
-            panic!("tried to set undefined variable {}", name);
+            panic!("tried to set undefined variable `{}`", name);
         }
     }
 }
@@ -358,7 +358,7 @@ fn set_struct_var(parent_struct: &Value, name: &String, value: &Values, global_s
     let _struct = get_struct(&struct_val.0, global_scope);
 
     let var_offset = _struct.var_offsets.get(name).
-                            expect(format!("attempted to set non-existant variable {name} in struct {}", _struct.name).as_str());
+                            expect(format!("attempted to set non-existant variable `{name}` in struct `{}`", _struct.name).as_str());
 
     // TODO: but what if the struct does *not* exist on the current frame?
     stack[cur_frame].set(struct_val.1+var_offset, value);
@@ -373,7 +373,7 @@ fn get_struct_var<'a>(parent_struct: &Value, name: &String, global_scope: &'a Sc
     let _struct = get_struct(&struct_val.0, global_scope);
 
     let var_offset = _struct.var_offsets.get(name).
-                            expect(format!("attempted to set non-existant variable {name} in struct {}", _struct.name).as_str());
+                            expect(format!("attempted to get non-existant variable `{name}` in struct `{}`", _struct.name).as_str());
 
     // TODO: but what if the struct does *not* exist on the current frame?
     return stack[cur_frame].get(struct_val.1+var_offset);

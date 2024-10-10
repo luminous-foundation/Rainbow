@@ -80,7 +80,7 @@ macro_rules! compare {
                     $pc = $new_pc as usize;
                 }
             }
-            _ => panic!("expected a number for comparison, got {:?}", $b),
+            _ => panic!("expected a number for comparison, got `{:?}`", $b),
         }
     }
 }
@@ -111,7 +111,7 @@ macro_rules! jne {
             Values::SIGNED(a_val) => compare!(a_val, $b.val, !=, $pc, new_pc),
             Values::UNSIGNED(a_val) => compare!(a_val, $b.val, !=, $pc, new_pc),
             Values::DECIMAL(a_val) => compare!(a_val, $b.val, !=, $pc, new_pc),
-            _ => panic!("expected a number for comparison, got {:?}", $a.val)
+            _ => panic!("expected a number for comparison, got `{:?}`", $a.val)
         }
     }
 }
@@ -126,7 +126,7 @@ macro_rules! je {
             Values::SIGNED(a_val) => compare!(a_val, $b.val, ==, $pc, new_pc),
             Values::UNSIGNED(a_val) => compare!(a_val, $b.val, ==, $pc, new_pc),
             Values::DECIMAL(a_val) => compare!(a_val, $b.val, ==, $pc, new_pc),
-            _ => panic!("expected a number for comparison, got {:?}", $a.val)
+            _ => panic!("expected a number for comparison, got `{:?}`", $a.val)
         }
     }
 }
@@ -142,7 +142,7 @@ macro_rules! jge {
             Values::SIGNED(a_val) => compare!(a_val, $b.val, >=, $pc, new_pc),
             Values::UNSIGNED(a_val) => compare!(a_val, $b.val, >=, $pc, new_pc),
             Values::DECIMAL(a_val) => compare!(a_val, $b.val, >=, $pc, new_pc),
-            _ => panic!("expected a number for comparison, got {:?}", $a.val)
+            _ => panic!("expected a number for comparison, got `{:?}`", $a.val)
         }
     }
 }
@@ -157,7 +157,7 @@ macro_rules! jg {
             Values::SIGNED(a_val) => compare!(a_val, $b.val, >, $pc, new_pc),
             Values::UNSIGNED(a_val) => compare!(a_val, $b.val, >, $pc, new_pc),
             Values::DECIMAL(a_val) => compare!(a_val, $b.val, >, $pc, new_pc),
-            _ => panic!("expected a number for comparison, got {:?}", $a.val)
+            _ => panic!("expected a number for comparison, got `{:?}`", $a.val)
         }
     }
 }
@@ -172,7 +172,7 @@ macro_rules! jle {
             Values::SIGNED(a_val) => compare!(a_val, $b.val, <=, $pc, new_pc),
             Values::UNSIGNED(a_val) => compare!(a_val, $b.val, <=, $pc, new_pc),
             Values::DECIMAL(a_val) => compare!(a_val, $b.val, <=, $pc, new_pc),
-            _ => panic!("expected a number for comparison, got {:?}", $a.val)
+            _ => panic!("expected a number for comparison, got `{:?}`", $a.val)
         }
     }
 }
@@ -187,7 +187,7 @@ macro_rules! jl {
             Values::SIGNED(a_val) => compare!(a_val, $b.val, <, $pc, new_pc),
             Values::UNSIGNED(a_val) => compare!(a_val, $b.val, <, $pc, new_pc),
             Values::DECIMAL(a_val) => compare!(a_val, $b.val, <, $pc, new_pc),
-            _ => panic!("expected a number for comparison, got {:?}", $a.val)
+            _ => panic!("expected a number for comparison, got `{:?}`", $a.val)
         }
     }
 }
@@ -246,7 +246,7 @@ macro_rules! get_type {
 
         match &type_var.val {
             Values::TYPE(t) => $typ = t.clone(),
-            _ => panic!("tried to {} with dynamic type stored in variable, but given variable had type {:?}", $action, type_var.typ)
+            _ => panic!("tried to {} with dynamic type stored in variable, but given variable had type `{:?}`", $action, type_var.typ)
         }
     }
 }
@@ -256,7 +256,7 @@ macro_rules! get_name {
 
         match &name_var.val {
             Values::NAME(n) => $name = n.clone(),
-            _ => panic!("tried to {} variable with dynamic name stored in variable, but given variable had type {:?}", $action, name_var.typ)
+            _ => panic!("tried to {} variable with dynamic name stored in variable, but given variable had type `{:?}`", $action, name_var.typ)
         }
     }
 }
@@ -270,7 +270,7 @@ macro_rules! ref_ {
             Types::POINTER => {
                 set_var($out_var, &Values::POINTER($index, 1), $global_scope, $stack, $cur_frame);
             }
-            _ => panic!("attempted set a variable with type {:?} to a reference", out_var_type)
+            _ => panic!("attempted set a variable with type `{:?}` to a reference", out_var_type)
         }
     }
 }
@@ -298,7 +298,7 @@ macro_rules! get_usize {
             Values::UNSIGNED(n) => n as usize,
             Values::DECIMAL(n) => n as usize,
             Values::POINTER(n, _) => n,
-            _ => panic!("cannot {} with non-number value as {}", $action, $type),
+            _ => panic!("cannot `{}` with non-number value as {}", $action, $type),
         };
     }
 }
@@ -408,7 +408,7 @@ pub fn exec_block(scope: &Scope, block: &Vec<Instruction>, global_scope: &Scope,
                 let func;
                 match &func_var.val {
                     Values::NAME(n) => func = n,
-                    _ => panic!("tried to call function with name stored in variable, but given variable had type {:?}", func_var.typ)
+                    _ => panic!("tried to call function with name stored in variable, but given variable had type `{:?}`", func_var.typ)
                 }
 
                 call!(func, scope, global_scope, stack, cur_frame);
@@ -1106,7 +1106,7 @@ pub fn exec_block(scope: &Scope, block: &Vec<Instruction>, global_scope: &Scope,
             }
 
             Opcode::FREE_VAR(ptr) => {
-                let mut index = *stack[0].vars.get(ptr).unwrap_or_else(|| panic!("attempted to free non-existant pointer {}", ptr));
+                let mut index = *stack[0].vars.get(ptr).unwrap_or_else(|| panic!("attempted to free non-existent pointer `{}`", ptr));
                 let start = index;
 
                 stack[0].vars.remove(ptr);

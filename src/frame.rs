@@ -50,13 +50,13 @@ impl Frame {
     pub fn get_var(&self, name: &String) -> &Value {
         let index = self.vars.get(name);
         if index.is_none() {
-            panic!("tried to get undefined variable {}", name);
+            panic!("tried to get undefined variable `{}`", name);
         }
         return &self.stack[*index.unwrap()];
     }
 
     pub fn set_var(&mut self, name: &String, value: &Values) {
-        let val = *self.vars.get(name).unwrap_or_else(|| panic!("attempted to set value of undefined variable {}", name));
+        let val = *self.vars.get(name).unwrap_or_else(|| panic!("attempted to set value of undefined variable `{}`", name));
         self.stack[val].set(value);
     }
 
