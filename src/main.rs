@@ -133,7 +133,7 @@ pub fn run_program(program: &Vec<u8>, linker_paths: Vec<String>, debug: bool) ->
 }
 
 fn usage() {
-    println!("Usage:");
+    println!("Usage: rainbow [cmd] [flags]\n");
     println!("Flags");
     println!("  --time/-t                       enables execution timing");
     println!("  --link/-l  [path]               provide a linking path");
