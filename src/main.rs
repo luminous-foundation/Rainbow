@@ -109,13 +109,17 @@ fn main() {
 }
 
 pub fn run_program(program: &Vec<u8>, linker_paths: Vec<String>, debug: bool) -> i32 {
+    let mut consts: HashMap<String, i32> = HashMap::new();
+
+    init_consts(&mut consts);
+
     let mut stack: Vec<Frame> = Vec::new();
 
     stack.push(Frame { vars: HashMap::new(), stack: Vec::new(), allocs: Vec::new() });
 
     let mut global_scope = Scope::new();
 
-    parse_program(program, &mut stack, &mut global_scope, &linker_paths, debug);
+    parse_program(program, &mut stack, &mut global_scope, &linker_paths, debug, &consts);
 
     let retval = exec_scope(&global_scope, &global_scope, &mut stack, 0, false, &mut 0);
 
@@ -132,6 +136,18 @@ pub fn run_program(program: &Vec<u8>, linker_paths: Vec<String>, debug: bool) ->
     // dbg!(stack);
 }
 
+fn init_consts(consts: &mut HashMap<String, i32>) {
+    consts.insert("PLATFORM_LINUX".to_string(), 0);
+    consts.insert("PLATFORM_WIN32".to_string(), 1);
+    consts.insert("PLATFORM_OTHER".to_string(), 2);
+
+    match env::consts::OS {
+        "linux" => consts.insert("PLATFORM".to_string(), *consts.get("PLATFORM_LINUX").unwrap()),
+        "windows" => consts.insert("PLATFORM".to_string(), *consts.get("PLATFORM_WIN32").unwrap()),
+        _ => consts.insert("PLATFORM".to_string(), *consts.get("PLATFORM_OTHER").unwrap()),
+    };
+}
+
 fn usage() {
     println!("Usage: rainbow [cmd] [flags]\n");
     println!("Flags");
@@ -144,10 +160,10 @@ fn usage() {
     println!("  [file]                          runs the given program");
 }
 
-fn parse_program(program: &Vec<u8>, stack: &mut Vec<Frame>, scope: &mut Scope, linker_paths: &Vec<String>, debug: bool) {
+fn parse_program(program: &Vec<u8>, stack: &mut Vec<Frame>, scope: &mut Scope, linker_paths: &Vec<String>, debug: bool, consts: &HashMap<String, i32>) {
     let mut index = 0;
 
-    *scope = match parse_scope(&program, stack, &mut index, linker_paths, debug) {
+    *scope = match parse_scope(&program, stack, &mut index, linker_paths, debug, consts) {
         Ok(scope) => scope,
         Err(error) => panic!("failed to parse program:\n{error}")
     };
