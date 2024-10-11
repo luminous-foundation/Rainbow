@@ -41,7 +41,7 @@ impl Scope {
         if self.block_starts.len() == 0 {
             self.block_starts.push(0);
         } else {
-            let len = match &block {
+            let len = match &self.blocks[self.blocks.len()-1] {
                 Block::CODE(vec) => vec.len(),
                 Block::SCOPE(_) => 1,
             };

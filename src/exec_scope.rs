@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{_type::Types, ffi::call_ffi, frame::Frame, func_exists, function::Function, get_extern, get_func, get_struct, get_var, instruction::{Instruction, Opcode}, scope::Scope, set_var, value::Values};
+use crate::{_type::Types, block::Block, ffi::call_ffi, frame::Frame, func_exists, function::Function, get_extern, get_func, get_struct, get_var, instruction::{Instruction, Opcode}, scope::Scope, set_var, value::Values};
 
 // instruction macros
 macro_rules! peek {
@@ -1171,8 +1171,6 @@ pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, c
 
     let mut i = 0;
     while i < scope.blocks.len() {
-        let block = &scope.blocks[i];
-
         let start;
         if scope.block_starts.len() > i {
             while *pc > scope.block_starts[i] {
@@ -1182,19 +1180,21 @@ pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, c
                     break;
                 }
             }
-
+            
             if i >= scope.block_starts.len() {
                 break;
             }
-
+            
             start = scope.block_starts[i];
         } else {
             start = 0;
         }
+        
+        let block = &scope.blocks[i];
 
         let ret = match block {
-            crate::block::Block::CODE(vec) => exec_block(scope, vec, global_scope, stack, cur_frame, pc, start),
-            crate::block::Block::SCOPE(scope) => exec_scope(&scope, global_scope, stack, cur_frame, pop_stack, &mut 0),
+            Block::CODE(vec) => exec_block(scope, vec, global_scope, stack, cur_frame, pc, start),
+            Block::SCOPE(scope) => exec_scope(&scope, global_scope, stack, cur_frame, pop_stack, &mut 0),
         };
 
         if ret != 0 {

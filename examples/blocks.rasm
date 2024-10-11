@@ -1,15 +1,20 @@
-JNE 1 1 :else_body
+VAR i32 temp
+MOV 1 $temp
 
-:if_body
 {
-    RET 1
+    JNE $temp 1 :else_body
+
+    :if_body
+    {
+        RET 1
+    }
+
+    JMP :end
+
+    :else_body
+    {
+        RET 69
+    }
+
+    :end
 }
-
-JMP :end
-
-:else_body
-{
-    RET 0
-}
-
-:end
