@@ -1,0 +1,15 @@
+JNE 1 1 :else_body
+
+:if_body
+{
+    RET 1
+}
+
+JMP :end
+
+:else_body
+{
+    RET 0
+}
+
+:end

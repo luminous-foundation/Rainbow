@@ -18,7 +18,7 @@ pub fn parse_scope(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, l
             }
             0xFE => {
                 *index += 1;
-                scope.blocks.push(Block::SCOPE(parse_scope(bytes, stack, index, linker_paths, debug)?));
+                scope.add_block(Block::SCOPE(parse_scope(bytes, stack, index, linker_paths, debug)?));
             }
             0xFD => {
                 *index += 1;
@@ -45,13 +45,13 @@ pub fn parse_scope(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, l
             }
             _ => {
                 if scope.blocks.len() == 0 {
-                    scope.blocks.push(Block::CODE(Vec::new()));
+                    scope.add_block(Block::CODE(Vec::new()));
                 }
 
                 let len = scope.blocks.len();
                 match &mut scope.blocks[len-1] {
                     Block::CODE(vec) => vec.push(parse_instruction(bytes, index)?),
-                    _ => scope.blocks.push(Block::CODE(Vec::new()))
+                    _ => scope.add_block(Block::CODE(Vec::new()))
                 }
             }
         }

@@ -117,7 +117,7 @@ pub fn run_program(program: &Vec<u8>, linker_paths: Vec<String>, debug: bool) ->
 
     parse_program(program, &mut stack, &mut global_scope, &linker_paths, debug);
 
-    let retval = exec_scope(&global_scope, &global_scope, &mut stack, 0, false);
+    let retval = exec_scope(&global_scope, &global_scope, &mut stack, 0, false, &mut 0);
 
     if retval != 0 {
         return retval;
