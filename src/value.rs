@@ -1,3 +1,5 @@
+use core::fmt;
+
 use crate::_type::Type;
 
 // TODO: enum type
@@ -18,6 +20,29 @@ pub enum Values {
 pub struct Value {
     pub typ: Type,
     pub val: Values,
+}
+
+impl fmt::Display for Value {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut res = String::new();
+
+        match &self.val {
+            Values::VOID => res += "VOID",
+            Values::SIGNED(n) => res += &n.to_string(),
+            Values::UNSIGNED(n) => res += &n.to_string(),
+            Values::DECIMAL(n) => res += &n.to_string(),
+            Values::POINTER(n, _) => res += &("*".to_string() + &n.to_string()),
+            Values::STRUCT(_, _) => todo!(),
+            Values::TYPE(t) => res += &format!("{t}"),
+            Values::NAME(n) => {
+                res += "\"";
+                res += &n;
+                res += "\"";
+            }
+        }
+
+        f.write_str(&res)
+    }
 }
 
 impl Value {

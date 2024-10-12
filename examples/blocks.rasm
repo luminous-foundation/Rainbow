@@ -1,5 +1,5 @@
 VAR i32 temp
-MOV 1 $temp
+MOV 0 $temp
 
 {
     JNE $temp 1 :else_body

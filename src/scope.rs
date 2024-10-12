@@ -1,6 +1,6 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::{self}};
 
-use crate::{_struct::Struct, block::Block, function::{Extern, Function}, instruction::Instruction};
+use crate::{_struct::Struct, block::Block, function::{Extern, Function}};
 
 #[derive(Debug, Clone)]
 pub struct Scope {
@@ -10,6 +10,12 @@ pub struct Scope {
     pub functions: HashMap<String, Function>,
     pub externs: HashMap<String, Extern>,
     pub structs: HashMap<String, Struct>,
+}
+
+impl fmt::Display for Scope {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.to_string(0))
+    }
 }
 
 impl Scope {
@@ -50,5 +56,42 @@ impl Scope {
         }
 
         self.blocks.push(block);
+    }
+
+    pub fn to_string(&self, depth: usize) -> String {        
+        let mut indentation = String::new();
+        for _ in 0..depth {
+            indentation += "    ";
+        }
+
+        let mut str = String::new();
+
+        str += &indentation;
+        str += "{\n";
+
+        for block in &self.blocks {
+            match block {
+                Block::CODE(vec) => {
+                    for instr in vec {
+                        str += "    ";
+                        str += &indentation;
+
+                        str += &instr.to_string();
+
+                        str += "\n";
+                    }
+                },
+                Block::SCOPE(scope) => {
+                    str += "\n";
+                    str += &scope.to_string(depth + 1);
+                    str += "\n";
+                }
+            }
+        }
+
+        str += &indentation;
+        str += "}\n";
+
+        return str;
     }
 }

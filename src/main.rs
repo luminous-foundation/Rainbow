@@ -175,7 +175,7 @@ fn parse_program(program: &Vec<u8>, stack: &mut Vec<Frame>, scope: &mut Scope, l
 
     if debug {
         println!("global scope: ");
-        println!("{scope:#?}");
+        println!("{scope}");
     }
 }
 

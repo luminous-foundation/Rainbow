@@ -1172,11 +1172,11 @@ pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, c
     let mut i = 0;
     while i < scope.blocks.len() {
         let start;
-        if scope.block_starts.len() > i {
-            while *pc > scope.block_starts[i] {
+        if scope.block_starts.len() > i + 1 {
+            while *pc > scope.block_starts[i + 1] {
                 i += 1;
 
-                if i >= scope.block_starts.len() {
+                if i >= scope.block_starts.len() - 1 {
                     break;
                 }
             }

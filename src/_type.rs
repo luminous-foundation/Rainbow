@@ -1,3 +1,5 @@
+use std::fmt;
+
 // TODO: enum type
 #[derive(Debug, Clone)]
 #[repr(u8)]
@@ -68,6 +70,41 @@ impl Types {
 #[derive(Debug, Clone)]
 pub struct Type {
     pub typ: Vec<Types>,
+}
+
+impl fmt::Display for Type {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut str = String::new();
+
+        str += "(";
+
+        let mut rev_typ = self.typ.clone();
+        rev_typ.reverse();
+        for typ in &self.typ {
+            str += match typ {
+                Types::VOID => "void",
+                Types::I8 => "i8",
+                Types::I16 => "i16",
+                Types::I32 => "i32",
+                Types::I64 => "i64",
+                Types::U8 => "u8",
+                Types::U16 => "u16",
+                Types::U32 => "u32",
+                Types::U64 => "u64",
+                Types::F16 => "f16",
+                Types::F32 => "f32",
+                Types::F64 => "f64",
+                Types::POINTER => "*",
+                Types::TYPE => "type",
+                Types::STRUCT => "struct",
+                Types::NAME => "name",
+            }
+        }
+
+        str += ")";
+
+        f.write_str(&str)
+    }
 }
 
 impl Type {
