@@ -1,19 +1,31 @@
 VAR i32 temp
-MOV 0 $temp
 
 {
-    JNE $temp 1 :else_body
+    JNE 1 1 :else_body
 
     :if_body
     {
-        RET 1
+        JNE 0 1 :else_body2
+        :if_body2
+        {
+            RET 1
+        }
+
+        JMP :end2
+
+        :else_body2
+        {
+            RET 69
+        }
+
+        :end2
     }
 
     JMP :end
 
     :else_body
     {
-        RET 69
+        RET 1
     }
 
     :end

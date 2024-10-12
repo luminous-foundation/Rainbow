@@ -14,7 +14,7 @@ pub struct Scope {
 
 impl fmt::Display for Scope {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(&self.to_string(0))
+        f.write_str(&self.to_string(0, 0))
     }
 }
 
@@ -58,7 +58,7 @@ impl Scope {
         self.blocks.push(block);
     }
 
-    pub fn to_string(&self, depth: usize) -> String {        
+    pub fn to_string(&self, depth: usize, index: usize) -> String {        
         let mut indentation = String::new();
         for _ in 0..depth {
             indentation += "    ";
@@ -67,26 +67,54 @@ impl Scope {
         let mut str = String::new();
 
         str += &indentation;
-        str += "{\n";
+        str += "{";
+        str += " - #";
+        str += &index.to_string();
+        str += "\n";
 
-        for block in &self.blocks {
+        let mut index = 0;
+        let mut i = 0;
+        while i < self.blocks.len() {
+            let block = &self.blocks[i];
+
             match block {
                 Block::CODE(vec) => {
+                    str += "    ";
+                    str += &indentation;
+                    str += "start: ";
+                    str += &self.block_starts[i].to_string();
+                    str += "\n";
+
                     for instr in vec {
                         str += "    ";
                         str += &indentation;
 
                         str += &instr.to_string();
 
+                        str += " - #";
+                        str += &index.to_string();
+
                         str += "\n";
+
+                        index += 1;
                     }
                 },
                 Block::SCOPE(scope) => {
-                    str += "\n";
-                    str += &scope.to_string(depth + 1);
-                    str += "\n";
+                    if i > 0 {
+                        str += "\n";
+                    }
+
+                    str += &scope.to_string(depth + 1, index);
+
+                    if i < self.blocks.len() - 1{
+                        str += "\n";
+                    }
+
+                    index += 1;
                 }
             }
+
+            i += 1;
         }
 
         str += &indentation;

@@ -63,20 +63,23 @@ macro_rules! modulo {
 }
 
 macro_rules! compare {
-    ($a_val:expr, $b:expr, $op:tt, $pc:expr, $new_pc:expr) => {
+    ($a_val:expr, $b:expr, $op:tt, $pc:expr, $new_pc:expr, $skip_inc:expr) => {
         match $b {
             Values::SIGNED(b_val) => {
                 if ($a_val as i64) $op b_val {
+                    $skip_inc = true;
                     $pc = $new_pc as usize;
                 }
             }
             Values::UNSIGNED(b_val) => {
                 if ($a_val as u64) $op b_val {
+                    $skip_inc = true;
                     $pc = $new_pc as usize;
                 }
             }
             Values::DECIMAL(b_val) => {
                 if ($a_val as f64) $op b_val {
+                    $skip_inc = true;
                     $pc = $new_pc as usize;
                 }
             }
@@ -101,92 +104,80 @@ macro_rules! get_pc {
 }
 
 macro_rules! jne {
-    ($a:expr, $b:expr, $c:expr, $pc:expr) => {
-        let mut new_pc;
+    ($a:expr, $b:expr, $c:expr, $pc:expr, $skip_inc:expr) => {
+        let new_pc;
         get_pc!($c.val, new_pc);
 
-        new_pc -= 1;
-
         match $a.val {
-            Values::SIGNED(a_val) => compare!(a_val, $b.val, !=, $pc, new_pc),
-            Values::UNSIGNED(a_val) => compare!(a_val, $b.val, !=, $pc, new_pc),
-            Values::DECIMAL(a_val) => compare!(a_val, $b.val, !=, $pc, new_pc),
+            Values::SIGNED(a_val) => compare!(a_val, $b.val, !=, $pc, new_pc, $skip_inc),
+            Values::UNSIGNED(a_val) => compare!(a_val, $b.val, !=, $pc, new_pc, $skip_inc),
+            Values::DECIMAL(a_val) => compare!(a_val, $b.val, !=, $pc, new_pc, $skip_inc),
             _ => panic!("expected a number for comparison, got `{:?}`", $a.val)
         }
     }
 }
 macro_rules! je {
-    ($a:expr, $b:expr, $c:expr, $pc:expr) => {
-        let mut new_pc;
+    ($a:expr, $b:expr, $c:expr, $pc:expr, $skip_inc:expr) => {
+        let new_pc;
         get_pc!($c.val, new_pc);
 
-        new_pc -= 1;
-
         match $a.val {
-            Values::SIGNED(a_val) => compare!(a_val, $b.val, ==, $pc, new_pc),
-            Values::UNSIGNED(a_val) => compare!(a_val, $b.val, ==, $pc, new_pc),
-            Values::DECIMAL(a_val) => compare!(a_val, $b.val, ==, $pc, new_pc),
+            Values::SIGNED(a_val) => compare!(a_val, $b.val, ==, $pc, new_pc, $skip_inc),
+            Values::UNSIGNED(a_val) => compare!(a_val, $b.val, ==, $pc, new_pc, $skip_inc),
+            Values::DECIMAL(a_val) => compare!(a_val, $b.val, ==, $pc, new_pc, $skip_inc),
             _ => panic!("expected a number for comparison, got `{:?}`", $a.val)
         }
     }
 }
 
 macro_rules! jge {
-    ($a:expr, $b:expr, $c:expr, $pc:expr) => {
-        let mut new_pc;
+    ($a:expr, $b:expr, $c:expr, $pc:expr, $skip_inc:expr) => {
+        let new_pc;
         get_pc!($c.val, new_pc);
 
-        new_pc -= 1;
-
         match $a.val {
-            Values::SIGNED(a_val) => compare!(a_val, $b.val, >=, $pc, new_pc),
-            Values::UNSIGNED(a_val) => compare!(a_val, $b.val, >=, $pc, new_pc),
-            Values::DECIMAL(a_val) => compare!(a_val, $b.val, >=, $pc, new_pc),
+            Values::SIGNED(a_val) => compare!(a_val, $b.val, >=, $pc, new_pc, $skip_inc),
+            Values::UNSIGNED(a_val) => compare!(a_val, $b.val, >=, $pc, new_pc, $skip_inc),
+            Values::DECIMAL(a_val) => compare!(a_val, $b.val, >=, $pc, new_pc, $skip_inc),
             _ => panic!("expected a number for comparison, got `{:?}`", $a.val)
         }
     }
 }
 macro_rules! jg {
-    ($a:expr, $b:expr, $c:expr, $pc:expr) => {
-        let mut new_pc;
+    ($a:expr, $b:expr, $c:expr, $pc:expr, $skip_inc:expr) => {
+        let new_pc;
         get_pc!($c.val, new_pc);
 
-        new_pc -= 1;
-
         match $a.val {
-            Values::SIGNED(a_val) => compare!(a_val, $b.val, >, $pc, new_pc),
-            Values::UNSIGNED(a_val) => compare!(a_val, $b.val, >, $pc, new_pc),
-            Values::DECIMAL(a_val) => compare!(a_val, $b.val, >, $pc, new_pc),
+            Values::SIGNED(a_val) => compare!(a_val, $b.val, >, $pc, new_pc, $skip_inc),
+            Values::UNSIGNED(a_val) => compare!(a_val, $b.val, >, $pc, new_pc, $skip_inc),
+            Values::DECIMAL(a_val) => compare!(a_val, $b.val, >, $pc, new_pc, $skip_inc),
             _ => panic!("expected a number for comparison, got `{:?}`", $a.val)
         }
     }
 }
 macro_rules! jle {
-    ($a:expr, $b:expr, $c:expr, $pc:expr) => {
-        let mut new_pc;
+    ($a:expr, $b:expr, $c:expr, $pc:expr, $skip_inc:expr) => {
+        let new_pc;
         get_pc!($c.val, new_pc);
 
-        new_pc -= 1;
-
         match $a.val {
-            Values::SIGNED(a_val) => compare!(a_val, $b.val, <=, $pc, new_pc),
-            Values::UNSIGNED(a_val) => compare!(a_val, $b.val, <=, $pc, new_pc),
-            Values::DECIMAL(a_val) => compare!(a_val, $b.val, <=, $pc, new_pc),
+            Values::SIGNED(a_val) => compare!(a_val, $b.val, <=, $pc, new_pc, $skip_inc),
+            Values::UNSIGNED(a_val) => compare!(a_val, $b.val, <=, $pc, new_pc, $skip_inc),
+            Values::DECIMAL(a_val) => compare!(a_val, $b.val, <=, $pc, new_pc, $skip_inc),
             _ => panic!("expected a number for comparison, got `{:?}`", $a.val)
         }
     }
 }
 macro_rules! jl {
-    ($a:expr, $b:expr, $c:expr, $pc:expr) => {
-        let mut new_pc;
+    ($a:expr, $b:expr, $c:expr, $pc:expr, $skip_inc:expr) => {
+        let new_pc;
         get_pc!($c.val, new_pc);
 
-        new_pc -= 1;
-
         match $a.val {
-            Values::SIGNED(a_val) => compare!(a_val, $b.val, <, $pc, new_pc),
-            Values::UNSIGNED(a_val) => compare!(a_val, $b.val, <, $pc, new_pc),
-            Values::DECIMAL(a_val) => compare!(a_val, $b.val, <, $pc, new_pc),
+            Values::SIGNED(a_val) => compare!(a_val, $b.val, <, $pc, new_pc, $skip_inc),
+            Values::UNSIGNED(a_val) => compare!(a_val, $b.val, <, $pc, new_pc, $skip_inc),
+            Values::DECIMAL(a_val) => compare!(a_val, $b.val, <, $pc, new_pc, $skip_inc),
             _ => panic!("expected a number for comparison, got `{:?}`", $a.val)
         }
     }
@@ -431,6 +422,9 @@ pub fn exec_block(scope: &Scope, block: &Vec<Instruction>, global_scope: &Scope,
     // let mut counts: [u32; 256] = [0; 256];
 
     // let start = std::time::Instant::now();
+
+    let mut skip_inc = false;
+
     while *pc - block_start < block.len() {
         let instr = &block[*pc - block_start];
 
@@ -562,278 +556,280 @@ pub fn exec_block(scope: &Scope, block: &Vec<Instruction>, global_scope: &Scope,
                 let new_pc: usize;
                 get_pc!(new_pc_val.val.clone(), new_pc);
 
-                *pc = new_pc - 1;
+                *pc = new_pc;
+                skip_inc = true;
             }
             Opcode::JMP_VAR(new_pc_name) => { // JMP [var]
                 let new_pc_var = get_var(new_pc_name, global_scope, stack, cur_frame).val.clone();
                 let new_pc: usize;
                 get_pc!(new_pc_var, new_pc);
 
-                *pc = new_pc - 1;
+                *pc = new_pc;
+                skip_inc = true;
             }
 
             Opcode::JNE_I_I_I(a, b, c) => { // JNE [imm] [imm] [imm]
-                jne!(a, b, c, *pc);
+                jne!(a, b, c, *pc, skip_inc);
             }
             Opcode::JNE_V_I_I(a_name, b, c) => { // JNE [var] [imm] [imm]
                 let a = get_var(a_name, global_scope, stack, cur_frame).clone();
 
-                jne!(a, b, c, *pc);
+                jne!(a, b, c, *pc, skip_inc);
             }
             Opcode::JNE_I_V_I(a, b_name, c) => { // JNE [imm] [imm] [imm]
                 let b = get_var(b_name, global_scope, stack, cur_frame).clone();
 
-                jne!(a, b, c, *pc);
+                jne!(a, b, c, *pc, skip_inc);
             }
             Opcode::JNE_V_V_I(a_name, b_name, c) => { // JNE [var] [var] [imm]
                 let a = get_var(a_name, global_scope, stack, cur_frame).clone();
                 let b = get_var(b_name, global_scope, stack, cur_frame).clone();
 
-                jne!(a, b, c, *pc);
+                jne!(a, b, c, *pc, skip_inc);
             }
             Opcode::JNE_I_I_V(a, b, c_name) => { // JNE [imm] [imm] [var]
                 let c = get_var(c_name, global_scope, stack, cur_frame).clone();
 
-                jne!(a, b, c, *pc);
+                jne!(a, b, c, *pc, skip_inc);
             }
             Opcode::JNE_V_I_V(a_name, b, c_name) => { // JNE [var] [imm] [var]
                 let a = get_var(a_name, global_scope, stack, cur_frame).clone();
                 let c = get_var(c_name, global_scope, stack, cur_frame).clone();
 
-                jne!(a, b, c, *pc);
+                jne!(a, b, c, *pc, skip_inc);
             }
             Opcode::JNE_I_V_V(a, b_name, c_name) => { // JNE [imm] [imm] [var]
                 let b = get_var(b_name, global_scope, stack, cur_frame).clone();
                 let c = get_var(c_name, global_scope, stack, cur_frame).clone();
 
-                jne!(a, b, c, *pc);
+                jne!(a, b, c, *pc, skip_inc);
             }
             Opcode::JNE_V_V_V(a_name, b_name, c_name) => { // JNE [var] [var] [var]
                 let a = get_var(a_name, global_scope, stack, cur_frame).clone();
                 let b = get_var(b_name, global_scope, stack, cur_frame).clone();
                 let c = get_var(c_name, global_scope, stack, cur_frame).clone();
 
-                jne!(a, b, c, *pc);
+                jne!(a, b, c, *pc, skip_inc);
             }
 
             Opcode::JE_I_I_I(a, b, c) => { // JE [imm] [imm] [imm]
-                je!(a, b, c, *pc);
+                je!(a, b, c, *pc, skip_inc);
             }
             Opcode::JE_V_I_I(a_name, b, c) => { // JE [var] [imm] [imm]
                 let a = get_var(a_name, global_scope, stack, cur_frame).clone();
 
-                je!(a, b, c, *pc);
+                je!(a, b, c, *pc, skip_inc);
             }
             Opcode::JE_I_V_I(a, b_name, c) => { // JE [imm] [imm] [imm]
                 let b = get_var(b_name, global_scope, stack, cur_frame).clone();
 
-                je!(a, b, c, *pc);
+                je!(a, b, c, *pc, skip_inc);
             }
             Opcode::JE_V_V_I(a_name, b_name, c) => { // JE [var] [var] [imm]
                 let a = get_var(a_name, global_scope, stack, cur_frame).clone();
                 let b = get_var(b_name, global_scope, stack, cur_frame).clone();
 
-                je!(a, b, c, *pc);
+                je!(a, b, c, *pc, skip_inc);
             }
             Opcode::JE_I_I_V(a, b, c_name) => { // JE [imm] [imm] [var]
                 let c = get_var(c_name, global_scope, stack, cur_frame).clone();
 
-                je!(a, b, c, *pc);
+                je!(a, b, c, *pc, skip_inc);
             }
             Opcode::JE_V_I_V(a_name, b, c_name) => { // JE [var] [imm] [var]
                 let a = get_var(a_name, global_scope, stack, cur_frame).clone();
                 let c = get_var(c_name, global_scope, stack, cur_frame).clone();
 
-                je!(a, b, c, *pc);
+                je!(a, b, c, *pc, skip_inc);
             }
             Opcode::JE_I_V_V(a, b_name, c_name) => { // JE [imm] [imm] [var]
                 let b = get_var(b_name, global_scope, stack, cur_frame).clone();
                 let c = get_var(c_name, global_scope, stack, cur_frame).clone();
 
-                je!(a, b, c, *pc);
+                je!(a, b, c, *pc, skip_inc);
             }
             Opcode::JE_V_V_V(a_name, b_name, c_name) => { // JE [var] [var] [var]
                 let a = get_var(a_name, global_scope, stack, cur_frame).clone();
                 let b = get_var(b_name, global_scope, stack, cur_frame).clone();
                 let c = get_var(c_name, global_scope, stack, cur_frame).clone();
 
-                je!(a, b, c, *pc);
+                je!(a, b, c, *pc, skip_inc);
             }
 
             Opcode::JGE_I_I_I(a, b, c) => { // JGE [imm] [imm] [imm]
-                jge!(a, b, c, *pc);
+                jge!(a, b, c, *pc, skip_inc);
             }
             Opcode::JGE_V_I_I(a_name, b, c) => { // JGE [var] [imm] [imm]
                 let a = get_var(a_name, global_scope, stack, cur_frame).clone();
 
-                jge!(a, b, c, *pc);
+                jge!(a, b, c, *pc, skip_inc);
             }
             Opcode::JGE_I_V_I(a, b_name, c) => { // JGE [imm] [imm] [imm]
                 let b = get_var(b_name, global_scope, stack, cur_frame).clone();
 
-                jge!(a, b, c, *pc);
+                jge!(a, b, c, *pc, skip_inc);
             }
             Opcode::JGE_V_V_I(a_name, b_name, c) => { // JGE [var] [var] [imm]
                 let a = get_var(a_name, global_scope, stack, cur_frame).clone();
                 let b = get_var(b_name, global_scope, stack, cur_frame).clone();
 
-                jge!(a, b, c, *pc);
+                jge!(a, b, c, *pc, skip_inc);
             }
             Opcode::JGE_I_I_V(a, b, c_name) => { // JGE [imm] [imm] [var]
                 let c = get_var(c_name, global_scope, stack, cur_frame).clone();
 
-                jge!(a, b, c, *pc);
+                jge!(a, b, c, *pc, skip_inc);
             }
             Opcode::JGE_V_I_V(a_name, b, c_name) => { // JGE [var] [imm] [var]
                 let a = get_var(a_name, global_scope, stack, cur_frame).clone();
                 let c = get_var(c_name, global_scope, stack, cur_frame).clone();
 
-                jge!(a, b, c, *pc);
+                jge!(a, b, c, *pc, skip_inc);
             }
             Opcode::JGE_I_V_V(a, b_name, c_name) => { // JGE [imm] [imm] [var]
                 let b = get_var(b_name, global_scope, stack, cur_frame).clone();
                 let c = get_var(c_name, global_scope, stack, cur_frame).clone();
 
-                jge!(a, b, c, *pc);
+                jge!(a, b, c, *pc, skip_inc);
             }
             Opcode::JGE_V_V_V(a_name, b_name, c_name) => { // JGE [var] [var] [var]
                 let a = get_var(a_name, global_scope, stack, cur_frame).clone();
                 let b = get_var(b_name, global_scope, stack, cur_frame).clone();
                 let c = get_var(c_name, global_scope, stack, cur_frame).clone();
 
-                jge!(a, b, c, *pc);
+                jge!(a, b, c, *pc, skip_inc);
             }
 
             Opcode::JG_I_I_I(a, b, c) => { // JG [imm] [imm] [imm]
-                jg!(a, b, c, *pc);
+                jg!(a, b, c, *pc, skip_inc);
             }
             Opcode::JG_V_I_I(a_name, b, c) => { // JG [var] [imm] [imm]
                 let a = get_var(a_name, global_scope, stack, cur_frame).clone();
 
-                jg!(a, b, c, *pc);
+                jg!(a, b, c, *pc, skip_inc);
             }
             Opcode::JG_I_V_I(a, b_name, c) => { // JG [imm] [imm] [imm]
                 let b = get_var(b_name, global_scope, stack, cur_frame).clone();
 
-                jg!(a, b, c, *pc);
+                jg!(a, b, c, *pc, skip_inc);
             }
             Opcode::JG_V_V_I(a_name, b_name, c) => { // JG [var] [var] [imm]
                 let a = get_var(a_name, global_scope, stack, cur_frame).clone();
                 let b = get_var(b_name, global_scope, stack, cur_frame).clone();
 
-                jg!(a, b, c, *pc);
+                jg!(a, b, c, *pc, skip_inc);
             }
             Opcode::JG_I_I_V(a, b, c_name) => { // JG [imm] [imm] [var]
                 let c = get_var(c_name, global_scope, stack, cur_frame).clone();
 
-                jg!(a, b, c, *pc);
+                jg!(a, b, c, *pc, skip_inc);
             }
             Opcode::JG_V_I_V(a_name, b, c_name) => { // JG [var] [imm] [var]
                 let a = get_var(a_name, global_scope, stack, cur_frame).clone();
                 let c = get_var(c_name, global_scope, stack, cur_frame).clone();
 
-                jg!(a, b, c, *pc);
+                jg!(a, b, c, *pc, skip_inc);
             }
             Opcode::JG_I_V_V(a, b_name, c_name) => { // JG [imm] [imm] [var]
                 let b = get_var(b_name, global_scope, stack, cur_frame).clone();
                 let c = get_var(c_name, global_scope, stack, cur_frame).clone();
 
-                jg!(a, b, c, *pc);
+                jg!(a, b, c, *pc, skip_inc);
             }
             Opcode::JG_V_V_V(a_name, b_name, c_name) => { // JG [var] [var] [var]
                 let a = get_var(a_name, global_scope, stack, cur_frame).clone();
                 let b = get_var(b_name, global_scope, stack, cur_frame).clone();
                 let c = get_var(c_name, global_scope, stack, cur_frame).clone();
 
-                jg!(a, b, c, *pc);
+                jg!(a, b, c, *pc, skip_inc);
             }
 
             Opcode::JLE_I_I_I(a, b, c) => { // JLE [imm] [imm] [imm]
-                jle!(a, b, c, *pc);
+                jle!(a, b, c, *pc, skip_inc);
             }
             Opcode::JLE_V_I_I(a_name, b, c) => { // JLE [var] [imm] [imm]
                 let a = get_var(a_name, global_scope, stack, cur_frame).clone();
 
-                jle!(a, b, c, *pc);
+                jle!(a, b, c, *pc, skip_inc);
             }
             Opcode::JLE_I_V_I(a, b_name, c) => { // JLE [imm] [imm] [imm]
                 let b = get_var(b_name, global_scope, stack, cur_frame).clone();
 
-                jle!(a, b, c, *pc);
+                jle!(a, b, c, *pc, skip_inc);
             }
             Opcode::JLE_V_V_I(a_name, b_name, c) => { // JLE [var] [var] [imm]
                 let a = get_var(a_name, global_scope, stack, cur_frame).clone();
                 let b = get_var(b_name, global_scope, stack, cur_frame).clone();
 
-                jle!(a, b, c, *pc);
+                jle!(a, b, c, *pc, skip_inc);
             }
             Opcode::JLE_I_I_V(a, b, c_name) => { // JLE [imm] [imm] [var]
                 let c = get_var(c_name, global_scope, stack, cur_frame).clone();
 
-                jle!(a, b, c, *pc);
+                jle!(a, b, c, *pc, skip_inc);
             }
             Opcode::JLE_V_I_V(a_name, b, c_name) => { // JLE [var] [imm] [var]
                 let a = get_var(a_name, global_scope, stack, cur_frame).clone();
                 let c = get_var(c_name, global_scope, stack, cur_frame).clone();
 
-                jle!(a, b, c, *pc);
+                jle!(a, b, c, *pc, skip_inc);
             }
             Opcode::JLE_I_V_V(a, b_name, c_name) => { // JLE [imm] [imm] [var]
                 let b = get_var(b_name, global_scope, stack, cur_frame).clone();
                 let c = get_var(c_name, global_scope, stack, cur_frame).clone();
 
-                jle!(a, b, c, *pc);
+                jle!(a, b, c, *pc, skip_inc);
             }
             Opcode::JLE_V_V_V(a_name, b_name, c_name) => { // JLE [var] [var] [var]
                 let a = get_var(a_name, global_scope, stack, cur_frame).clone();
                 let b = get_var(b_name, global_scope, stack, cur_frame).clone();
                 let c = get_var(c_name, global_scope, stack, cur_frame).clone();
 
-                jle!(a, b, c, *pc);
+                jle!(a, b, c, *pc, skip_inc);
             }
 
             Opcode::JL_I_I_I(a, b, c) => { // JL [imm] [imm] [imm]
-                jl!(a, b, c, *pc);
+                jl!(a, b, c, *pc, skip_inc);
             }
             Opcode::JL_V_I_I(a_name, b, c) => { // JL [var] [imm] [imm]
                 let a = get_var(a_name, global_scope, stack, cur_frame).clone();
 
-                jl!(a, b, c, *pc);
+                jl!(a, b, c, *pc, skip_inc);
             }
             Opcode::JL_I_V_I(a, b_name, c) => { // JL [imm] [imm] [imm]
                 let b = get_var(b_name, global_scope, stack, cur_frame).clone();
 
-                jl!(a, b, c, *pc);
+                jl!(a, b, c, *pc, skip_inc);
             }
             Opcode::JL_V_V_I(a_name, b_name, c) => { // JL [var] [var] [imm]
                 let a = get_var(a_name, global_scope, stack, cur_frame).clone();
                 let b = get_var(b_name, global_scope, stack, cur_frame).clone();
 
-                jl!(a, b, c, *pc);
+                jl!(a, b, c, *pc, skip_inc);
             }
             Opcode::JL_I_I_V(a, b, c_name) => { // JL [imm] [imm] [var]
                 let c = get_var(c_name, global_scope, stack, cur_frame).clone();
 
-                jl!(a, b, c, *pc);
+                jl!(a, b, c, *pc, skip_inc);
             }
             Opcode::JL_V_I_V(a_name, b, c_name) => { // JL [var] [imm] [var]
                 let a = get_var(a_name, global_scope, stack, cur_frame).clone();
                 let c = get_var(c_name, global_scope, stack, cur_frame).clone();
 
-                jl!(a, b, c, *pc);
+                jl!(a, b, c, *pc, skip_inc);
             }
             Opcode::JL_I_V_V(a, b_name, c_name) => { // JL [imm] [imm] [var]
                 let b = get_var(b_name, global_scope, stack, cur_frame).clone();
                 let c = get_var(c_name, global_scope, stack, cur_frame).clone();
 
-                jl!(a, b, c, *pc);
+                jl!(a, b, c, *pc, skip_inc);
             }
             Opcode::JL_V_V_V(a_name, b_name, c_name) => { // JL [var] [var] [var]
                 let a = get_var(a_name, global_scope, stack, cur_frame).clone();
                 let b = get_var(b_name, global_scope, stack, cur_frame).clone();
                 let c = get_var(c_name, global_scope, stack, cur_frame).clone();
 
-                jl!(a, b, c, *pc);
+                jl!(a, b, c, *pc, skip_inc);
             }
 
             Opcode::MOV_I_V(a, b) => { // MOV [imm] [var]
@@ -1253,10 +1249,18 @@ pub fn exec_block(scope: &Scope, block: &Vec<Instruction>, global_scope: &Scope,
         // times[instr.opcode.to_u8() as usize] += instr_start.elapsed().as_secs_f64() * 1000f64;
         // counts[instr.opcode.to_u8() as usize] += 1;
         
-        *pc += 1;
+        if !skip_inc {
+            *pc += 1;
+        }
+        skip_inc = false;
+
+        if *pc < block_start {
+            // println!("went backwards");
+            break;
+        }
     }
 
-    // clear everything from the stack created by the scope
+    // println!("block over {block_start}");
 
     return 0;
     
@@ -1277,34 +1281,59 @@ pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, c
         let start;
         if scope.block_starts.len() > i + 1 {
             while *pc > scope.block_starts[i + 1] {
+                // println!("skipping {}, {pc} > {}", i + 1, scope.block_starts[i + 1]);
+
                 i += 1;
 
                 if i >= scope.block_starts.len() - 1 {
+                    // println!("skipping hit end");
                     break;
                 }
             }
             
             if i >= scope.block_starts.len() {
+                // println!("skipped whole block");
                 break;
             }
             
             start = scope.block_starts[i];
         } else {
-            start = 0;
+            start = scope.block_starts[i];
         }
         
+        // println!("block_start: {start}, pc: {pc}, i: {i}");
+
         let block = &scope.blocks[i];
 
         let ret = match block {
             Block::CODE(vec) => exec_block(scope, vec, global_scope, stack, cur_frame, pc, start),
-            Block::SCOPE(scope) => exec_scope(&scope, global_scope, stack, cur_frame, pop_stack, &mut 0),
+            Block::SCOPE(scope) => {
+                *pc += 1;
+                exec_scope(&scope, global_scope, stack, cur_frame, pop_stack, &mut 0)
+            }
         };
+
+        let mut skip_inc = false;
+        if i > 0 {
+            while *pc < scope.block_starts[i] {
+                // println!("skipping backwards {i}, {pc} < {}", scope.block_starts[i]);
+
+                i -= 1;
+                skip_inc = true;
+                
+                if i <= 0 {
+                    break;
+                }
+            }
+        }
 
         if ret != 0 {
             return ret;
         }
         
-        i += 1;
+        if !skip_inc {
+            i += 1;
+        }
     }
 
     if pop_stack {
@@ -1312,6 +1341,8 @@ pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, c
             stack[cur_frame].pop();
         }
     }
+
+    // println!("scope completed");
 
     return 0;
 }

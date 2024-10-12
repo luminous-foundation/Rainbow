@@ -1,0 +1,17 @@
+VAR i64 temp
+
+VAR i64 count
+MOV 0 $count
+
+{
+    CMP < $count 100 $temp
+    JNE $temp 1 4
+
+    {
+        ADD $count 1 $count
+    }
+
+    JMP 0
+}
+
+RET $count
