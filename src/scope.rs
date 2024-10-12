@@ -79,11 +79,11 @@ impl Scope {
 
             match block {
                 Block::CODE(vec) => {
-                    str += "    ";
-                    str += &indentation;
-                    str += "start: ";
-                    str += &self.block_starts[i].to_string();
-                    str += "\n";
+                    // str += "    ";
+                    // str += &indentation;
+                    // str += "start: ";
+                    // str += &self.block_starts[i].to_string();
+                    // str += "\n";
 
                     for instr in vec {
                         str += "    ";
