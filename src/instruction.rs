@@ -506,14 +506,14 @@ impl Instruction {
             Opcode::CALLC_V_T_V(a, b, c) => "CALLC_V_T_V".to_string() + &format!("({a}, {b}, {c})"),
             Opcode::CALLC_I_V_V(a, b, c) => "CALLC_I_V_V".to_string() + &format!("({a}, {b}, {c})"),
             Opcode::CALLC_V_V_V(a, b, c) => "CALLC_V_V_V".to_string() + &format!("({a}, {b}, {c})"),
-            Opcode::CMP_I_I_I(a, b, c, d) => "CMP_I_I_I".to_string() + &to_cond(a) + &format!("({b}, {c}, {d})"),
-            Opcode::CMP_V_I_I(a, b, c, d) => "CMP_V_I_I".to_string() + &format!("({a}, {b}, {c}, {d})"),
-            Opcode::CMP_I_V_I(a, b, c, d) => "CMP_I_V_I".to_string() + &to_cond(a) + &format!("({b}, {c}, {d})"),
-            Opcode::CMP_V_V_I(a, b, c, d) => "CMP_V_V_I".to_string() + &format!("({a}, {b}, {c}, {d})"),
-            Opcode::CMP_I_I_V(a, b, c, d) => "CMP_I_I_V".to_string() + &to_cond(a) + &format!("({b}, {c}, {d})"),
-            Opcode::CMP_V_I_V(a, b, c, d) => "CMP_V_I_V".to_string() + &format!("({a}, {b}, {c}, {d})"),
-            Opcode::CMP_I_V_V(a, b, c, d) => "CMP_I_V_V".to_string() + &to_cond(a) + &format!("({b}, {c}, {d})"),
-            Opcode::CMP_V_V_V(a, b, c, d) => "CMP_V_V_V".to_string() + &format!("({a}, {b}, {c}, {d})"),
+            Opcode::CMP_I_I_I(a, b, c, d) => "CMP_I_I_I(".to_string() + &to_cond(a) + ", " + &format!("{b}, {c}, {d})"),
+            Opcode::CMP_V_I_I(a, b, c, d) => "CMP_V_I_I(".to_string() + &format!("{a}, {b}, {c}, {d})"),
+            Opcode::CMP_I_V_I(a, b, c, d) => "CMP_I_V_I(".to_string() + &to_cond(a) + ", " + &format!("{b}, {c}, {d})"),
+            Opcode::CMP_V_V_I(a, b, c, d) => "CMP_V_V_I(".to_string() + &format!("{a}, {b}, {c}, {d})"),
+            Opcode::CMP_I_I_V(a, b, c, d) => "CMP_I_I_V(".to_string() + &to_cond(a) + ", " + &format!("{b}, {c}, {d})"),
+            Opcode::CMP_V_I_V(a, b, c, d) => "CMP_V_I_V(".to_string() + &format!("{a}, {b}, {c}, {d})"),
+            Opcode::CMP_I_V_V(a, b, c, d) => "CMP_I_V_V(".to_string() + &to_cond(a) + ", " + &format!("{b}, {c}, {d})"),
+            Opcode::CMP_V_V_V(a, b, c, d) => "CMP_V_V_V(".to_string() + &format!("{a}, {b}, {c}, {d})"),
         }
     }
 }

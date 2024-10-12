@@ -1,6 +1,9 @@
 VAR u8 test
 
-CMP != 0 1 $test
+VAR u8 test2
+MOV 2 $test2
+
+CMP > $test2 1 $test
 
 JNE $test 1 :fail
 RET 0
