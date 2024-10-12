@@ -127,8 +127,18 @@ Frees pointer A with size B
 Size only needs to be provided when given an immediate address, but still can be provided given a pointer variable
 If size is not provided with the given pointer variable the pointer will be deleted, if a size is provided the pointer will remain.
 
-[ ] 0x84-8C     CALLC   [imm/var]   [type/var]  [imm/var]
+[ ] 0x84-8B     CALLC   [imm/var]   [type/var]  [imm/var]
 Calls the function in memory at address A, return type B, and argument count C.
+
+[ ] 0x8C-93     CMP     [imm/var]   [imm/var]   [imm/var]   [var]
+Compares B to C with condition A, and stores 1 or 0 in D depending on the result.
+
+0x00: ==
+0x01: !=
+0x02: >=
+0x03: >
+0x04: <=
+0x05: <
 ```
 
 0xXX-0xYY - instruction opcode range

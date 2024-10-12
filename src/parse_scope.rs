@@ -974,6 +974,56 @@ pub fn parse_instruction(bytes: &Vec<u8>, index: &mut usize) -> Result<Instructi
             parse_bytecode_string(bytes, index)?)
         }
 
+        // compare instruction
+        0x8C => {
+            Opcode::CMP_I_I_I(parse_immediate(bytes, index)?, 
+            parse_immediate(bytes, index)?, 
+            parse_immediate(bytes, index)?, 
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x8D => {
+            Opcode::CMP_V_I_I(parse_bytecode_string(bytes, index)?, 
+            parse_immediate(bytes, index)?, 
+            parse_immediate(bytes, index)?, 
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x8E => {
+            Opcode::CMP_I_V_I(parse_immediate(bytes, index)?, 
+            parse_bytecode_string(bytes, index)?, 
+            parse_immediate(bytes, index)?, 
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x8F => {
+            Opcode::CMP_V_V_I(parse_bytecode_string(bytes, index)?, 
+            parse_bytecode_string(bytes, index)?, 
+            parse_immediate(bytes, index)?, 
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x90 => {
+            Opcode::CMP_I_I_V(parse_immediate(bytes, index)?, 
+            parse_immediate(bytes, index)?, 
+            parse_bytecode_string(bytes, index)?, 
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x91 => {
+            Opcode::CMP_V_I_V(parse_bytecode_string(bytes, index)?, 
+            parse_immediate(bytes, index)?, 
+            parse_bytecode_string(bytes, index)?, 
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x92 => {
+            Opcode::CMP_I_V_V(parse_immediate(bytes, index)?, 
+            parse_bytecode_string(bytes, index)?, 
+            parse_bytecode_string(bytes, index)?, 
+            parse_bytecode_string(bytes, index)?)
+        }
+        0x93 => {
+            Opcode::CMP_V_V_V(parse_bytecode_string(bytes, index)?, 
+            parse_bytecode_string(bytes, index)?, 
+            parse_bytecode_string(bytes, index)?, 
+            parse_bytecode_string(bytes, index)?)
+        }
+
         _ => return Err(format!("unknown instruction {:#04x} at {:#06x}", opcode_byte, start_index))
     };
 

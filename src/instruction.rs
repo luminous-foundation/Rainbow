@@ -1,194 +1,204 @@
-use crate::{_type::Type, value::Value};
+use crate::{_type::Type, value::{Value, Values}};
 
 #[derive(Debug, Clone)]
 #[repr(u8)]
 #[allow(non_camel_case_types)]
 pub enum Opcode { // very large enum 
     // nop
-    NOP                                   = 0x00,
+    NOP                                       = 0x00,
 
     // stack operations
-    PUSH_IMM(Value)                       = 0x01,
-    PUSH_VAR(String)                      = 0x02,
+    PUSH_IMM(Value)                           = 0x01,
+    PUSH_VAR(String)                          = 0x02,
     
-    POP(String)                           = 0x03,
+    POP(String)                               = 0x03,
     
-    PEEK_IMM(Value, String)               = 0x04,
-    PEEK_VAR(String, String)              = 0x05,
+    PEEK_IMM(Value, String)                   = 0x04,
+    PEEK_VAR(String, String)                  = 0x05,
     
     // function calling
-    CALL_FUNC(String)                     = 0x06,
-    CALL_VAR(String)                      = 0x07,
+    CALL_FUNC(String)                         = 0x06,
+    CALL_VAR(String)                          = 0x07,
     
     // math operations
-    ADD_I_I(Value, Value, String)         = 0x08,
-    ADD_V_I(String, Value, String)        = 0x09,
-    ADD_I_V(Value, String, String)        = 0x0A,
-    ADD_V_V(String, String, String)       = 0x0B,
+    ADD_I_I(Value, Value, String)             = 0x08,
+    ADD_V_I(String, Value, String)            = 0x09,
+    ADD_I_V(Value, String, String)            = 0x0A,
+    ADD_V_V(String, String, String)           = 0x0B,
     
-    SUB_I_I(Value, Value, String)         = 0x0C,
-    SUB_V_I(String, Value, String)        = 0x0D,
-    SUB_I_V(Value, String, String)        = 0x0E,
-    SUB_V_V(String, String, String)       = 0x0F,
+    SUB_I_I(Value, Value, String)             = 0x0C,
+    SUB_V_I(String, Value, String)            = 0x0D,
+    SUB_I_V(Value, String, String)            = 0x0E,
+    SUB_V_V(String, String, String)           = 0x0F,
     
-    MUL_I_I(Value, Value, String)         = 0x10,
-    MUL_V_I(String, Value, String)        = 0x11,
-    MUL_I_V(Value, String, String)        = 0x12,
-    MUL_V_V(String, String, String)       = 0x13,
+    MUL_I_I(Value, Value, String)             = 0x10,
+    MUL_V_I(String, Value, String)            = 0x11,
+    MUL_I_V(Value, String, String)            = 0x12,
+    MUL_V_V(String, String, String)           = 0x13,
     
-    DIV_I_I(Value, Value, String)         = 0x14,
-    DIV_V_I(String, Value, String)        = 0x15,
-    DIV_I_V(Value, String, String)        = 0x16,
-    DIV_V_V(String, String, String)       = 0x17,
+    DIV_I_I(Value, Value, String)             = 0x14,
+    DIV_V_I(String, Value, String)            = 0x15,
+    DIV_I_V(Value, String, String)            = 0x16,
+    DIV_V_V(String, String, String)           = 0x17,
     
     // jumps
-    JMP_IMM(Value)                        = 0x18,
-    JMP_VAR(String)                       = 0x19,
+    JMP_IMM(Value)                            = 0x18,
+    JMP_VAR(String)                           = 0x19,
     
-    JNE_I_I_I(Value, Value, Value)        = 0x1A,
-    JNE_V_I_I(String, Value, Value)       = 0x1B,
-    JNE_I_V_I(Value, String, Value)       = 0x1C,
-    JNE_V_V_I(String, String, Value)      = 0x1D,
-    JNE_I_I_V(Value, Value, String)       = 0x1E,
-    JNE_V_I_V(String, Value, String)      = 0x1F,
-    JNE_I_V_V(Value, String, String)      = 0x20,
-    JNE_V_V_V(String, String, String)     = 0x21,
+    JNE_I_I_I(Value, Value, Value)            = 0x1A,
+    JNE_V_I_I(String, Value, Value)           = 0x1B,
+    JNE_I_V_I(Value, String, Value)           = 0x1C,
+    JNE_V_V_I(String, String, Value)          = 0x1D,
+    JNE_I_I_V(Value, Value, String)           = 0x1E,
+    JNE_V_I_V(String, Value, String)          = 0x1F,
+    JNE_I_V_V(Value, String, String)          = 0x20,
+    JNE_V_V_V(String, String, String)         = 0x21,
     
-    JE_I_I_I(Value, Value, Value)         = 0x22,
-    JE_V_I_I(String, Value, Value)        = 0x23,
-    JE_I_V_I(Value, String, Value)        = 0x24,
-    JE_V_V_I(String, String, Value)       = 0x25,
-    JE_I_I_V(Value, Value, String)        = 0x26,
-    JE_V_I_V(String, Value, String)       = 0x27,
-    JE_I_V_V(Value, String, String)       = 0x28,
-    JE_V_V_V(String, String, String)      = 0x29,
+    JE_I_I_I(Value, Value, Value)             = 0x22,
+    JE_V_I_I(String, Value, Value)            = 0x23,
+    JE_I_V_I(Value, String, Value)            = 0x24,
+    JE_V_V_I(String, String, Value)           = 0x25,
+    JE_I_I_V(Value, Value, String)            = 0x26,
+    JE_V_I_V(String, Value, String)           = 0x27,
+    JE_I_V_V(Value, String, String)           = 0x28,
+    JE_V_V_V(String, String, String)          = 0x29,
     
-    JGE_I_I_I(Value, Value, Value)        = 0x2A,
-    JGE_V_I_I(String, Value, Value)       = 0x2B,
-    JGE_I_V_I(Value, String, Value)       = 0x2C,
-    JGE_V_V_I(String, String, Value)      = 0x2D,
-    JGE_I_I_V(Value, Value, String)       = 0x2E,
-    JGE_V_I_V(String, Value, String)      = 0x2F,
-    JGE_I_V_V(Value, String, String)      = 0x30,
-    JGE_V_V_V(String, String, String)     = 0x31,
+    JGE_I_I_I(Value, Value, Value)            = 0x2A,
+    JGE_V_I_I(String, Value, Value)           = 0x2B,
+    JGE_I_V_I(Value, String, Value)           = 0x2C,
+    JGE_V_V_I(String, String, Value)          = 0x2D,
+    JGE_I_I_V(Value, Value, String)           = 0x2E,
+    JGE_V_I_V(String, Value, String)          = 0x2F,
+    JGE_I_V_V(Value, String, String)          = 0x30,
+    JGE_V_V_V(String, String, String)         = 0x31,
     
-    JG_I_I_I(Value, Value, Value)         = 0x32,
-    JG_V_I_I(String, Value, Value)        = 0x33,
-    JG_I_V_I(Value, String, Value)        = 0x34,
-    JG_V_V_I(String, String, Value)       = 0x35,
-    JG_I_I_V(Value, Value, String)        = 0x36,
-    JG_V_I_V(String, Value, String)       = 0x37,
-    JG_I_V_V(Value, String, String)       = 0x38,
-    JG_V_V_V(String, String, String)      = 0x39,
+    JG_I_I_I(Value, Value, Value)             = 0x32,
+    JG_V_I_I(String, Value, Value)            = 0x33,
+    JG_I_V_I(Value, String, Value)            = 0x34,
+    JG_V_V_I(String, String, Value)           = 0x35,
+    JG_I_I_V(Value, Value, String)            = 0x36,
+    JG_V_I_V(String, Value, String)           = 0x37,
+    JG_I_V_V(Value, String, String)           = 0x38,
+    JG_V_V_V(String, String, String)          = 0x39,
     
-    JLE_I_I_I(Value, Value, Value)        = 0x3A,
-    JLE_V_I_I(String, Value, Value)       = 0x3B,
-    JLE_I_V_I(Value, String, Value)       = 0x3C,
-    JLE_V_V_I(String, String, Value)      = 0x3D,
-    JLE_I_I_V(Value, Value, String)       = 0x3E,
-    JLE_V_I_V(String, Value, String)      = 0x3F,
-    JLE_I_V_V(Value, String, String)      = 0x40,
-    JLE_V_V_V(String, String, String)     = 0x41,
+    JLE_I_I_I(Value, Value, Value)            = 0x3A,
+    JLE_V_I_I(String, Value, Value)           = 0x3B,
+    JLE_I_V_I(Value, String, Value)           = 0x3C,
+    JLE_V_V_I(String, String, Value)          = 0x3D,
+    JLE_I_I_V(Value, Value, String)           = 0x3E,
+    JLE_V_I_V(String, Value, String)          = 0x3F,
+    JLE_I_V_V(Value, String, String)          = 0x40,
+    JLE_V_V_V(String, String, String)         = 0x41,
     
-    JL_I_I_I(Value, Value, Value)         = 0x42,
-    JL_V_I_I(String, Value, Value)        = 0x43,
-    JL_I_V_I(Value, String, Value)        = 0x44,
-    JL_V_V_I(String, String, Value)       = 0x45,
-    JL_I_I_V(Value, Value, String)        = 0x46,
-    JL_V_I_V(String, Value, String)       = 0x47,
-    JL_I_V_V(Value, String, String)       = 0x48,
-    JL_V_V_V(String, String, String)      = 0x49,
+    JL_I_I_I(Value, Value, Value)             = 0x42,
+    JL_V_I_I(String, Value, Value)            = 0x43,
+    JL_I_V_I(Value, String, Value)            = 0x44,
+    JL_V_V_I(String, String, Value)           = 0x45,
+    JL_I_I_V(Value, Value, String)            = 0x46,
+    JL_V_I_V(String, Value, String)           = 0x47,
+    JL_I_V_V(Value, String, String)           = 0x48,
+    JL_V_V_V(String, String, String)          = 0x49,
     
     // move instructions
-    MOV_I_V(Value, String)                = 0x4A,
-    MOV_V_V(String, String)               = 0x4B,
-    MOV_VV_V(String, String)              = 0x4C,
-    MOV_I_VV(Value, String)               = 0x4D,
-    MOV_V_VV(String, String)              = 0x4E,
-    MOV_VV_VV(String, String)             = 0x4F,
+    MOV_I_V(Value, String)                    = 0x4A,
+    MOV_V_V(String, String)                   = 0x4B,
+    MOV_VV_V(String, String)                  = 0x4C,
+    MOV_I_VV(Value, String)                   = 0x4D,
+    MOV_V_VV(String, String)                  = 0x4E,
+    MOV_VV_VV(String, String)                 = 0x4F,
     
     // bitwise operations
-    AND_I_I(Value, Value, String)         = 0x50,
-    AND_V_I(String, Value, String)        = 0x51,
-    AND_I_V(Value, String, String)        = 0x52,
-    AND_V_V(String, String, String)       = 0x53,
+    AND_I_I(Value, Value, String)             = 0x50,
+    AND_V_I(String, Value, String)            = 0x51,
+    AND_I_V(Value, String, String)            = 0x52,
+    AND_V_V(String, String, String)           = 0x53,
     
-    OR_I_I(Value, Value, String)          = 0x54,
-    OR_V_I(String, Value, String)         = 0x55,
-    OR_I_V(Value, String, String)         = 0x56,
-    OR_V_V(String, String, String)        = 0x57,
+    OR_I_I(Value, Value, String)              = 0x54,
+    OR_V_I(String, Value, String)             = 0x55,
+    OR_I_V(Value, String, String)             = 0x56,
+    OR_V_V(String, String, String)            = 0x57,
     
-    XOR_I_I(Value, Value, String)         = 0x58,
-    XOR_V_I(String, Value, String)        = 0x59,
-    XOR_I_V(Value, String, String)        = 0x5A,
-    XOR_V_V(String, String, String)       = 0x5B,
+    XOR_I_I(Value, Value, String)             = 0x58,
+    XOR_V_I(String, Value, String)            = 0x59,
+    XOR_I_V(Value, String, String)            = 0x5A,
+    XOR_V_V(String, String, String)           = 0x5B,
     
-    NOT_IMM(Value, String)                = 0x5C,
-    NOT_VAR(String, String)               = 0x5D,
+    NOT_IMM(Value, String)                    = 0x5C,
+    NOT_VAR(String, String)                   = 0x5D,
     
-    LSH_I_I(Value, Value, String)         = 0x5E,
-    LSH_V_I(String, Value, String)        = 0x5F,
-    LSH_I_V(Value, String, String)        = 0x60,
-    LSH_V_V(String, String, String)       = 0x61,
+    LSH_I_I(Value, Value, String)             = 0x5E,
+    LSH_V_I(String, Value, String)            = 0x5F,
+    LSH_I_V(Value, String, String)            = 0x60,
+    LSH_V_V(String, String, String)           = 0x61,
     
-    RSH_I_I(Value, Value, String)         = 0x62,
-    RSH_V_I(String, Value, String)        = 0x63,
-    RSH_I_V(Value, String, String)        = 0x64,
-    RSH_V_V(String, String, String)       = 0x65,
+    RSH_I_I(Value, Value, String)             = 0x62,
+    RSH_V_I(String, Value, String)            = 0x63,
+    RSH_I_V(Value, String, String)            = 0x64,
+    RSH_V_V(String, String, String)           = 0x65,
     
     // variable instructions
-    VAR_TYPE_NAME(Type, String)           = 0x66,
-    VAR_VAR_NAME(String, String)          = 0x67,
-    VAR_TYPE_VAR(Type, String)            = 0x68,
-    VAR_VAR_VAR(String, String)           = 0x69,
+    VAR_TYPE_NAME(Type, String)               = 0x66,
+    VAR_VAR_NAME(String, String)              = 0x67,
+    VAR_TYPE_VAR(Type, String)                = 0x68,
+    VAR_VAR_VAR(String, String)               = 0x69,
     
     // return
-    RET                                   = 0x6A,
-    RET_IMM(Value)                        = 0x6B,
-    RET_VAR(String)                       = 0x6C,
+    RET                                       = 0x6A,
+    RET_IMM(Value)                            = 0x6B,
+    RET_VAR(String)                           = 0x6C,
     
     // pointer instructions
-    DEREF_IMM(Value, String)              = 0x6D,
-    DEREF_VAR(String, String)             = 0x6E,
+    DEREF_IMM(Value, String)                  = 0x6D,
+    DEREF_VAR(String, String)                 = 0x6E,
     
-    REF_IMM(Value, String)                = 0x6F,
-    REF_VAR(String, String)               = 0x70,
+    REF_IMM(Value, String)                    = 0x6F,
+    REF_VAR(String, String)                   = 0x70,
     
     // struct instantiation
-    INST_NAME(String, String)             = 0x71,
-    INST_VAR(String, String)              = 0x72,
+    INST_NAME(String, String)                 = 0x71,
+    INST_VAR(String, String)                  = 0x72,
     
     // modulo
-    MOD_I_I(Value, Value, String)         = 0x73,
-    MOD_V_I(String, Value, String)        = 0x74,
-    MOD_I_V(Value, String, String)        = 0x75,
-    MOD_V_V(String, String, String)       = 0x76,
+    MOD_I_I(Value, Value, String)             = 0x73,
+    MOD_V_I(String, Value, String)            = 0x74,
+    MOD_I_V(Value, String, String)            = 0x75,
+    MOD_V_V(String, String, String)           = 0x76,
     
     // more pointer instructions
-    PMOV_IMM_IMM(Value, String, Value)    = 0x77,
-    PMOV_VAR_IMM(String, String, Value)   = 0x78,
-    PMOV_IMM_VAR(Value, String, String)   = 0x79,
-    PMOV_VAR_VAR(String, String, String)  = 0x7A,
+    PMOV_IMM_IMM(Value, String, Value)        = 0x77,
+    PMOV_VAR_IMM(String, String, Value)       = 0x78,
+    PMOV_IMM_VAR(Value, String, String)       = 0x79,
+    PMOV_VAR_VAR(String, String, String)      = 0x7A,
     
-    ALLOC_TYPE_IMM(Type, Value, String)   = 0x7B,
-    ALLOC_VAR_IMM(String, Value, String)  = 0x7C,
-    ALLOC_TYPE_VAR(Type, String, String)  = 0x7D,
-    ALLOC_VAR_VAR(String, String, String) = 0x7E,
+    ALLOC_TYPE_IMM(Type, Value, String)       = 0x7B,
+    ALLOC_VAR_IMM(String, Value, String)      = 0x7C,
+    ALLOC_TYPE_VAR(Type, String, String)      = 0x7D,
+    ALLOC_VAR_VAR(String, String, String)     = 0x7E,
     
-    FREE_VAR(String)                      = 0x7F,
-    FREE_IMM_IMM(Value, Value)            = 0x80,
-    FREE_VAR_IMM(String, Value)           = 0x81,
-    FREE_IMM_VAR(Value, String)           = 0x82,
-    FREE_VAR_VAR(String, String)          = 0x83,
+    FREE_VAR(String)                          = 0x7F,
+    FREE_IMM_IMM(Value, Value)                = 0x80,
+    FREE_VAR_IMM(String, Value)               = 0x81,
+    FREE_IMM_VAR(Value, String)               = 0x82,
+    FREE_VAR_VAR(String, String)              = 0x83,
 
-    CALLC_I_T_I(Value, Type, Value)       = 0x84,
-    CALLC_V_T_I(String, Type, Value)      = 0x85,
-    CALLC_I_V_I(Value, String, Value)     = 0x86,
-    CALLC_V_V_I(String, String, Value)    = 0x87,
-    CALLC_I_T_V(Value, Type, String)      = 0x88,
-    CALLC_V_T_V(String, Type, String)     = 0x89,
-    CALLC_I_V_V(Value, String, String)    = 0x8A,
-    CALLC_V_V_V(String, String, String)   = 0x8B,
+    CALLC_I_T_I(Value, Type, Value)           = 0x84,
+    CALLC_V_T_I(String, Type, Value)          = 0x85,
+    CALLC_I_V_I(Value, String, Value)         = 0x86,
+    CALLC_V_V_I(String, String, Value)        = 0x87,
+    CALLC_I_T_V(Value, Type, String)          = 0x88,
+    CALLC_V_T_V(String, Type, String)         = 0x89,
+    CALLC_I_V_V(Value, String, String)        = 0x8A,
+    CALLC_V_V_V(String, String, String)       = 0x8B,
+
+    // compare instruction
+    CMP_I_I_I(Value, Value, Value, String)    = 0x8C,
+    CMP_V_I_I(String, Value, Value, String)   = 0x8D,
+    CMP_I_V_I(Value, String, Value, String)   = 0x8E,
+    CMP_V_V_I(String, String, Value, String)  = 0x8F,
+    CMP_I_I_V(Value, Value, String, String)   = 0x90,
+    CMP_V_I_V(String, Value, String, String)  = 0x91,
+    CMP_I_V_V(Value, String, String, String)  = 0x92,
+    CMP_V_V_V(String, String, String, String) = 0x93,
 }
 
 impl Opcode {
@@ -286,8 +296,8 @@ impl Opcode {
             Opcode::XOR_V_I(_, _, _)        => 0x59,
             Opcode::XOR_I_V(_, _, _)        => 0x5A,
             Opcode::XOR_V_V(_, _, _)        => 0x5B,
-            Opcode::NOT_IMM(_, _)              => 0x5C,
-            Opcode::NOT_VAR(_, _)              => 0x5D,
+            Opcode::NOT_IMM(_, _)           => 0x5C,
+            Opcode::NOT_VAR(_, _)           => 0x5D,
             Opcode::LSH_I_I(_, _, _)        => 0x5E,
             Opcode::LSH_V_I(_, _, _)        => 0x5F,
             Opcode::LSH_I_V(_, _, _)        => 0x60,
@@ -334,6 +344,14 @@ impl Opcode {
             Opcode::CALLC_V_T_V(_, _, _)    => 0x89,
             Opcode::CALLC_I_V_V(_, _, _)    => 0x8A,
             Opcode::CALLC_V_V_V(_, _, _)    => 0x8B,
+            Opcode::CMP_I_I_I(_, _, _, _)   => 0x8C,
+            Opcode::CMP_V_I_I(_, _, _, _)   => 0x8D,
+            Opcode::CMP_I_V_I(_, _, _, _)   => 0x8E,
+            Opcode::CMP_V_V_I(_, _, _, _)   => 0x8F,
+            Opcode::CMP_I_I_V(_, _, _, _)   => 0x90,
+            Opcode::CMP_V_I_V(_, _, _, _)   => 0x91,
+            Opcode::CMP_I_V_V(_, _, _, _)   => 0x92,
+            Opcode::CMP_V_V_V(_, _, _, _)   => 0x93,
         }
     }
 }
@@ -488,6 +506,64 @@ impl Instruction {
             Opcode::CALLC_V_T_V(a, b, c) => "CALLC_V_T_V".to_string() + &format!("({a}, {b}, {c})"),
             Opcode::CALLC_I_V_V(a, b, c) => "CALLC_I_V_V".to_string() + &format!("({a}, {b}, {c})"),
             Opcode::CALLC_V_V_V(a, b, c) => "CALLC_V_V_V".to_string() + &format!("({a}, {b}, {c})"),
+            Opcode::CMP_I_I_I(a, b, c, d) => "CMP_I_I_I".to_string() + &to_cond(a) + &format!("({b}, {c}, {d})"),
+            Opcode::CMP_V_I_I(a, b, c, d) => "CMP_V_I_I".to_string() + &format!("({a}, {b}, {c}, {d})"),
+            Opcode::CMP_I_V_I(a, b, c, d) => "CMP_I_V_I".to_string() + &to_cond(a) + &format!("({b}, {c}, {d})"),
+            Opcode::CMP_V_V_I(a, b, c, d) => "CMP_V_V_I".to_string() + &format!("({a}, {b}, {c}, {d})"),
+            Opcode::CMP_I_I_V(a, b, c, d) => "CMP_I_I_V".to_string() + &to_cond(a) + &format!("({b}, {c}, {d})"),
+            Opcode::CMP_V_I_V(a, b, c, d) => "CMP_V_I_V".to_string() + &format!("({a}, {b}, {c}, {d})"),
+            Opcode::CMP_I_V_V(a, b, c, d) => "CMP_I_V_V".to_string() + &to_cond(a) + &format!("({b}, {c}, {d})"),
+            Opcode::CMP_V_V_V(a, b, c, d) => "CMP_V_V_V".to_string() + &format!("({a}, {b}, {c}, {d})"),
         }
+    }
+}
+
+fn to_cond(val: &Value) -> String {
+    match val.val {
+        Values::SIGNED(n) => {
+            match n as u64 {
+                0x00 => "==".to_string(),
+                0x01 => "!=".to_string(),
+                0x02 => ">=".to_string(),
+                0x03 => ">".to_string(),
+                0x04 => "<=".to_string(),
+                0x05 => "<".to_string(),
+                _ => panic!("invalid condition `{n}` passed to `to_cond`")
+            }
+        }
+        Values::UNSIGNED(n) => {
+            match n as u64 {
+                0x00 => "==".to_string(),
+                0x01 => "!=".to_string(),
+                0x02 => ">=".to_string(),
+                0x03 => ">".to_string(),
+                0x04 => "<=".to_string(),
+                0x05 => "<".to_string(),
+                _ => panic!("invalid condition `{n}` passed to `to_cond`")
+            }
+        }
+        Values::DECIMAL(n) => {
+            match n as u64 {
+                0x00 => "==".to_string(),
+                0x01 => "!=".to_string(),
+                0x02 => ">=".to_string(),
+                0x03 => ">".to_string(),
+                0x04 => "<=".to_string(),
+                0x05 => "<".to_string(),
+                _ => panic!("invalid condition `{n}` passed to `to_cond`")
+            }
+        }
+        Values::POINTER(n, _) => {
+            match n as u64 {
+                0x00 => "==".to_string(),
+                0x01 => "!=".to_string(),
+                0x02 => ">=".to_string(),
+                0x03 => ">".to_string(),
+                0x04 => "<=".to_string(),
+                0x05 => "<".to_string(),
+                _ => panic!("invalid condition `{n}` passed to `to_cond`")
+            }
+        }
+        _ => panic!("invalid condition `{}` passed to `to_cond`", val)
     }
 }

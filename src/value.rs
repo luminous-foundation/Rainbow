@@ -1,4 +1,5 @@
 use core::fmt;
+use std::cmp::{self, Ordering};
 
 use crate::_type::Type;
 
@@ -135,6 +136,72 @@ macro_rules! bitwise {
             (Values::NAME(_), _) => panic!("name cannot be {} to", $op_plural),
         }
     };
+}
+
+macro_rules! compare {
+    ($self:expr, $other:expr, $op:tt) => {
+        match($self, $other) {
+            (Values::VOID, Values::VOID) => true,
+            (Values::VOID, _) => false,
+            (Values::SIGNED(_), Values::VOID) => false,
+            (Values::SIGNED(s), Values::SIGNED(v)) => *s $op *v,
+            (Values::SIGNED(s), Values::UNSIGNED(v)) => *s $op *v as i64,
+            (Values::SIGNED(s), Values::DECIMAL(v)) => *s $op *v as i64,
+            (Values::SIGNED(s), Values::POINTER(v, _)) => *s $op *v as i64,
+            (Values::SIGNED(_), Values::STRUCT(_, _)) => false,
+            (Values::SIGNED(_), Values::TYPE(_)) => false,
+            (Values::SIGNED(_), Values::NAME(_)) => false,
+            (Values::UNSIGNED(_), Values::VOID) => false,
+            (Values::UNSIGNED(s), Values::SIGNED(v)) => *s $op *v as u64,
+            (Values::UNSIGNED(s), Values::UNSIGNED(v)) => *s $op *v,
+            (Values::UNSIGNED(s), Values::DECIMAL(v)) => *s $op *v as u64,
+            (Values::UNSIGNED(s), Values::POINTER(v, _)) => *s $op *v as u64,
+            (Values::UNSIGNED(_), Values::STRUCT(_, _)) => false,
+            (Values::UNSIGNED(_), Values::TYPE(_)) => false,
+            (Values::UNSIGNED(_), Values::NAME(_)) => false,
+            (Values::DECIMAL(_), Values::VOID) => false,
+            (Values::DECIMAL(s), Values::SIGNED(v)) => *s $op *v as f64,
+            (Values::DECIMAL(s), Values::UNSIGNED(v)) => *s $op *v as f64,
+            (Values::DECIMAL(s), Values::DECIMAL(v)) => *s $op *v,
+            (Values::DECIMAL(s), Values::POINTER(v, _)) => *s $op *v as f64,
+            (Values::DECIMAL(_), Values::STRUCT(_, _)) => false,
+            (Values::DECIMAL(_), Values::TYPE(_)) => false,
+            (Values::DECIMAL(_), Values::NAME(_)) => false,
+            (Values::POINTER(_, _), Values::VOID) => false,
+            (Values::POINTER(s, _), Values::SIGNED(v)) => *s $op *v as usize,
+            (Values::POINTER(s, _), Values::UNSIGNED(v)) => *s $op *v as usize,
+            (Values::POINTER(s, _), Values::DECIMAL(v)) => *s $op *v as usize,
+            (Values::POINTER(s, _), Values::POINTER(v, _)) => *s $op *v,
+            (Values::POINTER(_, _), Values::STRUCT(_, _)) => false,
+            (Values::POINTER(_, _), Values::TYPE(_)) => false,
+            (Values::POINTER(_, _), Values::NAME(_)) => false,
+            (Values::STRUCT(_, _), _) => false,
+            (Values::TYPE(_), _) => false,
+            (Values::NAME(_), _) => false,
+        }
+    }
+}
+
+impl cmp::PartialEq for Values {
+    fn eq(&self, other: &Self) -> bool {
+        compare!(self, other, ==)
+    }
+}
+
+impl cmp::PartialOrd for Values {
+    fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
+        let less = compare!(self, other, <);
+        let greater = compare!(self, other, >);
+
+        if less {
+            return Some(Ordering::Less);
+        }
+        if greater {
+            return Some(Ordering::Greater);
+        }
+
+        return Some(Ordering::Equal);
+    }
 }
 
 // TODO: actually make sure resulting numbers can fit in the types they're supposed to be

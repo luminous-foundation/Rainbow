@@ -261,7 +261,6 @@ macro_rules! get_name {
     }
 }
 
-
 macro_rules! ref_ {
     ($index:expr, $out_var:expr, $global_scope:expr, $stack:expr, $cur_frame:expr) => {
         // ugly line
@@ -362,6 +361,66 @@ macro_rules! free_ {
             index += 1;
         }
     }
+}
+
+macro_rules! cmp {
+    ($cond:expr, $a:expr, $b:expr, $out:expr, $global_scope:expr, $stack:expr, $cur_frame:expr) => {
+        {
+            let c;
+            match $cond.val {
+                Values::SIGNED(n) => c = n as u64,
+                Values::UNSIGNED(n) => c = n,
+                Values::DECIMAL(n) => c = n as u64,
+                _ => panic!("invalid condition `{:?}` passed to `CMP` instruction", $cond.val)
+            }
+
+            match c {
+                0x00 => {
+                    if $a.val == $b.val {
+                        set_var($out, &Values::UNSIGNED(1), $global_scope, $stack, $cur_frame);
+                    } else {
+                        set_var($out, &Values::UNSIGNED(0), $global_scope, $stack, $cur_frame);
+                    }
+                }
+                0x01 => {
+                    if $a.val != $b.val {
+                        set_var($out, &Values::UNSIGNED(1), $global_scope, $stack, $cur_frame);
+                    } else {
+                        set_var($out, &Values::UNSIGNED(0), $global_scope, $stack, $cur_frame);
+                    }
+                }
+                0x02 => {
+                    if $a.val >= $b.val {
+                        set_var($out, &Values::UNSIGNED(1), $global_scope, $stack, $cur_frame);
+                    } else {
+                        set_var($out, &Values::UNSIGNED(0), $global_scope, $stack, $cur_frame);
+                    }
+                }
+                0x03 => {
+                    if $a.val > $b.val {
+                        set_var($out, &Values::UNSIGNED(1), $global_scope, $stack, $cur_frame);
+                    } else {
+                        set_var($out, &Values::UNSIGNED(0), $global_scope, $stack, $cur_frame);
+                    }
+                }
+                0x04 => {
+                    if $a.val <= $b.val {
+                        set_var($out, &Values::UNSIGNED(1), $global_scope, $stack, $cur_frame);
+                    } else {
+                        set_var($out, &Values::UNSIGNED(0), $global_scope, $stack, $cur_frame);
+                    }
+                }
+                0x05 => {
+                    if $a.val < $b.val {
+                        set_var($out, &Values::UNSIGNED(1), $global_scope, $stack, $cur_frame);
+                    } else {
+                        set_var($out, &Values::UNSIGNED(0), $global_scope, $stack, $cur_frame);
+                    }
+                }
+                _ => panic!("invalid condition `{:#04x}` passed to `CMP` instruction", c)
+            }
+        }
+    };
 }
 
 pub fn exec_block(scope: &Scope, block: &Vec<Instruction>, global_scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize, pc: &mut usize, block_start: usize) -> i32 {
@@ -1142,6 +1201,50 @@ pub fn exec_block(scope: &Scope, block: &Vec<Instruction>, global_scope: &Scope,
                 let amnt = get_var(amnt_var, global_scope, stack, cur_frame).clone();
 
                 free_!(ptr, amnt, stack);
+            }
+
+            Opcode::CMP_I_I_I(cond, a, b, out) => {
+                cmp!(cond, a, b, out, global_scope, stack, cur_frame);
+            }
+            Opcode::CMP_V_I_I(cond_var, a, b, out) => {
+                let cond = get_var(cond_var, global_scope, stack, cur_frame).clone();
+
+                cmp!(cond, a, b, out, global_scope, stack, cur_frame);
+            }
+            Opcode::CMP_I_V_I(cond, a_var, b, out) => {
+                let a = get_var(a_var, global_scope, stack, cur_frame).clone();
+
+                cmp!(cond, a, b, out, global_scope, stack, cur_frame);
+            }
+            Opcode::CMP_V_V_I(cond_var, a_var, b, out) => {
+                let cond = get_var(cond_var, global_scope, stack, cur_frame).clone();
+                let a = get_var(a_var, global_scope, stack, cur_frame).clone();
+
+                cmp!(cond, a, b, out, global_scope, stack, cur_frame);
+            }
+            Opcode::CMP_I_I_V(cond, a, b_var, out) => {
+                let b = get_var(b_var, global_scope, stack, cur_frame).clone();
+
+                cmp!(cond, a, b, out, global_scope, stack, cur_frame);
+            }
+            Opcode::CMP_V_I_V(cond_var, a, b_var, out) => {
+                let cond = get_var(cond_var, global_scope, stack, cur_frame).clone();
+                let b = get_var(b_var, global_scope, stack, cur_frame).clone();
+
+                cmp!(cond, a, b, out, global_scope, stack, cur_frame);
+            }
+            Opcode::CMP_I_V_V(cond, a_var, b_var, out) => {
+                let a = get_var(a_var, global_scope, stack, cur_frame).clone();
+                let b = get_var(b_var, global_scope, stack, cur_frame).clone();
+
+                cmp!(cond, a, b, out, global_scope, stack, cur_frame);
+            }
+            Opcode::CMP_V_V_V(cond_var, a_var, b_var, out) => {
+                let cond = get_var(cond_var, global_scope, stack, cur_frame).clone();
+                let a = get_var(a_var, global_scope, stack, cur_frame).clone();
+                let b = get_var(b_var, global_scope, stack, cur_frame).clone();
+
+                cmp!(cond, a, b, out, global_scope, stack, cur_frame);
             }
 
             _ => panic!("unknown instruction {:#04x} at {:#06x}", instr.opcode.to_u8(), instr.index)
