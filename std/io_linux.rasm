@@ -17,6 +17,6 @@ void io_println(u8* text u32 len) {
     CALL io_print
 
     PUSH $NEWLINE
-    PUSH 2
+    PUSH 1
     CALL io_print
 }
