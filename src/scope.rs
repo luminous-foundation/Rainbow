@@ -58,7 +58,7 @@ impl Scope {
         self.blocks.push(block);
     }
 
-    pub fn to_string(&self, depth: usize, index: usize) -> String {        
+    pub fn to_string(&self, depth: usize, index: usize) -> String {
         let mut indentation = String::new();
         for _ in 0..depth {
             indentation += "    ";
@@ -118,7 +118,32 @@ impl Scope {
         }
 
         str += &indentation;
-        str += "}\n";
+        str += "}\n\n";
+
+        for (_, func) in &self.functions {
+            str += &indentation;
+
+            str += &func.ret_type.to_string();
+            str += " ";
+            str += &func.name;
+            str += "(";
+
+            let mut i = 0;
+            while i < func.arg_names.len() {
+                str += &func.arg_types[i].to_string();
+                str += " ";
+                str += &func.arg_names[i];
+
+                i += 1;
+                
+                if i < func.arg_names.len() {
+                    str += ", ";
+                }
+            }
+
+            str += ")\n";
+            str += &func.scope.to_string(depth + 1, 0);
+        }
 
         return str;
     }

@@ -27,6 +27,7 @@ void io_print(u8* text u32 len) {
     PUSH $len
     PUSH 0
     PUSH 0
+    PUSH 0
     
     PUSH $STD_OUT
     PUSH $text

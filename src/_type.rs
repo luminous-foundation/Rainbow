@@ -76,8 +76,6 @@ impl fmt::Display for Type {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut str = String::new();
 
-        str += "(";
-
         let mut rev_typ = self.typ.clone();
         rev_typ.reverse();
         for typ in &self.typ {
@@ -100,8 +98,6 @@ impl fmt::Display for Type {
                 Types::NAME => "name",
             }
         }
-
-        str += ")";
 
         f.write_str(&str)
     }

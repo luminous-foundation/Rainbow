@@ -35,18 +35,18 @@ pub fn parse_scope(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, l
             }
             0xFA => {
                 *index += 1;
-                parse_import(bytes, stack, &mut scope, index, linker_paths, debug, consts)?;
+                parse_import(bytes, stack, &mut scope, index, linker_paths, consts)?;
             }
             0xF9 => {
                 *index += 1;
-
                 let func = parse_extern(bytes, index)?;
                 scope.externs.insert(func.name.clone(), func);
             }
             0xF7 => {
                 *index += 1;
 
-                scope.merge(eval_conditional(bytes, stack, index, linker_paths, debug, consts)?);
+                let s = eval_conditional(bytes, stack, index, linker_paths, debug, consts)?;
+                scope.merge(s);
             }
             _ => {
                 if scope.blocks.len() == 0 {
@@ -209,7 +209,7 @@ fn parse_struct(bytes: &Vec<u8>, index: &mut usize) -> Result<Struct, String> {
 
 // expects `index` to be at the start of the import
 // leaves `index` to be the byte after the import
-fn parse_import(bytes: &Vec<u8>, stack: &mut Vec<Frame>, scope: &mut Scope, index: &mut usize, linker_paths: &Vec<String>, debug: bool, consts: &HashMap<String, i32>) -> Result<(), String> {
+fn parse_import(bytes: &Vec<u8>, stack: &mut Vec<Frame>, scope: &mut Scope, index: &mut usize, linker_paths: &Vec<String>, consts: &HashMap<String, i32>) -> Result<(), String> {
     let import = parse_bytecode_string(bytes, index)?;
 
     let mut import_path = String::new();
@@ -239,7 +239,7 @@ fn parse_import(bytes: &Vec<u8>, stack: &mut Vec<Frame>, scope: &mut Scope, inde
     let mut new_scope = Scope::new();
 
     let program = fs::read(import_path.clone()).expect(&format!("failed to read import `{import}`"));
-    parse_program(&program, stack, &mut new_scope, linker_paths, debug, consts);
+    parse_program(&program, stack, &mut new_scope, linker_paths, false, consts);
 
     scope.merge(new_scope);
 
