@@ -1,9 +1,14 @@
+.extern i64 write(i32, u8*, u64) @"libc.so.6"
+
 VAR u8* NEWLINE
 ALLOC u8 1 $NEWLINE
 PMOV 10 $NEWLINE 0
 
 void io_print(u8* text u32 len) {
-
+    PUSH 1
+    PUSH $text
+    PUSH $len
+    CALL write
 }
 
 void io_println(u8* text u32 len) {
