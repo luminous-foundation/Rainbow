@@ -5,14 +5,14 @@
     ALLOC u8 1 $NEWLINE
     PMOV 10 $NEWLINE 0
 
-    void io_print(u8* text u32 len) {
+    void print(u8* text u32 len) {
         PUSH 1
         PUSH $text
         PUSH $len
         CALL write
     }
 
-    void io_println(u8* text u32 len) {
+    void println(u8* text u32 len) {
         PUSH $text
         PUSH $len
         CALL print
