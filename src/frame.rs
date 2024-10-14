@@ -110,7 +110,7 @@ impl Frame {
             Types::F64 => Values::DECIMAL(0f64),
             Types::POINTER => Values::POINTER(usize::MAX, 0),
             Types::TYPE => Values::TYPE(Type { typ: vec![Types::VOID] }),
-            Types::STRUCT => Values::STRUCT("null".to_string(), usize::MAX),
+            Types::STRUCT => Values::STRUCT(String::new(), "null".to_string(), usize::MAX),
             Types::NAME => Values::NAME("".to_string()),
         }
     }

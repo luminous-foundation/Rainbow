@@ -8,8 +8,8 @@
         VAR struct res
 
         INST string $res
-        MOV $text $string.text
-        MOV $len $string.length
+        MOV $text $res.text
+        MOV $length $res.length
 
         RET $res
     }

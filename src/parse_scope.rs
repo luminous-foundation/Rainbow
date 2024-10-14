@@ -58,7 +58,8 @@ pub fn parse_scope(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, l
                 *index += 1;
                 let module_scope = parse_scope(bytes, stack, index, linker_paths, debug, consts)?;
 
-                scope.modules.insert(name, Module { scope: module_scope, frame: stack.len() });
+                let module = Module { name: name.clone(), scope: module_scope, frame: stack.len() };
+                scope.modules.insert(name, module);
 
                 stack.push(Frame { vars: HashMap::new(), stack: Vec::new(), allocs: Vec::new() });
             }

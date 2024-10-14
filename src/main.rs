@@ -7,7 +7,7 @@ use function::{Extern, Function};
 use module::Module;
 use scope::Scope;
 use parse_scope::{parse_bytecode_string, parse_dyn_number, parse_scope, parse_type};
-use exec_scope::{exec_func, exec_scope};
+use exec_scope::exec_scope;
 use value::{Value, Values};
 use half::f16;
 
@@ -123,7 +123,7 @@ pub fn run_program(program: &Vec<u8>, linker_paths: Vec<String>, debug: bool) ->
 
     let global_frame = stack.len() - 1;
     
-    let retval = exec_scope(&global_scope, &global_scope, &mut stack, global_frame, false, &mut 0, global_frame, global_frame);
+    let retval = exec_scope(&global_scope, &global_scope, &mut stack, global_frame, false, &mut 0, global_frame, global_frame, &String::new());
 
     if retval != 0 {
         return retval;
@@ -288,11 +288,11 @@ fn parse_data_section(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize
 
 // this function expects the function to exist
 // if it doesnt, it will crash
-fn get_func<'a>(name: &String, scope: &'a Scope, global_scope: &'a Scope, module_frame: usize, global_frame: usize) -> (usize, Function) {
+fn get_func<'a>(name: &String, scope: &'a Scope, global_scope: &'a Scope, module_frame: usize, global_frame: usize, module_name: String) -> (String, usize, Function) {
     if scope.func_exists(name, false) {
-        return (module_frame, scope.get_func(name));
+        return (module_name, module_frame, scope.get_func(name));
     } else if global_scope.func_exists(name, false) {
-        return (global_frame, global_scope.get_func(name));
+        return (module_name, global_frame, global_scope.get_func(name));
     } else {
         if name.contains(".") {
             let split = name.split(".").collect::<Vec<&str>>();
@@ -303,7 +303,7 @@ fn get_func<'a>(name: &String, scope: &'a Scope, global_scope: &'a Scope, module
             let name = split[1..].to_vec().join(".");
             let scope = &module.scope;
 
-            return get_func(&name, scope, global_scope, module.frame, global_frame);
+            return get_func(&name, scope, global_scope, module.frame, global_frame, module.name.clone());
         } else {
             panic!("tried to call undefined function `{}`", name);
         }
@@ -350,7 +350,7 @@ fn func_exists(name: &String, scope: &Scope, global_scope: &Scope) -> bool {
 
 // these functions expect the variable to exist
 // if it doesnt, it will crash (it was going to crash later anyways)
-fn get_var<'a>(name: &String, global_scope: &'a Scope, stack: &'a mut [Frame], cur_frame: usize, module_frame: usize, global_frame: usize) -> &'a Value {
+fn get_var<'a>(name: &String, scope: &'a Scope, global_scope: &'a Scope, stack: &'a mut [Frame], cur_frame: usize, module_frame: usize, global_frame: usize) -> &'a Value {
     if stack[cur_frame].vars.contains_key(name) {
         return stack[cur_frame].get_var(name);
     } else {
@@ -358,9 +358,9 @@ fn get_var<'a>(name: &String, global_scope: &'a Scope, stack: &'a mut [Frame], c
             let split = name.split(".").collect::<Vec<&str>>();
             
             let struct_name = &split[0].to_string();
-            let parent_struct = get_var(struct_name, global_scope, stack, cur_frame, module_frame, global_frame).clone();
+            let parent_struct = get_var(struct_name, scope, global_scope, stack, cur_frame, module_frame, global_frame).clone();
 
-            return get_struct_var(&parent_struct, &split[1].to_string(), global_scope, stack, cur_frame);
+            return get_struct_var(&parent_struct, &split[1].to_string(), scope, global_scope, stack, cur_frame);
         }
 
         if stack[module_frame].vars.contains_key(name) {
@@ -371,7 +371,7 @@ fn get_var<'a>(name: &String, global_scope: &'a Scope, stack: &'a mut [Frame], c
     }
 }
 
-fn set_var(name: &String, value: &Values, global_scope: &Scope, stack: &mut [Frame], cur_frame: usize, module_frame: usize, global_frame: usize) {
+fn set_var(name: &String, value: &Values, scope: &Scope, global_scope: &Scope, stack: &mut [Frame], cur_frame: usize, module_frame: usize, global_frame: usize) {
     if name == "_" {
         return;
     }
@@ -386,9 +386,9 @@ fn set_var(name: &String, value: &Values, global_scope: &Scope, stack: &mut [Fra
                 let split = name.split(".").collect::<Vec<&str>>();
                 
                 let struct_name = &split[0].to_string();
-                let parent_struct = get_var(struct_name, global_scope, stack, cur_frame, module_frame, global_frame).clone();
+                let parent_struct = get_var(struct_name, scope, global_scope, stack, cur_frame, module_frame, global_frame).clone();
 
-                set_struct_var(&parent_struct, &split[1].to_string(), value, global_scope, stack, cur_frame);
+                set_struct_var(&parent_struct, &split[1].to_string(), value, scope, global_scope, stack, cur_frame);
                 return;
             }
 
@@ -401,41 +401,56 @@ fn set_var(name: &String, value: &Values, global_scope: &Scope, stack: &mut [Fra
     }
 }
 
-// TODO: structs that arent in the global scope
-fn get_struct<'a>(name: &String, scope: &'a Scope) -> &'a Struct {
-    if scope.structs.contains_key(name) {
-        return scope.structs.get(name).unwrap();
+fn get_struct<'a>(name: &String, global_scope: &'a Scope, scope: &'a Scope) -> Struct {
+    if scope.struct_exists(name, false) {
+        return scope.get_struct(name);
+    } else if global_scope.struct_exists(name, false) {
+        return global_scope.get_struct(name);
     } else {
-        panic!("tried to get value from struct that somehow doesn't exist");
+        if name.contains(".") {
+            println!("getting {name}");
+
+            let split = name.split(".").collect::<Vec<&str>>();
+            
+            let module_name = &split[0].to_string();
+            let module = get_module(module_name, scope, global_scope);
+
+            let name = split[1..].to_vec().join(".");
+            let scope = &module.scope;
+
+            return get_struct(&name, scope, global_scope);
+        } else {
+            panic!("tried to get undefined struct `{}`", name);
+        }
     }
 }
 
-fn set_struct_var(parent_struct: &Value, name: &String, value: &Values, global_scope: &Scope, stack: &mut [Frame], cur_frame: usize) {
+fn set_struct_var(parent_struct: &Value, name: &String, value: &Values, scope: &Scope, global_scope: &Scope, stack: &mut [Frame], cur_frame: usize) {
     let struct_val = match &parent_struct.val {
-        Values::STRUCT(name, index) => (name, index),
+        Values::STRUCT(module, name, index) => (module, name, index),
         _ => panic!("cannot set a variable in a value that is not a struct"),
     };
 
-    let _struct = get_struct(&struct_val.0, global_scope);
+    let _struct = get_struct(&(struct_val.0.clone() + "." + struct_val.1), scope, global_scope);
 
     let var_offset = _struct.var_offsets.get(name).
                             expect(format!("attempted to set non-existant variable `{name}` in struct `{}`", _struct.name).as_str());
 
     // TODO: but what if the struct does *not* exist on the current frame?
-    stack[cur_frame].set(struct_val.1+var_offset, value);
+    stack[cur_frame].set(struct_val.2+var_offset, value);
 }
 
-fn get_struct_var<'a>(parent_struct: &Value, name: &String, global_scope: &'a Scope, stack: &'a mut [Frame], cur_frame: usize) -> &'a Value {    
+fn get_struct_var<'a>(parent_struct: &Value, name: &String, scope: &Scope, global_scope: &'a Scope, stack: &'a mut [Frame], cur_frame: usize) -> &'a Value {    
     let struct_val = match &parent_struct.val {
-        Values::STRUCT(name, index) => (name, index),
+        Values::STRUCT(module, name, index) => (module, name, index),
         _ => panic!("cannot set a variable in a value that is not a struct"),
     };
 
-    let _struct = get_struct(&struct_val.0, global_scope);
+    let _struct = get_struct(&(struct_val.0.clone() + "." + struct_val.1), scope, global_scope);
 
     let var_offset = _struct.var_offsets.get(name).
                             expect(format!("attempted to get non-existant variable `{name}` in struct `{}`", _struct.name).as_str());
 
     // TODO: but what if the struct does *not* exist on the current frame?
-    return stack[cur_frame].get(struct_val.1+var_offset);
+    return stack[cur_frame].get(struct_val.2+var_offset);
 }

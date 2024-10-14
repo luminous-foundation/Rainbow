@@ -1,0 +1,13 @@
+.include "string.rasm"
+.include "io.rasm"
+
+VAR struct text
+
+PUSH "Hello, World!"
+PUSH 13
+CALL string.new
+POP $text
+
+PUSH $text.text
+PUSH $text.length
+CALL io.println

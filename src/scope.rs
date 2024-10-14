@@ -54,7 +54,7 @@ impl Scope {
         return false;
     }
 
-    pub fn get_func<'a>(&'a self, name: &String) -> Function {
+    pub fn get_func(&self, name: &String) -> Function {
         if self.func_exists(name, false) {
             if self.functions.contains_key(name) {
                 return self.functions.get(name).unwrap().clone();
@@ -75,6 +75,49 @@ impl Scope {
             return self.modules.get(name).unwrap();
         } else {
             panic!("tried to get undefined module `{}`", name);
+        }
+    }
+
+    pub fn struct_exists(&self, name: &String, check_module: bool) -> bool {
+        if check_module {
+            if name.contains(".") {
+                let split = name.split(".").collect::<Vec<&str>>();
+                
+                let module_name = &split[0].to_string();
+
+                if self.modules.contains_key(module_name) {
+                    let module = self.get_module(module_name);
+
+                    let name = split[1..].to_vec().join(".");
+                    let scope = &module.scope;
+
+                    return scope.struct_exists(&name, true);
+                }
+            }
+        }
+
+        if self.structs.contains_key(name) {
+            return true;
+        } else if self.parent_scope.is_some() {
+            return (*self.parent_scope.clone().unwrap()).struct_exists(name, check_module);
+        }
+
+        return false;
+    }
+
+    pub fn get_struct(&self, name: &String) -> Struct {
+        if self.struct_exists(name, false) {
+            if self.structs.contains_key(name) {
+                return self.structs.get(name).unwrap().clone();
+            } else {
+                if self.parent_scope.is_some() {
+                    return (*self.parent_scope.clone().unwrap()).get_struct(name);
+                } else {
+                    unreachable!();
+                }
+            }
+        } else {
+            panic!("tried to get undefined struct `{name}`");
         }
     }
 
