@@ -18,3 +18,5 @@ void main() {
     PUSH 13
     CALL io.println
 }
+
+CALL main

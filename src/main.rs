@@ -129,9 +129,9 @@ pub fn run_program(program: &Vec<u8>, linker_paths: Vec<String>, debug: bool) ->
         return retval;
     }
     
-    if let Some(func) = global_scope.functions.get("main") { // main functions are not required
-        return exec_func(func, &global_scope, &mut stack, global_frame, global_frame);
-    }
+    // if let Some(func) = global_scope.functions.get("main") { // main functions are not required
+    //     return exec_func(func, &global_scope, &mut stack, global_frame, global_frame);
+    // }
 
     return 0;
 

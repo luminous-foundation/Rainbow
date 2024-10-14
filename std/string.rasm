@@ -1,0 +1,16 @@
+.module string {
+    .struct string {
+        u8* text
+        u64 length
+    }
+
+    struct new(u8* text u64 length) {
+        VAR struct res
+
+        INST string $res
+        MOV $text $string.text
+        MOV $len $string.length
+
+        RET $res
+    }
+}
