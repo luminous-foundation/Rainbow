@@ -53,7 +53,7 @@ pub unsafe fn get_pointer(vals: &[Value], pp: &mut Vec<*mut c_void>, s8p: &mut V
     }
 }
 
-pub fn call_ffi(_extern: &Extern, stack: &mut Vec<Frame>, cur_frame: usize) {
+pub fn call_ffi(_extern: &Extern, stack: &mut Vec<Frame>, cur_frame: usize, global_frame: usize) {
     unsafe {
         let lib = Library::new(&_extern.dll).unwrap();
 
@@ -110,7 +110,7 @@ pub fn call_ffi(_extern: &Extern, stack: &mut Vec<Frame>, cur_frame: usize) {
                     raw_args.push(decimal_args.last_mut().unwrap() as *mut _ as *mut c_void);
                 }
                 Values::POINTER(p, s) => {
-                    let val = &stack[0].stack[*p..*p+*s];
+                    let val = &stack[global_frame].stack[*p..*p+*s];
                     let ptr = get_pointer(val, &mut pp, &mut s8p, &mut s16p, &mut s32p, &mut s64p, &mut u8p, &mut u16p, &mut u32p, &mut u64p, &mut f32p, &mut f64p);
 
                     raw_args.push(ptr);

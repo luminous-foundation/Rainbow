@@ -117,20 +117,20 @@ pub fn run_program(program: &Vec<u8>, linker_paths: Vec<String>, debug: bool) ->
 
     let mut stack: Vec<Frame> = Vec::new();
 
-    stack.push(Frame { vars: HashMap::new(), stack: Vec::new(), allocs: Vec::new() });
-
     let mut global_scope = Scope::new();
-
-    parse_program(program, &mut stack, &mut global_scope, &linker_paths, debug, &consts);
     
-    let retval = exec_scope(&global_scope, &global_scope, &mut stack, 0, false, &mut 0, 0);
+    parse_program(program, &mut stack, &mut global_scope, &linker_paths, debug, &consts);
+
+    let global_frame = stack.len() - 1;
+    
+    let retval = exec_scope(&global_scope, &global_scope, &mut stack, global_frame, false, &mut 0, global_frame, global_frame);
 
     if retval != 0 {
         return retval;
     }
     
     if let Some(func) = global_scope.functions.get("main") { // main functions are not required
-        return exec_func(func, &global_scope, &mut stack, 0);
+        return exec_func(func, &global_scope, &mut stack, global_frame, global_frame);
     }
 
     return 0;
@@ -170,7 +170,10 @@ fn parse_program(program: &Vec<u8>, stack: &mut Vec<Frame>, scope: &mut Scope, l
         Err(error) => panic!("failed to parse program:\n{error}")
     };
 
-    match parse_data_section(&program, stack, &mut index) {
+    let global_frame = stack.len();
+    stack.push(Frame { vars: HashMap::new(), stack: Vec::new(), allocs: Vec::new() });
+    
+    match parse_data_section(&program, stack, &mut index, global_frame) {
         Ok(_) => (),
         Err(error) => panic!("failed to parse data:\n{error}")
     }
@@ -181,7 +184,7 @@ fn parse_program(program: &Vec<u8>, stack: &mut Vec<Frame>, scope: &mut Scope, l
     }
 }
 
-fn parse_data_section(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize) -> Result<(), String> {
+fn parse_data_section(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, global_frame: usize) -> Result<(), String> {
     if *index == bytes.len() {
         return Ok(());
     }
@@ -198,8 +201,8 @@ fn parse_data_section(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize
 
         let len = parse_dyn_number(bytes, index)?;
 
-        let i = stack[0].stack.len();
-        stack[0].push_var(&name, typ.clone(), Values::POINTER(i + 1, len));
+        let i = stack[global_frame].stack.len();
+        stack[global_frame].push_var(&name, typ.clone(), Values::POINTER(i + 1, len));
 
         // TODO: macroize
         match typ.typ[0] {
@@ -210,67 +213,67 @@ fn parse_data_section(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize
                             let val = i8::from_be_bytes(bytes[*index..*index+1].try_into().unwrap());
                             *index += 1;
 
-                            stack[0].push(Value { typ: typ.clone().pop(), val: Values::SIGNED(val as i64) });
+                            stack[global_frame].push(Value { typ: typ.clone().pop(), val: Values::SIGNED(val as i64) });
                         }
                         Types::I16 => {
                             let val = i16::from_be_bytes(bytes[*index..*index+2].try_into().unwrap());
                             *index += 2;
 
-                            stack[0].push(Value { typ: typ.clone().pop(), val: Values::SIGNED(val as i64) });
+                            stack[global_frame].push(Value { typ: typ.clone().pop(), val: Values::SIGNED(val as i64) });
                         }
                         Types::I32 => {
                             let val = i32::from_be_bytes(bytes[*index..*index+4].try_into().unwrap());
                             *index += 4;
 
-                            stack[0].push(Value { typ: typ.clone().pop(), val: Values::SIGNED(val as i64) });
+                            stack[global_frame].push(Value { typ: typ.clone().pop(), val: Values::SIGNED(val as i64) });
                         }
                         Types::I64 => {
                             let val = i64::from_be_bytes(bytes[*index..*index+8].try_into().unwrap());
                             *index += 8;
 
-                            stack[0].push(Value { typ: typ.clone().pop(), val: Values::SIGNED(val as i64) });
+                            stack[global_frame].push(Value { typ: typ.clone().pop(), val: Values::SIGNED(val as i64) });
                         }
                         Types::U8 => {
                             let val = u8::from_be_bytes(bytes[*index..*index+1].try_into().unwrap());
                             *index += 1;
 
-                            stack[0].push(Value { typ: typ.clone().pop(), val: Values::UNSIGNED(val as u64) });
+                            stack[global_frame].push(Value { typ: typ.clone().pop(), val: Values::UNSIGNED(val as u64) });
                         }
                         Types::U16 => {
                             let val = u16::from_be_bytes(bytes[*index..*index+2].try_into().unwrap());
                             *index += 2;
 
-                            stack[0].push(Value { typ: typ.clone().pop(), val: Values::UNSIGNED(val as u64) });
+                            stack[global_frame].push(Value { typ: typ.clone().pop(), val: Values::UNSIGNED(val as u64) });
                         }
                         Types::U32 => {
                             let val = u32::from_be_bytes(bytes[*index..*index+4].try_into().unwrap());
                             *index += 4;
 
-                            stack[0].push(Value { typ: typ.clone().pop(), val: Values::UNSIGNED(val as u64) });
+                            stack[global_frame].push(Value { typ: typ.clone().pop(), val: Values::UNSIGNED(val as u64) });
                         }
                         Types::U64 => {
                             let val = u64::from_be_bytes(bytes[*index..*index+8].try_into().unwrap());
                             *index += 8;
 
-                            stack[0].push(Value { typ: typ.clone().pop(), val: Values::UNSIGNED(val as u64) });
+                            stack[global_frame].push(Value { typ: typ.clone().pop(), val: Values::UNSIGNED(val as u64) });
                         }
                         Types::F16 => {
                             let val = f16::to_f64(f16::from_be_bytes(bytes[*index..*index+2].try_into().unwrap()));
                             *index += 2;
 
-                            stack[0].push(Value { typ: typ.clone().pop(), val: Values::DECIMAL(val as f64) });
+                            stack[global_frame].push(Value { typ: typ.clone().pop(), val: Values::DECIMAL(val as f64) });
                         }
                         Types::F32 => {
                             let val = f32::from_be_bytes(bytes[*index..*index+4].try_into().unwrap());
                             *index += 4;
 
-                            stack[0].push(Value { typ: typ.clone().pop(), val: Values::DECIMAL(val as f64) });
+                            stack[global_frame].push(Value { typ: typ.clone().pop(), val: Values::DECIMAL(val as f64) });
                         }
                         Types::F64 => {
                             let val = f64::from_be_bytes(bytes[*index..*index+8].try_into().unwrap());
                             *index += 8;
 
-                            stack[0].push(Value { typ: typ.clone().pop(), val: Values::DECIMAL(val as f64) });
+                            stack[global_frame].push(Value { typ: typ.clone().pop(), val: Values::DECIMAL(val as f64) });
                         }
                         _ => panic!("unsupported data section type `{:?}`", typ.typ),
                     }
@@ -285,11 +288,11 @@ fn parse_data_section(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize
 
 // this function expects the function to exist
 // if it doesnt, it will crash
-fn get_func<'a>(name: &String, scope: &'a Scope, global_scope: &'a Scope, global_frame: usize) -> (usize, Function) {
+fn get_func<'a>(name: &String, scope: &'a Scope, global_scope: &'a Scope, module_frame: usize, global_frame: usize) -> (usize, Function) {
     if scope.func_exists(name, false) {
-        return (global_frame, scope.get_func(name));
+        return (module_frame, scope.get_func(name));
     } else if global_scope.func_exists(name, false) {
-        return (0, global_scope.get_func(name));
+        return (global_frame, global_scope.get_func(name));
     } else {
         if name.contains(".") {
             let split = name.split(".").collect::<Vec<&str>>();
@@ -300,7 +303,7 @@ fn get_func<'a>(name: &String, scope: &'a Scope, global_scope: &'a Scope, global
             let name = split[1..].to_vec().join(".");
             let scope = &module.scope;
 
-            return get_func(&name, scope, global_scope, module.frame);
+            return get_func(&name, scope, global_scope, module.frame, global_frame);
         } else {
             panic!("tried to call undefined function `{}`", name);
         }
@@ -347,7 +350,7 @@ fn func_exists(name: &String, scope: &Scope, global_scope: &Scope) -> bool {
 
 // these functions expect the variable to exist
 // if it doesnt, it will crash (it was going to crash later anyways)
-fn get_var<'a>(name: &String, global_scope: &'a Scope, stack: &'a mut [Frame], cur_frame: usize, global_frame: usize) -> &'a Value {
+fn get_var<'a>(name: &String, global_scope: &'a Scope, stack: &'a mut [Frame], cur_frame: usize, module_frame: usize, global_frame: usize) -> &'a Value {
     if stack[cur_frame].vars.contains_key(name) {
         return stack[cur_frame].get_var(name);
     } else {
@@ -355,20 +358,20 @@ fn get_var<'a>(name: &String, global_scope: &'a Scope, stack: &'a mut [Frame], c
             let split = name.split(".").collect::<Vec<&str>>();
             
             let struct_name = &split[0].to_string();
-            let parent_struct = get_var(struct_name, global_scope, stack, cur_frame, global_frame).clone();
+            let parent_struct = get_var(struct_name, global_scope, stack, cur_frame, module_frame, global_frame).clone();
 
             return get_struct_var(&parent_struct, &split[1].to_string(), global_scope, stack, cur_frame);
         }
 
-        if stack[global_frame].vars.contains_key(name) {
-            return stack[global_frame].get_var(name);
+        if stack[module_frame].vars.contains_key(name) {
+            return stack[module_frame].get_var(name);
         } else {
-            return stack[0].get_var(name);
+            return stack[global_frame].get_var(name);
         }
     }
 }
 
-fn set_var(name: &String, value: &Values, global_scope: &Scope, stack: &mut [Frame], cur_frame: usize, global_frame: usize) {
+fn set_var(name: &String, value: &Values, global_scope: &Scope, stack: &mut [Frame], cur_frame: usize, module_frame: usize, global_frame: usize) {
     if name == "_" {
         return;
     }
@@ -376,21 +379,21 @@ fn set_var(name: &String, value: &Values, global_scope: &Scope, stack: &mut [Fra
     if stack[cur_frame].vars.contains_key(name) {
         stack[cur_frame].set_var(name, value);
     } else {
-        if stack[0].vars.contains_key(name) {
-            stack[0].set_var(name, value);
+        if stack[global_frame].vars.contains_key(name) {
+            stack[global_frame].set_var(name, value);
         } else {
             if name.contains(".") {
                 let split = name.split(".").collect::<Vec<&str>>();
                 
                 let struct_name = &split[0].to_string();
-                let parent_struct = get_var(struct_name, global_scope, stack, cur_frame, global_frame).clone();
+                let parent_struct = get_var(struct_name, global_scope, stack, cur_frame, module_frame, global_frame).clone();
 
                 set_struct_var(&parent_struct, &split[1].to_string(), value, global_scope, stack, cur_frame);
                 return;
             }
 
-            if stack[global_frame].vars.contains_key(name) {
-                stack[global_frame].set_var(name, value);
+            if stack[module_frame].vars.contains_key(name) {
+                stack[module_frame].set_var(name, value);
             } else {
                 panic!("tried to set undefined variable `{name}`");
             }
