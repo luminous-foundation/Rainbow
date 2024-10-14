@@ -1,8 +1,8 @@
-use std::{collections::HashMap, fs, path::Path};
+use std::{collections::HashMap, fs, path::Path, usize};
 
 use half::f16;
 
-use crate::{_struct::Struct, _type::{Type, Types}, block::Block, frame::Frame, function::{Extern, Function}, instruction::{Instruction, Opcode}, parse_program, scope::Scope, value::{Value, Values}};
+use crate::{_struct::Struct, _type::{Type, Types}, block::Block, frame::Frame, function::{Extern, Function}, instruction::{Instruction, Opcode}, module::Module, parse_program, scope::Scope, value::{Value, Values}};
 
 // expects `index` to be at the start of the scope body
 pub fn parse_scope(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, linker_paths: &Vec<String>, debug: bool, consts: &HashMap<String, i32>) -> Result<Scope, String> {
@@ -18,6 +18,7 @@ pub fn parse_scope(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, l
             }
             0xFE => {
                 *index += 1;
+
                 scope.add_block(Block::SCOPE(parse_scope(bytes, stack, index, linker_paths, debug, consts)?));
             }
             0xFD => {
@@ -46,7 +47,20 @@ pub fn parse_scope(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, l
                 *index += 1;
 
                 let s = eval_conditional(bytes, stack, index, linker_paths, debug, consts)?;
-                scope.merge(s);
+                if s.is_some() {
+                    let s = s.unwrap(); 
+                    scope.merge(s);
+                }
+            }
+            0xF6 => {
+                *index += 1;
+                let name = parse_bytecode_string(bytes, index)?;
+                *index += 1;
+                let module_scope = parse_scope(bytes, stack, index, linker_paths, debug, consts)?;
+
+                scope.modules.insert(name, Module { scope: module_scope, frame: stack.len() });
+
+                stack.push(Frame { vars: HashMap::new(), stack: Vec::new(), allocs: Vec::new() });
             }
             _ => {
                 if scope.blocks.len() == 0 {
@@ -62,18 +76,85 @@ pub fn parse_scope(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, l
         }
     }
 
+    let clone = scope.clone();
+    for block in &mut scope.blocks {
+        match block {
+            Block::SCOPE(s) => {
+                s.parent_scope = Some(Box::new(clone.clone()));
+            }
+            _ => {}
+        } 
+    }
+
+    for (_, func) in &mut scope.functions {
+        func.scope.parent_scope = Some(Box::new(clone.clone()));
+    }
+
+    for (_, module) in &mut scope.modules {
+        module.scope.parent_scope = Some(Box::new(clone.clone()));
+    }
+
     return Ok(scope);
+}
+
+// this just skips past a scope
+// throws away everything it parses
+// not the most performant but whatever
+fn skip_scope(bytes: &Vec<u8>, index: &mut usize) {
+    let mut stack = Vec::new();
+    let linker_paths = Vec::new();
+    let debug = false;
+    let consts = HashMap::new();
+
+    while *index < bytes.len() {
+        match bytes[*index] {
+            0xFF => {
+                *index += 1;
+                let _ = parse_function(bytes, &mut stack, index, &linker_paths, debug, &consts);
+            }
+            0xFE => {
+                *index += 1;
+                skip_scope(bytes, index);
+            }
+            0xFD => {
+                *index += 1;
+                break;
+            }
+            0xFC => {
+                break;
+            }
+            0xFB => {
+                *index += 1;
+                let _ = parse_struct(bytes, index);
+            }
+            0xFA => {
+                *index += 1;
+                skip_import(bytes, index);
+            }
+            0xF9 => {
+                *index += 1;
+                let _ = parse_extern(bytes, index);
+            }
+            0xF7 => {
+                *index += 1;
+                let _ = eval_conditional(bytes, &mut stack, index, &linker_paths, debug, &consts);
+            }
+            0xF6 => {
+                *index += 1;
+                let _ = parse_bytecode_string(bytes, index);
+                *index += 1;
+                skip_scope(bytes, index);
+            }
+            _ => {
+                let _ = parse_instruction(bytes, index);
+            }
+        }
+    }
 }
 
 // expects `index` to be at the byte after start of the conditional
 // leaves `index` to be the byte after the conditional
-fn eval_conditional(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, linker_paths: &Vec<String>, debug: bool, consts: &HashMap<String, i32>) -> Result<Scope, String> {
-    // TODO: i feel like this function is doing a lot of work and then throwing it away
-
-    let mut chosen: i32 = -1;
-
-    let mut scopes: Vec<Scope> = Vec::new();
-
+fn eval_conditional(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, linker_paths: &Vec<String>, debug: bool, consts: &HashMap<String, i32>) -> Result<Option<Scope>, String> {
     while *index < bytes.len() {
         match bytes[*index] {
             0x00 | 0x01 => {
@@ -83,9 +164,6 @@ fn eval_conditional(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, 
                 *index += 1;
                 let right_name = parse_bytecode_string(bytes, index)?;
                 *index += 1;
-
-                let scope = parse_scope(bytes, stack, index, linker_paths, debug, consts)?;
-                scopes.push(scope);
 
                 if !consts.contains_key(&left_name) {
                     if consts.contains_key(&left_name.to_uppercase()) {
@@ -110,44 +188,44 @@ fn eval_conditional(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, 
                 match condition {
                     0x00 => {
                         if left == right {
-                            if chosen == -1 {
-                                chosen = scopes.len() as i32 - 1;
-                            }
+                            return Ok(Some(parse_scope(bytes, stack, index, linker_paths, debug, consts)?));
+                        } else {
+                            skip_scope(bytes, index);
                         }
                     }
                     0x01 => {
                         if left != right {
-                            if chosen == -1 {
-                                chosen = scopes.len() as i32 - 1;
-                            }
+                            return Ok(Some(parse_scope(bytes, stack, index, linker_paths, debug, consts)?));
+                        } else {
+                            skip_scope(bytes, index);
                         }
                     }
                     0x02 => {
                         if left >= right {
-                            if chosen == -1 {
-                                chosen = scopes.len() as i32 - 1;
-                            }
+                            return Ok(Some(parse_scope(bytes, stack, index, linker_paths, debug, consts)?));
+                        } else {
+                            skip_scope(bytes, index);
                         }
                     }
                     0x03 => {
                         if left > right {
-                            if chosen == -1 {
-                                chosen = scopes.len() as i32 - 1;
-                            }
+                            return Ok(Some(parse_scope(bytes, stack, index, linker_paths, debug, consts)?));
+                        } else {
+                            skip_scope(bytes, index);
                         }
                     }
                     0x04 => {
                         if left <= right {
-                            if chosen == -1 {
-                                chosen = scopes.len() as i32 - 1;
-                            }
+                            return Ok(Some(parse_scope(bytes, stack, index, linker_paths, debug, consts)?));
+                        } else {
+                            skip_scope(bytes, index);
                         }
                     }
                     0x05 => {
                         if left < right {
-                            if chosen == -1 {
-                                chosen = scopes.len() as i32 - 1;
-                            }
+                            return Ok(Some(parse_scope(bytes, stack, index, linker_paths, debug, consts)?));
+                        } else {
+                            skip_scope(bytes, index);
                         }
                     }
                     _ => return Err(format!("unknown conditional `{:#04x}`", bytes[*index]))
@@ -158,14 +236,7 @@ fn eval_conditional(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, 
             0x02 => {
                 *index += 2;
 
-                let scope = parse_scope(bytes, stack, index, linker_paths, debug, consts)?;
-                scopes.push(scope);
-
-                if chosen == -1 {
-                    chosen = scopes.len() as i32 - 1;
-                }
-
-                *index += 1;
+                return Ok(Some(parse_scope(bytes, stack, index, linker_paths, debug, consts)?));
             }
             0x03 => {
                 *index += 1;
@@ -175,7 +246,7 @@ fn eval_conditional(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, 
         }
     }
 
-    return Ok(scopes[chosen as usize].clone());
+    return Ok(None);
 }
 
 // expects `index` to be at the start of the struct definition
@@ -207,6 +278,10 @@ fn parse_struct(bytes: &Vec<u8>, index: &mut usize) -> Result<Struct, String> {
     return Ok(strct);
 }
 
+fn skip_import(bytes: &Vec<u8>, index: &mut usize) {
+    let _ = parse_bytecode_string(bytes, index);
+}
+
 // expects `index` to be at the start of the import
 // leaves `index` to be the byte after the import
 fn parse_import(bytes: &Vec<u8>, stack: &mut Vec<Frame>, scope: &mut Scope, index: &mut usize, linker_paths: &Vec<String>, consts: &HashMap<String, i32>) -> Result<(), String> {
@@ -218,18 +293,12 @@ fn parse_import(bytes: &Vec<u8>, stack: &mut Vec<Frame>, scope: &mut Scope, inde
     }
 
     for path in linker_paths {
-        let paths = match fs::read_dir(path) {
-            Ok(p) => p,
-            Err(e) => return Err(e.to_string()),
-        };
+        let paths = get_paths(path).unwrap();
 
         for path in paths {
-            let dir_entry = path.unwrap();
-            let path = &dir_entry.path();
-            let path_str = path.as_os_str().to_str().unwrap();
-            if path_str.ends_with(&import) {
+            if path.ends_with(&import) {
                 if import_path == "" {
-                    import_path = path_str.to_owned();
+                    import_path = path;
                 } else {
                     return Err(format!("ambiguous import {import}"));
                 }
@@ -244,6 +313,33 @@ fn parse_import(bytes: &Vec<u8>, stack: &mut Vec<Frame>, scope: &mut Scope, inde
     scope.merge(new_scope);
 
     return Ok(());
+}
+
+fn get_paths(path: &String) -> Result<Vec<String>, String> {
+    let mut path_queue: Vec<String> = Vec::new();
+    let mut res = Vec::new();
+    
+    path_queue.push(path.to_string());
+
+    while path_queue.len() > 0 {
+        let path = path_queue.remove(0);
+        let paths = match fs::read_dir(path.clone()) {
+            Ok(p) => p,
+            Err(e) => return Err(e.to_string()),
+        };
+
+        for path in paths {
+            let dir_entry = path.unwrap();
+
+            if dir_entry.metadata().unwrap().is_dir() {
+                path_queue.push(dir_entry.path().as_os_str().to_str().unwrap().to_string());
+            } else if dir_entry.metadata().unwrap().is_file() {
+                res.push(dir_entry.path().as_os_str().to_str().unwrap().to_string());
+            }
+        }
+    }
+
+    return Ok(res);
 }
 
 // expects `index` to be at the start of the extern

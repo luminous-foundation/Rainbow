@@ -4,6 +4,7 @@ use _struct::Struct;
 use _type::Types;
 use frame::Frame;
 use function::{Extern, Function};
+use module::Module;
 use scope::Scope;
 use parse_scope::{parse_bytecode_string, parse_dyn_number, parse_scope, parse_type};
 use exec_scope::{exec_func, exec_scope};
@@ -21,6 +22,7 @@ mod value;
 mod ffi;
 mod _struct;
 mod block;
+mod module;
 
 // TODO: better error handling
 // TODO: result type
@@ -120,15 +122,15 @@ pub fn run_program(program: &Vec<u8>, linker_paths: Vec<String>, debug: bool) ->
     let mut global_scope = Scope::new();
 
     parse_program(program, &mut stack, &mut global_scope, &linker_paths, debug, &consts);
-
-    let retval = exec_scope(&global_scope, &global_scope, &mut stack, 0, false, &mut 0);
+    
+    let retval = exec_scope(&global_scope, &global_scope, &mut stack, 0, false, &mut 0, 0);
 
     if retval != 0 {
         return retval;
     }
     
     if let Some(func) = global_scope.functions.get("main") { // main functions are not required
-        return exec_func(func, &global_scope, &mut stack);
+        return exec_func(func, &global_scope, &mut stack, 0);
     }
 
     return 0;
@@ -283,13 +285,25 @@ fn parse_data_section(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize
 
 // this function expects the function to exist
 // if it doesnt, it will crash
-fn get_func<'a>(name: &String, scope: &'a Scope, global_scope: &'a Scope) -> &'a Function {
-    if scope.functions.contains_key(name) {
-        return scope.functions.get(name).unwrap();
-    } else if global_scope.functions.contains_key(name) {
-        return global_scope.functions.get(name).unwrap();
+fn get_func<'a>(name: &String, scope: &'a Scope, global_scope: &'a Scope, global_frame: usize) -> (usize, Function) {
+    if scope.func_exists(name, false) {
+        return (global_frame, scope.get_func(name));
+    } else if global_scope.func_exists(name, false) {
+        return (0, global_scope.get_func(name));
     } else {
-        panic!("tried to call undefined function `{}`", name);
+        if name.contains(".") {
+            let split = name.split(".").collect::<Vec<&str>>();
+            
+            let module_name = &split[0].to_string();
+            let module = get_module(module_name, scope, global_scope);
+
+            let name = split[1..].to_vec().join(".");
+            let scope = &module.scope;
+
+            return get_func(&name, scope, global_scope, module.frame);
+        } else {
+            panic!("tried to call undefined function `{}`", name);
+        }
     }
 }
 
@@ -301,35 +315,60 @@ fn get_extern<'a>(name: &String, scope: &'a Scope, global_scope: &'a Scope) -> &
     } else if global_scope.externs.contains_key(name) {
         return global_scope.externs.get(name).unwrap();
     } else {
-        panic!("tried to call undefined function `{}`", name);
+        if name.contains(".") {
+            let split = name.split(".").collect::<Vec<&str>>();
+            
+            let module_name = &split[0].to_string();
+            let module = get_module(module_name, scope, global_scope);
+
+            let name = split[1..].to_vec().join(".");
+            let scope = &module.scope;
+
+            return get_extern(&name, scope, global_scope);
+        } else {
+            panic!("tried to call undefined function `{}`", name);
+        }
+    }
+}
+
+fn get_module<'a>(name: &String, scope: &'a Scope, global_scope: &'a Scope) -> &'a Module {
+    if scope.modules.contains_key(name) {
+        return scope.modules.get(name).unwrap();
+    } else if global_scope.modules.contains_key(name) {
+        return global_scope.modules.get(name).unwrap();
+    } else {
+        panic!("tried to get undefined module `{}`", name);
     }
 }
 
 fn func_exists(name: &String, scope: &Scope, global_scope: &Scope) -> bool {
-    return scope.functions.contains_key(name) || global_scope.functions.contains_key(name);
+    return scope.func_exists(name, true) || global_scope.func_exists(name, true);
 }
 
 // these functions expect the variable to exist
 // if it doesnt, it will crash (it was going to crash later anyways)
-fn get_var<'a>(name: &String, global_scope: &'a Scope, stack: &'a mut [Frame], cur_frame: usize) -> &'a Value {
+fn get_var<'a>(name: &String, global_scope: &'a Scope, stack: &'a mut [Frame], cur_frame: usize, global_frame: usize) -> &'a Value {
     if stack[cur_frame].vars.contains_key(name) {
         return stack[cur_frame].get_var(name);
     } else {
         if name.contains(".") {
-            // println!("{:?}", );
             let split = name.split(".").collect::<Vec<&str>>();
             
             let struct_name = &split[0].to_string();
-            let parent_struct = get_var(struct_name, global_scope, stack, cur_frame).clone();
+            let parent_struct = get_var(struct_name, global_scope, stack, cur_frame, global_frame).clone();
 
             return get_struct_var(&parent_struct, &split[1].to_string(), global_scope, stack, cur_frame);
         }
-        
-        return stack[0].get_var(name);
+
+        if stack[global_frame].vars.contains_key(name) {
+            return stack[global_frame].get_var(name);
+        } else {
+            return stack[0].get_var(name);
+        }
     }
 }
 
-fn set_var(name: &String, value: &Values, global_scope: &Scope, stack: &mut [Frame], cur_frame: usize) {
+fn set_var(name: &String, value: &Values, global_scope: &Scope, stack: &mut [Frame], cur_frame: usize, global_frame: usize) {
     if name == "_" {
         return;
     }
@@ -341,17 +380,20 @@ fn set_var(name: &String, value: &Values, global_scope: &Scope, stack: &mut [Fra
             stack[0].set_var(name, value);
         } else {
             if name.contains(".") {
-                // println!("{:?}", );
                 let split = name.split(".").collect::<Vec<&str>>();
                 
                 let struct_name = &split[0].to_string();
-                let parent_struct = get_var(struct_name, global_scope, stack, cur_frame).clone();
+                let parent_struct = get_var(struct_name, global_scope, stack, cur_frame, global_frame).clone();
 
                 set_struct_var(&parent_struct, &split[1].to_string(), value, global_scope, stack, cur_frame);
                 return;
             }
 
-            panic!("tried to set undefined variable `{}`", name);
+            if stack[global_frame].vars.contains_key(name) {
+                stack[global_frame].set_var(name, value);
+            } else {
+                panic!("tried to set undefined variable `{name}`");
+            }
         }
     }
 }

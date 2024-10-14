@@ -11,7 +11,7 @@
 0xF9 - extern function
 0xF8 - extern args end
 0xF7 - conditional parse
-0xF6 - unused
+0xF6 - module start
 0xF5 - unused
 0xF4 - unused
 0xF3 - unused
@@ -130,7 +130,7 @@ If size is not provided with the given pointer variable the pointer will be dele
 [ ] 0x84-8B     CALLC   [imm/var]   [type/var]  [imm/var]
 Calls the function in memory at address A, return type B, and argument count C.
 
-[ ] 0x8C-93     CMP     [imm/var]   [imm/var]   [imm/var]   [var]
+[x] 0x8C-93     CMP     [imm/var]   [imm/var]   [imm/var]   [var]
 Compares B to C with condition A, and stores 1 or 0 in D depending on the result.
 
 0x00: ==
@@ -403,6 +403,30 @@ becomes
 
 ```
 F9 08 0C 47 65 74 53 74 64 48 61 6E 64 6C 65 03 F8 0C 4B 65 72 6E 65 6C 33 32 2E 64 6C 6C
+```
+
+## MODULES
+Modules are ways of grouping and organizing code.
+
+The format is
+```
+F6 (module name) FE
+    ... code
+FD
+```
+
+```
+.module io {
+    ...
+}
+```
+
+becomes
+
+```
+F6 02 69 6F FE
+    ...
+FD
 ```
 
 ## ERRORS

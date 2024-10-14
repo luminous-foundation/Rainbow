@@ -16,5 +16,5 @@ void main() {
 
     PUSH $foo.text
     PUSH 13
-    CALL io_println
+    CALL io.println
 }

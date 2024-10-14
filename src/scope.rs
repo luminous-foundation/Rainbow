@@ -1,15 +1,19 @@
 use std::{collections::HashMap, fmt::{self}};
 
-use crate::{_struct::Struct, block::Block, function::{Extern, Function}};
+use crate::{_struct::Struct, block::Block, function::{Extern, Function}, module::Module};
 
 #[derive(Debug, Clone)]
 pub struct Scope {
+    pub parent_scope: Option<Box<Scope>>,
+
     pub blocks: Vec<Block>,
     pub block_starts: Vec<usize>,
 
     pub functions: HashMap<String, Function>,
     pub externs: HashMap<String, Extern>,
     pub structs: HashMap<String, Struct>,
+
+    pub modules: HashMap<String, Module>,
 }
 
 impl fmt::Display for Scope {
@@ -20,7 +24,58 @@ impl fmt::Display for Scope {
 
 impl Scope {
     pub fn new() -> Scope {
-        Scope { blocks: Vec::new(), block_starts: Vec::new(), functions: HashMap::new(), externs: HashMap::new(), structs: HashMap::new() }
+        Scope { parent_scope: None, blocks: Vec::new(), block_starts: Vec::new(), functions: HashMap::new(), externs: HashMap::new(), structs: HashMap::new(), modules: HashMap::new() }
+    }
+
+    pub fn func_exists(&self, name: &String, check_module: bool) -> bool {
+        if check_module {
+            if name.contains(".") {
+                let split = name.split(".").collect::<Vec<&str>>();
+                
+                let module_name = &split[0].to_string();
+
+                if self.modules.contains_key(module_name) {
+                    let module = self.get_module(module_name);
+
+                    let name = split[1..].to_vec().join(".");
+                    let scope = &module.scope;
+
+                    return scope.func_exists(&name, true);
+                }
+            }
+        }
+
+        if self.functions.contains_key(name) {
+            return true;
+        } else if self.parent_scope.is_some() {
+            return (*self.parent_scope.clone().unwrap()).func_exists(name, check_module);
+        }
+
+        return false;
+    }
+
+    pub fn get_func<'a>(&'a self, name: &String) -> Function {
+        if self.func_exists(name, false) {
+            if self.functions.contains_key(name) {
+                return self.functions.get(name).unwrap().clone();
+            } else {
+                if self.parent_scope.is_some() {
+                    return (*self.parent_scope.clone().unwrap()).get_func(name);
+                } else {
+                    unreachable!();
+                }
+            }
+        } else {
+            panic!("tried to get undefined function `{name}`");
+        }
+    }
+
+    pub fn get_module<'a>(&'a self, name: &String) -> &'a Module{
+        if self.modules.contains_key(name) {
+            return self.modules.get(name).unwrap();
+        } else {
+            panic!("tried to get undefined module `{}`", name);
+        }
     }
 
     pub fn merge(&mut self, mut other: Scope) {
@@ -41,6 +96,7 @@ impl Scope {
         self.functions.extend(other.functions);
         self.externs.extend(other.externs);
         self.structs.extend(other.structs);
+        self.modules.extend(other.modules);
     }
 
     pub fn add_block(&mut self, block: Block) {
@@ -65,6 +121,14 @@ impl Scope {
         }
 
         let mut str = String::new();
+
+        for (name, module) in &self.modules {
+            str += &indentation;
+            str += "module ";
+            str += name;
+            str += "\n";
+            str += &module.scope.to_string(depth + 1, 0);
+        }
 
         str += &indentation;
         str += "{";
