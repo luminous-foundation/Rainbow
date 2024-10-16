@@ -18,6 +18,10 @@ pub struct Frame {
 }
 
 impl Frame {
+    pub fn len(&self) -> usize {
+        return self.stack.len();
+    }
+
     pub fn push(&mut self, val: Value) {
         self.stack.push(val);
         self.allocs.push(String::new());

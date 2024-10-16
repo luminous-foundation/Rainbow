@@ -1,13 +1,13 @@
 .include "string.rasm"
 .include "io.rasm"
 
-VAR struct text
+VAR struct str
 
-PUSH "Hello, World!"
-PUSH 13
+PUSH "do strings work?"
+PUSH 16
 CALL string.new
-POP $text
+POP $str
 
-PUSH $text.text
-PUSH $text.length
+PUSH $str.text
+PUSH $str.length
 CALL io.println

@@ -55,6 +55,8 @@ pub unsafe fn get_pointer(vals: &[Value], pp: &mut Vec<*mut c_void>, s8p: &mut V
 
 pub fn call_ffi(_extern: &Extern, stack: &mut Vec<Frame>, cur_frame: usize, global_frame: usize) {
     unsafe {
+        // println!("{:?}", stack);
+
         let lib = Library::new(&_extern.dll).unwrap();
 
         let func: Symbol<*mut c_void> = lib.get(_extern.name.as_bytes()).unwrap();
@@ -82,7 +84,6 @@ pub fn call_ffi(_extern: &Extern, stack: &mut Vec<Frame>, cur_frame: usize, glob
         let mut unsigned_args: Vec<u64> = Vec::new();
         let mut decimal_args: Vec<f64> = Vec::new();
 
-        
         let mut pp: Vec<*mut c_void> = Vec::new();
         let mut s8p: Vec<Vec<i8>> = Vec::new();
         let mut s16p: Vec<Vec<i16>> = Vec::new();
@@ -115,7 +116,7 @@ pub fn call_ffi(_extern: &Extern, stack: &mut Vec<Frame>, cur_frame: usize, glob
 
                     raw_args.push(ptr);
                 }
-                _ => panic!("unsupported type `{:?}` for externs", arg.typ),
+                _ => panic!("unsupported type `{:?}` for externs (value: `{:?}`)", arg.typ, arg.val),
             }
         }
         

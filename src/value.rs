@@ -12,7 +12,7 @@ pub enum Values {
     UNSIGNED(u64),
     DECIMAL(f64),
     POINTER(usize, usize), // index and size
-    STRUCT(String, String, usize),
+    STRUCT(String, String, usize), // module, name, index
     TYPE(Type),
     NAME(String),
 }
@@ -243,7 +243,7 @@ impl Values {
             (Values::POINTER(_, _), Values::NAME(_)) => panic!("cannot set a pointer value as a name"),
             (Values::STRUCT(_, _, _), Values::VOID) => todo!(),
             (Values::STRUCT(_, _, _), Values::SIGNED(_)) => todo!(),
-            (Values::STRUCT(_, _, _), Values::UNSIGNED(_)) => todo!(),
+            (Values::STRUCT(_, name, _), Values::UNSIGNED(_)) => todo!("{name}"),
             (Values::STRUCT(_, _, _), Values::DECIMAL(_)) => todo!(),
             (Values::STRUCT(_, _, _), Values::POINTER(_, _)) => todo!(),
             (Values::STRUCT(m, n, p), Values::STRUCT(om, on, op)) => { *m = om.clone(); *n = on.clone(); *p = *op; },

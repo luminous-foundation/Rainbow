@@ -382,6 +382,7 @@ fn set_var(name: &String, value: &Values, scope: &Scope, global_scope: &Scope, s
         if stack[global_frame].vars.contains_key(name) {
             stack[global_frame].set_var(name, value);
         } else {
+            // println!("{name}");
             if name.contains(".") {
                 let split = name.split(".").collect::<Vec<&str>>();
                 
@@ -401,14 +402,18 @@ fn set_var(name: &String, value: &Values, scope: &Scope, global_scope: &Scope, s
     }
 }
 
-fn get_struct<'a>(name: &String, global_scope: &'a Scope, scope: &'a Scope) -> Struct {
-    if scope.struct_exists(name, false) {
-        return scope.get_struct(name);
-    } else if global_scope.struct_exists(name, false) {
-        return global_scope.get_struct(name);
+fn get_struct<'a>(module: &String, name: &String, global_scope: &'a Scope, scope: &'a Scope) -> Struct {
+    let mut name = name.clone();
+    if module != "" {
+        name = module.clone() + "." + &name;
+    }
+    if scope.struct_exists(&name, false) {
+        return scope.get_struct(&name);
+    } else if global_scope.struct_exists(&name, false) {
+        return global_scope.get_struct(&name);
     } else {
         if name.contains(".") {
-            println!("getting {name}");
+            // println!("getting {name}");
 
             let split = name.split(".").collect::<Vec<&str>>();
             
@@ -418,7 +423,7 @@ fn get_struct<'a>(name: &String, global_scope: &'a Scope, scope: &'a Scope) -> S
             let name = split[1..].to_vec().join(".");
             let scope = &module.scope;
 
-            return get_struct(&name, scope, global_scope);
+            return get_struct(&"".to_string(), &name, scope, global_scope);
         } else {
             panic!("tried to get undefined struct `{}`", name);
         }
@@ -431,7 +436,7 @@ fn set_struct_var(parent_struct: &Value, name: &String, value: &Values, scope: &
         _ => panic!("cannot set a variable in a value that is not a struct"),
     };
 
-    let _struct = get_struct(&(struct_val.0.clone() + "." + struct_val.1), scope, global_scope);
+    let _struct = get_struct(struct_val.0, struct_val.1, scope, global_scope);
 
     let var_offset = _struct.var_offsets.get(name).
                             expect(format!("attempted to set non-existant variable `{name}` in struct `{}`", _struct.name).as_str());
@@ -446,11 +451,14 @@ fn get_struct_var<'a>(parent_struct: &Value, name: &String, scope: &Scope, globa
         _ => panic!("cannot set a variable in a value that is not a struct"),
     };
 
-    let _struct = get_struct(&(struct_val.0.clone() + "." + struct_val.1), scope, global_scope);
+    let _struct = get_struct(struct_val.0, struct_val.1, scope, global_scope);
 
     let var_offset = _struct.var_offsets.get(name).
                             expect(format!("attempted to get non-existant variable `{name}` in struct `{}`", _struct.name).as_str());
 
     // TODO: but what if the struct does *not* exist on the current frame?
+    // println!("{:?}", _struct);
+    // println!("{:?}", stack);
+
     return stack[cur_frame].get(struct_val.2+var_offset);
 }

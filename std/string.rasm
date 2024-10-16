@@ -1,6 +1,6 @@
 .module string {
     .struct string {
-        u8* text
+        u16* text
         u64 length
     }
 

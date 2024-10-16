@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{_type::Types, block::Block, ffi::call_ffi, frame::Frame, func_exists, function::Function, get_extern, get_func, get_struct, get_var, instruction::{Instruction, Opcode}, scope::Scope, set_var, value::Values};
+use crate::{_type::Types, block::Block, ffi::call_ffi, frame::Frame, func_exists, function::Function, get_extern, get_func, get_struct, get_var, instruction::{Instruction, Opcode}, scope::Scope, set_var, value::{Value, Values}};
 
 // instruction macros
 macro_rules! peek {
@@ -255,6 +255,12 @@ macro_rules! get_name {
     }
 }
 
+macro_rules! ret {
+    ($v:expr, $stack:expr, $cur_frame:expr, $global_frame:expr) => {
+        
+    };
+}
+
 macro_rules! ref_ {
     ($index:expr, $out_var:expr, $scope:expr, $global_scope:expr, $stack:expr, $cur_frame:expr, $module_frame:expr, $global_frame:expr) => {
         // ugly line
@@ -448,7 +454,17 @@ pub fn exec_block(scope: &Scope, block: &Vec<Instruction>, global_scope: &Scope,
             }
 
             Opcode::POP(name) => { // POP [var]
-                set_var(name, &stack[cur_frame].pop().val, scope, global_scope, stack, cur_frame, module_frame, global_frame);
+                let pop_val;
+                let popped = stack[cur_frame].pop();
+                match popped.val {
+                    Values::STRUCT(module, struct_name, _) => {
+                        let new_index = stack[cur_frame].vars.get(name).expect("tried to pop into non-existent variable") + 1;
+                        pop_val = Values::STRUCT(module, struct_name, new_index);
+                    }
+                    _ => pop_val = popped.val,
+                }
+
+                set_var(name, &pop_val, scope, global_scope, stack, cur_frame, module_frame, global_frame);
             }
 
             Opcode::PEEK_IMM(val, out) => { // PEEK [imm] [var]
@@ -1016,27 +1032,34 @@ pub fn exec_block(scope: &Scope, block: &Vec<Instruction>, global_scope: &Scope,
                 break;
             }
             Opcode::RET_IMM(v) => { // RET [imm]
-                if cur_frame != global_frame {
-                    stack[cur_frame - 1].push(v.clone());
-                } else {
-                    match v.val {
-                        Values::VOID => return 0,
-                        Values::SIGNED(n) => return n as i32,
-                        Values::UNSIGNED(n) => return n as i32,
-                        Values::DECIMAL(n) => return n as i32,
-                        Values::POINTER(n, _) => return n as i32,
-                        Values::STRUCT(_, _, _) => return 0,
-                        Values::TYPE(_) => return 0,
-                        Values::NAME(_) => return 0,
-                    }
-                }
+                
                 break;
             }
             Opcode::RET_VAR(var) => { // RET [var]
                 let v = get_var(var, scope, global_scope, stack, cur_frame, module_frame, global_frame).clone();
-                
+                // println!("----- PUSHING -----");
                 if cur_frame != global_frame {
-                    stack[cur_frame - 1].push(v);
+                    match &v.val {
+                        // TODO: if the struct has the same name as a variable in the struct it will ignore the variable
+                        Values::STRUCT(module, name, index) => {
+                            let struct_type = get_struct(module, name, scope, global_scope);
+
+                            let new_struct = Values::STRUCT(module.clone(), name.clone(), stack[cur_frame - 1].len());
+                            let new_struct = Value { typ: v.typ, val: new_struct };
+                            
+                            for (name, offset) in struct_type.var_offsets {
+                                let var = stack[cur_frame].get(index + offset);
+                                let typ = var.typ.clone();
+                                let value = var.val.clone();
+                                
+                                stack[cur_frame - 1].push_var(&name, typ, value);
+                            }
+                            
+                            stack[cur_frame - 1].push(new_struct);
+                            // println!("{:?}", stack[cur_frame-1]);
+                        }
+                        _ => stack[cur_frame - 1].push(v.clone()),
+                    }
                 } else {
                     match v.val {
                         Values::VOID => return 0,
@@ -1049,6 +1072,7 @@ pub fn exec_block(scope: &Scope, block: &Vec<Instruction>, global_scope: &Scope,
                         Values::NAME(_) => return 0,
                     }
                 }
+                // println!("----- PUSHED -----");
                 break;
             }
 
@@ -1094,11 +1118,10 @@ pub fn exec_block(scope: &Scope, block: &Vec<Instruction>, global_scope: &Scope,
                 let frame = &stack[cur_frame];
                 let start_index = frame.stack.len();
 
-                let struct_type = get_struct(struct_name, scope, global_scope);
+                let struct_type = get_struct(&String::from(""), struct_name, scope, global_scope);
 
-                println!("{module}");
                 let strct = Values::STRUCT(module.clone(), struct_name.clone(), start_index);
-
+                
                 set_var(out, &strct, scope, global_scope, stack, cur_frame, module_frame, global_frame);
 
                 for i in 0..struct_type.var_types.len() {
@@ -1353,7 +1376,10 @@ pub fn exec_func(func: &Function, global_scope: &Scope, stack: &mut Vec<Frame>, 
     for i in 0..func.arg_names.len() {
         // TODO: argument type checking
         let val = stack[len - 1].pop();
+
         let index = func.arg_names.len() - 1 - i;
+        // println!("{} {} -> {:?}", func.arg_names[index], func.arg_types[index].clone(), val.val);
+
         stack[len].push_var(&func.arg_names[index], func.arg_types[index].clone(), val.val);
     }
 
