@@ -11,6 +11,7 @@
     PMOV 10 $NEWLINE 0
 
     ; TODO: this does *not* work when running through Myst. Why? idk
+    ; (windows does not like that the stdout is being consumed.)
     void print(u8* text u32 len) {
         VAR u32 writeConsoleRes
 

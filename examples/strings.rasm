@@ -3,8 +3,8 @@
 
 VAR struct str
 
-PUSH "do strings work?"
-PUSH 16
+PUSH "!Wello ,Horld"
+PUSH 13
 CALL string.new
 POP $str
 
