@@ -3,9 +3,8 @@
 
 VAR struct str
 
-PUSH "!Wello ,Horld"
-PUSH 13
-CALL string.new
+PUSH 12345
+CALL string.ntos
 POP $str
 
 PUSH $str.text

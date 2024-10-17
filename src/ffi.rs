@@ -96,7 +96,9 @@ pub fn call_ffi(_extern: &Extern, stack: &mut Vec<Frame>, cur_frame: usize, glob
         let mut f32p: Vec<Vec<f32>> = Vec::new();
         let mut f64p: Vec<Vec<f64>> = Vec::new();
 
+        // println!("{:#?}", stack[cur_frame]);
         for arg in &args {
+            // println!("{arg:?}");
             match &arg.val {
                 Values::SIGNED(n) => {
                     signed_args.push(*n);

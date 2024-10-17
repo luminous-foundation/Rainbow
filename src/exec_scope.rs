@@ -26,7 +26,19 @@ macro_rules! call {
             let module = frame_func.0;
             let frame = frame_func.1;
             let func = frame_func.2;
-            exec_func(&func, $global_scope, $stack, frame, $global_frame, &($module.clone() + &module));
+
+            let module_name;
+            if frame != $module_frame {
+                if $module.clone().len() > 0 {
+                    module_name = $module.clone() + "." + &module;
+                } else {
+                    module_name = module;
+                }
+            } else {
+                module_name = module;
+            }
+
+            exec_func(&func, $global_scope, $stack, frame, $global_frame, &module_name);
         } else {
             let func = get_extern($func, $scope, $global_scope);
             call_ffi(func, $stack, $cur_frame, $global_frame);
@@ -350,7 +362,7 @@ macro_rules! pmov {
         let offset_index;
         get_usize!(offset_index, $offset, "PMOV", "offset");
 
-        if ptr + offset_index > $stack[$global_frame].stack.len() {
+        if ptr + offset_index >= $stack[$global_frame].stack.len() {
             panic!("`PMOV` index out of bounds: {} > {}", ptr + offset_index, $stack[$global_frame].stack.len() - 1);
         }
 
@@ -466,6 +478,8 @@ pub fn exec_block(scope: &Scope, block: &Vec<Instruction>, global_scope: &Scope,
 
     // let start = std::time::Instant::now();
 
+    // println!("block: {module}");
+
     let mut skip_inc = false;
 
     while *pc - block_start < block.len() {
@@ -488,17 +502,17 @@ pub fn exec_block(scope: &Scope, block: &Vec<Instruction>, global_scope: &Scope,
             }
 
             Opcode::POP(name) => { // POP [var]
-                let pop_val;
                 let popped = stack[cur_frame].pop();
                 match popped.val {
-                    Values::STRUCT(module, struct_name, _) => {
-                        let new_index = stack[cur_frame].vars.get(name).expect("tried to pop into non-existent variable") + 1;
-                        pop_val = Values::STRUCT(module, struct_name, new_index);
-                    }
-                    _ => pop_val = popped.val,
-                }
+                    Values::STRUCT(module, struct_name, index) => {                        
 
-                set_var(name, &pop_val, scope, global_scope, stack, cur_frame, module_frame, global_frame);
+                        let val = Values::STRUCT(module, struct_name, index);
+                        set_var(name, &val, scope, global_scope, stack, cur_frame, module_frame, global_frame);
+                    }
+                    _ => {
+                        set_var(name, &popped.val, scope, global_scope, stack, cur_frame, module_frame, global_frame);
+                    }
+                }
             }
 
             Opcode::PEEK_IMM(val, out) => { // PEEK [imm] [var]
@@ -1120,7 +1134,7 @@ pub fn exec_block(scope: &Scope, block: &Vec<Instruction>, global_scope: &Scope,
                 let struct_type = get_struct(&String::from(""), struct_name, scope, global_scope);
 
                 let strct = Values::STRUCT(module.clone(), struct_name.clone(), start_index);
-                
+
                 set_var(out, &strct, scope, global_scope, stack, cur_frame, module_frame, global_frame);
 
                 for i in 0..struct_type.var_types.len() {
@@ -1299,7 +1313,10 @@ pub fn exec_block(scope: &Scope, block: &Vec<Instruction>, global_scope: &Scope,
 pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize, pop_stack: bool, pc: &mut usize, module_frame: usize, global_frame: usize, module_name: &String) -> i32 {
     let scope_stack_start = stack[cur_frame].stack.len();
 
+    // println!("exec_scope: {module_name}");
+
     for (_, module) in &scope.modules {
+        // println!("calling: {module_name} {}", module.name);
         let retval = exec_scope(&module.scope, &global_scope, stack, module.frame, pop_stack, &mut 0, module.frame, global_frame, &(module_name.clone() + &module.name));
         if retval != 0 {
             return retval;
@@ -1330,7 +1347,10 @@ pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, c
         let block = &scope.blocks[i];
 
         let ret = match block {
-            Block::CODE(vec) => exec_block(scope, vec, global_scope, stack, cur_frame, pc, start, module_frame, global_frame, module_name),
+            Block::CODE(vec) => {
+                // println!("code: {module_name}");
+                exec_block(scope, vec, global_scope, stack, cur_frame, pc, start, module_frame, global_frame, module_name)
+            }
             Block::SCOPE(scope) => {
                 *pc += 1;
                 exec_scope(&scope, global_scope, stack, cur_frame, pop_stack, &mut 0, module_frame, global_frame, module_name)
@@ -1384,6 +1404,7 @@ pub fn exec_func(func: &Function, global_scope: &Scope, stack: &mut Vec<Frame>, 
         stack[len].push_var(&func.arg_names[index], func.arg_types[index].clone(), val.val);
     }
 
+    // println!("exec_func: {module}");
     let retval = exec_scope(&func.scope, global_scope, stack, len, true, &mut 0, module_frame, global_frame, module);
 
     stack.pop();

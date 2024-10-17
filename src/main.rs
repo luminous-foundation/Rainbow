@@ -389,6 +389,7 @@ fn set_var(name: &String, value: &Values, scope: &Scope, global_scope: &Scope, s
                 let struct_name = &split[0].to_string();
                 let parent_struct = get_var(struct_name, scope, global_scope, stack, cur_frame, module_frame, global_frame).clone();
 
+                // println!("{struct_name} {parent_struct:?}");
                 set_struct_var(&parent_struct, &split[1].to_string(), value, scope, global_scope, stack, cur_frame);
                 return;
             }
@@ -412,6 +413,7 @@ fn get_struct<'a>(module: &String, name: &String, global_scope: &'a Scope, scope
     } else if global_scope.struct_exists(&name, false) {
         return global_scope.get_struct(&name);
     } else {
+        // println!("{name}");
         if name.contains(".") {
             // println!("getting {name}");
 
@@ -436,6 +438,7 @@ fn set_struct_var(parent_struct: &Value, name: &String, value: &Values, scope: &
         _ => panic!("cannot set a variable in a value that is not a struct"),
     };
 
+    // println!("{} {}", struct_val.0, struct_val.1);
     let _struct = get_struct(struct_val.0, struct_val.1, scope, global_scope);
 
     let var_offset = _struct.var_offsets.get(name).
