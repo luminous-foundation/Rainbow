@@ -2,11 +2,20 @@
 .include "io.rasm"
 
 VAR struct str
+VAR struct str2
 
 PUSH 12345
 CALL string.ntos
 POP $str
 
+PUSH 67890
+CALL string.ntos
+POP $str2
+
 PUSH $str.text
 PUSH $str.length
+CALL io.println
+
+PUSH $str2.text
+PUSH $str2.length
 CALL io.println

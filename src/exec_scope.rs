@@ -284,7 +284,7 @@ macro_rules! ret {
                         let typ = var.typ.clone();
                         let value = var.val.clone();
                         
-                        $stack[$cur_frame - 1].push_var(&name, typ, value);
+                        $stack[$cur_frame - 1].push(Value { typ, val: value });
                     }
                     
                     $stack[$cur_frame - 1].push(new_struct);

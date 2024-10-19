@@ -87,15 +87,10 @@ impl Frame {
     }
 
     pub fn push_var(&mut self, name: &String, typ: Type, value: Values) {
-        if self.vars.contains_key(name) {
-            // TODO: handle this if the type changes
-            // todo!();
-        } else {
-            let index = self.stack.len();
-            self.stack.push(Value { typ: typ, val: value });
-            self.vars.insert(name.clone(), index);
-            self.allocs.push(name.clone());
-        }
+        let index = self.stack.len();
+        self.stack.push(Value { typ: typ, val: value });
+        self.vars.insert(name.clone(), index);
+        self.allocs.push(name.clone());
     }
 
     pub fn get_default_val(typ: &Type) -> Values {
@@ -120,17 +115,12 @@ impl Frame {
     }
 
     pub fn create_var(&mut self, name: String, typ: Type) {
-        if self.vars.contains_key(&name) {
-            // TODO: handle this if the type changes
-            // todo!();
-        } else {
-            let val = Self::get_default_val(&typ);
-            let value = Value { typ: typ, val: val };
-    
-            let index = self.stack.len();
-            self.stack.push(value);
-            self.vars.insert(name.clone(), index);
-            self.allocs.push(name.clone());
-        }
+        let val = Self::get_default_val(&typ);
+        let value = Value { typ: typ, val: val };
+
+        let index = self.stack.len();
+        self.stack.push(value);
+        self.vars.insert(name.clone(), index);
+        self.allocs.push(name.clone());
     }
 }
