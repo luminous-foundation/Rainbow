@@ -451,7 +451,7 @@ fn set_struct_var(parent_struct: &Value, name: &String, value: &Values, scope: &
 fn get_struct_var<'a>(parent_struct: &Value, name: &String, scope: &Scope, global_scope: &'a Scope, stack: &'a mut [Frame], cur_frame: usize) -> &'a Value {    
     let struct_val = match &parent_struct.val {
         Values::STRUCT(module, name, index) => (module, name, index),
-        _ => panic!("cannot set a variable in a value that is not a struct"),
+        _ => panic!("cannot get a variable in a value that is not a struct"),
     };
 
     let _struct = get_struct(struct_val.0, struct_val.1, scope, global_scope);
