@@ -1291,12 +1291,15 @@ pub fn parse_immediate(bytes: &[u8], index: &mut usize) -> Result<Value, String>
         0x0B => {
             value = Values::DECIMAL(f64::from_be_bytes(bytes[*index..*index+8].try_into().expect("immediate was incorrect length")));
             *index += 8;
-
         }
-        0x0C => return Err("`POINTER` is unsupported as an immediate value".to_string()), // TODO: why?
+        0x0C => {
+            value = Values::POINTER(usize::from_be_bytes(bytes[*index..*index+(usize::BITS/8) as usize].try_into().expect("immediate was incorrect length")), 0);
+        }
         0x0D => return Err("`TYPE` is unsupported as an immediate value".to_string()),
         0x0E => return Err("`STRUCT` is unsupported as an immediate value".to_string()),
-        0x0F => return Err("`NAME` is unsupported as an immediate value".to_string()), // TODO: why?
+        0x0F => {
+            value = Values::NAME(parse_bytecode_string(bytes, index)?);
+        }
         _ => return Err(format!("unknown type {:#04x}", typ))
     }
     
