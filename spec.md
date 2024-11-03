@@ -118,6 +118,7 @@ Perform modulus on A and B and store in variable C
 
 [x] 0x77-7A     PMOV    [imm/var]   [ptr var]   [imm/var]
 Moves the value A into where value B references, with the offset C
+Equivalent to `b[c] = a`
 
 [x] 0x7B-7E     ALLOC   [type/var]  [imm/var]   [ptr var]
 Allocates a pointer with type A, size B, and puts the address in variable C
