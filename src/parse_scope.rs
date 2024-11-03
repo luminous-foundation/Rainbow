@@ -40,8 +40,8 @@ pub fn parse_scope(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, l
             }
             0xF9 => {
                 *index += 1;
-                let func = parse_extern(bytes, index)?;
-                scope.externs.insert(func.name.clone(), func);
+                let func = parse_extern(bytes, index, linker_paths)?;
+                scope.externs.insert(func.access_name.clone(), func);
             }
             0xF7 => {
                 *index += 1;
@@ -95,6 +95,12 @@ pub fn parse_scope(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, l
         module.scope.parent_scope = Some(Box::new(clone.clone()));
     }
 
+    for i in 2..stack.len() {
+        let frame = stack[i].clone();
+        stack[1].extend(frame);
+        stack[i].clear();
+    }
+
     return Ok(scope);
 }
 
@@ -134,7 +140,7 @@ fn skip_scope(bytes: &Vec<u8>, index: &mut usize) {
             }
             0xF9 => {
                 *index += 1;
-                let _ = parse_extern(bytes, index);
+                let _ = parse_extern(bytes, index, &linker_paths);
             }
             0xF7 => {
                 *index += 1;
@@ -345,7 +351,7 @@ fn get_paths(path: &String) -> Result<Vec<String>, String> {
 
 // expects `index` to be at the start of the extern
 // leaves `index` to be the byte after the extern
-pub fn parse_extern(bytes: &Vec<u8>, index: &mut usize) -> Result<Extern, String> {
+pub fn parse_extern(bytes: &Vec<u8>, index: &mut usize, linker_paths: &Vec<String>) -> Result<Extern, String> {
     let ret_type = parse_type(bytes, index)?;
 
     let name = parse_bytecode_string(bytes, index)?;
@@ -358,8 +364,29 @@ pub fn parse_extern(bytes: &Vec<u8>, index: &mut usize) -> Result<Extern, String
     *index += 1;
 
     let dll = parse_bytecode_string(bytes, index)?;
+    let mut dll_path = String::new();
+    if Path::exists(Path::new(&dll)) {
+        dll_path = dll.clone();
+    }
 
-    return Ok(Extern { name, ret_type, arg_types, dll });
+    for path in linker_paths {
+        let paths = get_paths(path).unwrap();
+
+        for path in paths {
+            if path.ends_with(&dll) {
+                if dll_path == "" {
+                    dll_path = path;
+                } else {
+                    return Err(format!("ambiguous extern dll {dll}"));
+                }
+            }
+        }
+    }
+    let dll = dll_path;
+
+    let access_name = parse_bytecode_string(bytes, index)?;
+
+    return Ok(Extern { name, access_name, ret_type, arg_types, dll });
 }
 
 // expects `index` to be at the start of the instruction
