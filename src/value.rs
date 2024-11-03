@@ -295,11 +295,11 @@ impl Values {
     }
     
     pub fn or(&self, other: &Values) -> Values {
-        bitwise!(self, other, &, "OR", "ORed");
+        bitwise!(self, other, |, "OR", "ORed");
     }
     
     pub fn xor(&self, other: &Values) -> Values {
-        bitwise!(self, other, &, "XOR", "XORed");
+        bitwise!(self, other, ^, "XOR", "XORed");
     }
     
     pub fn not(&self) -> Values {
