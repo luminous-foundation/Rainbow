@@ -116,11 +116,38 @@ impl Frame {
 
     pub fn create_var(&mut self, name: String, typ: Type) {
         let val = Self::get_default_val(&typ);
-        let value = Value { typ: typ, val: val };
+        let value = Value { typ, val };
 
         let index = self.stack.len();
         self.stack.push(value);
         self.vars.insert(name.clone(), index);
         self.allocs.push(name.clone());
+    }
+
+    pub fn extend(&mut self, mut other: Frame) {
+        self.allocs.append(&mut other.allocs);
+        
+        let len = self.stack.len();
+        for val in other.stack {
+            match val.val {
+                Values::POINTER(p, s) => {
+                    self.stack.push(Value { typ: val.typ, val: Values::POINTER(p + len, s) });
+                }
+                Values::STRUCT(module, name, index) => {
+                    self.stack.push(Value { typ: val.typ, val: Values::STRUCT(module, name, index) });
+                }
+                _ => self.stack.push(val),
+            }
+        }
+
+        for (var, index) in other.vars {
+            self.vars.insert(var, index + len);
+        }
+    }
+
+    pub fn clear(&mut self) {
+        self.stack.clear();
+        self.allocs.clear();
+        self.vars.clear();
     }
 }
