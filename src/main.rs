@@ -117,11 +117,16 @@ pub fn run_program(program: &Vec<u8>, linker_paths: Vec<String>, debug: bool) ->
 
     let mut stack: Vec<Frame> = Vec::new();
 
+    stack.push(Frame { vars: HashMap::new(), stack: Vec::new(), allocs: Vec::new() });
+
     let mut global_scope = Scope::new();
     
     parse_program(program, &mut stack, &mut global_scope, &linker_paths, debug, &consts);
 
+    let data_frame = stack.remove(1);
+
     let global_frame = stack.len() - 1;
+    stack[global_frame].extend(data_frame);
     
     let retval = exec_scope(&global_scope, &global_scope, &mut stack, global_frame, false, &mut 0, global_frame, global_frame, &String::new());
 
@@ -348,6 +353,14 @@ fn func_exists(name: &String, scope: &Scope, global_scope: &Scope) -> bool {
     return scope.func_exists(name, true) || global_scope.func_exists(name, true);
 }
 
+fn var_exists(name: &String, stack: &mut [Frame], cur_frame: usize, global_frame: usize, module_frame: usize) -> bool {
+    return stack[cur_frame].vars.contains_key(name) || stack[module_frame].vars.contains_key(name) || stack[global_frame].vars.contains_key(name);
+}
+
+fn module_exists(name: &String, scope: &Scope, global_scope: &Scope) -> bool {
+    return scope.modules.contains_key(name) || global_scope.modules.contains_key(name);
+}
+
 // these functions expect the variable to exist
 // if it doesnt, it will crash (it was going to crash later anyways)
 fn get_var<'a>(name: &String, scope: &'a Scope, global_scope: &'a Scope, stack: &'a mut [Frame], cur_frame: usize, module_frame: usize, global_frame: usize) -> &'a Value {
@@ -358,9 +371,16 @@ fn get_var<'a>(name: &String, scope: &'a Scope, global_scope: &'a Scope, stack: 
             let split = name.split(".").collect::<Vec<&str>>();
             
             let struct_name = &split[0].to_string();
-            let parent_struct = get_var(struct_name, scope, global_scope, stack, cur_frame, module_frame, global_frame).clone();
-
-            return get_struct_var(&parent_struct, &split[1].to_string(), scope, global_scope, stack, cur_frame);
+            
+            if var_exists(struct_name, stack, cur_frame, global_frame, module_frame) {
+                let parent_struct = get_var(struct_name, scope, global_scope, stack, cur_frame, module_frame, global_frame).clone();
+                return get_struct_var(&parent_struct, &split[1].to_string(), scope, global_scope, stack, cur_frame);
+            } else if module_exists(struct_name, &scope, &global_scope) {
+                let module = get_module(struct_name, scope, global_scope);
+                return get_var(&split[1].to_string(), &module.scope, global_scope, stack, cur_frame, module.frame, global_frame);
+            } else {
+                panic!("tried to get undefined variable `{name}`");
+            }
         }
 
         if stack[module_frame].vars.contains_key(name) {
@@ -444,11 +464,12 @@ fn set_struct_var(parent_struct: &Value, name: &String, value: &Values, scope: &
     let var_offset = _struct.var_offsets.get(name).
                             expect(format!("attempted to set non-existant variable `{name}` in struct `{}`", _struct.name).as_str());
 
-    // TODO: but what if the struct does *not* exist on the current frame?
     stack[cur_frame].set(struct_val.2+var_offset, value);
 }
 
 fn get_struct_var<'a>(parent_struct: &Value, name: &String, scope: &Scope, global_scope: &'a Scope, stack: &'a mut [Frame], cur_frame: usize) -> &'a Value {    
+    // println!("{:?}", parent_struct.val);
+    
     let struct_val = match &parent_struct.val {
         Values::STRUCT(module, name, index) => (module, name, index),
         _ => panic!("cannot get a variable in a value that is not a struct"),
@@ -459,7 +480,6 @@ fn get_struct_var<'a>(parent_struct: &Value, name: &String, scope: &Scope, globa
     let var_offset = _struct.var_offsets.get(name).
                             expect(format!("attempted to get non-existant variable `{name}` in struct `{}`", _struct.name).as_str());
 
-    // TODO: but what if the struct does *not* exist on the current frame?
     // println!("{:?}", _struct);
     // println!("{:?}", stack);
 
