@@ -38,7 +38,7 @@ macro_rules! call {
                 module_name = module;
             }
 
-            exec_func(&func, $global_scope, $stack, frame, $global_frame, &module_name);
+            exec_func(&func, $global_scope, $scope, $stack, frame, $global_frame, &module_name);
         } else {
             let func = get_extern($func, $scope, $global_scope);
             call_ffi(func, $stack, $cur_frame, $global_frame);
@@ -78,22 +78,23 @@ macro_rules! modulo {
 }
 
 macro_rules! compare {
-    ($a_val:expr, $b:expr, $op:tt, $pc:expr, $new_pc:expr, $skip_inc:expr) => {
+    ($a_val:expr, $b:expr, $op:tt, $cast:tt, $pc:expr, $new_pc:expr, $skip_inc:expr) => {
+        
         match $b {
             Values::SIGNED(b_val) => {
-                if ($a_val as i64) $op b_val {
+                if $a_val $op (b_val as $cast) {
                     $skip_inc = true;
                     $pc = $new_pc as usize;
                 }
             }
             Values::UNSIGNED(b_val) => {
-                if ($a_val as u64) $op b_val {
+                if $a_val $op (b_val as $cast) {
                     $skip_inc = true;
                     $pc = $new_pc as usize;
                 }
             }
             Values::DECIMAL(b_val) => {
-                if ($a_val as f64) $op b_val {
+                if $a_val $op (b_val as $cast) {
                     $skip_inc = true;
                     $pc = $new_pc as usize;
                 }
@@ -124,9 +125,9 @@ macro_rules! jne {
         get_pc!($c.val, new_pc);
 
         match $a.val {
-            Values::SIGNED(a_val) => compare!(a_val, $b.val, !=, $pc, new_pc, $skip_inc),
-            Values::UNSIGNED(a_val) => compare!(a_val, $b.val, !=, $pc, new_pc, $skip_inc),
-            Values::DECIMAL(a_val) => compare!(a_val, $b.val, !=, $pc, new_pc, $skip_inc),
+            Values::SIGNED(a_val) => compare!(a_val, $b.val, !=, i64, $pc, new_pc, $skip_inc),
+            Values::UNSIGNED(a_val) => compare!(a_val, $b.val, !=, u64, $pc, new_pc, $skip_inc),
+            Values::DECIMAL(a_val) => compare!(a_val, $b.val, !=, f64, $pc, new_pc, $skip_inc),
             _ => panic!("expected a number for comparison, got `{:?}`", $a.val)
         }
     }
@@ -137,9 +138,9 @@ macro_rules! je {
         get_pc!($c.val, new_pc);
 
         match $a.val {
-            Values::SIGNED(a_val) => compare!(a_val, $b.val, ==, $pc, new_pc, $skip_inc),
-            Values::UNSIGNED(a_val) => compare!(a_val, $b.val, ==, $pc, new_pc, $skip_inc),
-            Values::DECIMAL(a_val) => compare!(a_val, $b.val, ==, $pc, new_pc, $skip_inc),
+            Values::SIGNED(a_val) => compare!(a_val, $b.val, ==, i64, $pc, new_pc, $skip_inc),
+            Values::UNSIGNED(a_val) => compare!(a_val, $b.val, ==, u64, $pc, new_pc, $skip_inc),
+            Values::DECIMAL(a_val) => compare!(a_val, $b.val, ==, f64, $pc, new_pc, $skip_inc),
             _ => panic!("expected a number for comparison, got `{:?}`", $a.val)
         }
     }
@@ -151,9 +152,9 @@ macro_rules! jge {
         get_pc!($c.val, new_pc);
 
         match $a.val {
-            Values::SIGNED(a_val) => compare!(a_val, $b.val, >=, $pc, new_pc, $skip_inc),
-            Values::UNSIGNED(a_val) => compare!(a_val, $b.val, >=, $pc, new_pc, $skip_inc),
-            Values::DECIMAL(a_val) => compare!(a_val, $b.val, >=, $pc, new_pc, $skip_inc),
+            Values::SIGNED(a_val) => compare!(a_val, $b.val, >=, i64, $pc, new_pc, $skip_inc),
+            Values::UNSIGNED(a_val) => compare!(a_val, $b.val, >=, u64, $pc, new_pc, $skip_inc),
+            Values::DECIMAL(a_val) => compare!(a_val, $b.val, >=, f64, $pc, new_pc, $skip_inc),
             _ => panic!("expected a number for comparison, got `{:?}`", $a.val)
         }
     }
@@ -164,9 +165,9 @@ macro_rules! jg {
         get_pc!($c.val, new_pc);
 
         match $a.val {
-            Values::SIGNED(a_val) => compare!(a_val, $b.val, >, $pc, new_pc, $skip_inc),
-            Values::UNSIGNED(a_val) => compare!(a_val, $b.val, >, $pc, new_pc, $skip_inc),
-            Values::DECIMAL(a_val) => compare!(a_val, $b.val, >, $pc, new_pc, $skip_inc),
+            Values::SIGNED(a_val) => compare!(a_val, $b.val, >, i64, $pc, new_pc, $skip_inc),
+            Values::UNSIGNED(a_val) => compare!(a_val, $b.val, >, u64, $pc, new_pc, $skip_inc),
+            Values::DECIMAL(a_val) => compare!(a_val, $b.val, >, f64, $pc, new_pc, $skip_inc),
             _ => panic!("expected a number for comparison, got `{:?}`", $a.val)
         }
     }
@@ -177,9 +178,9 @@ macro_rules! jle {
         get_pc!($c.val, new_pc);
 
         match $a.val {
-            Values::SIGNED(a_val) => compare!(a_val, $b.val, <=, $pc, new_pc, $skip_inc),
-            Values::UNSIGNED(a_val) => compare!(a_val, $b.val, <=, $pc, new_pc, $skip_inc),
-            Values::DECIMAL(a_val) => compare!(a_val, $b.val, <=, $pc, new_pc, $skip_inc),
+            Values::SIGNED(a_val) => compare!(a_val, $b.val, <=, i64, $pc, new_pc, $skip_inc),
+            Values::UNSIGNED(a_val) => compare!(a_val, $b.val, <=, u64, $pc, new_pc, $skip_inc),
+            Values::DECIMAL(a_val) => compare!(a_val, $b.val, <=, f64, $pc, new_pc, $skip_inc),
             _ => panic!("expected a number for comparison, got `{:?}`", $a.val)
         }
     }
@@ -190,9 +191,9 @@ macro_rules! jl {
         get_pc!($c.val, new_pc);
 
         match $a.val {
-            Values::SIGNED(a_val) => compare!(a_val, $b.val, <, $pc, new_pc, $skip_inc),
-            Values::UNSIGNED(a_val) => compare!(a_val, $b.val, <, $pc, new_pc, $skip_inc),
-            Values::DECIMAL(a_val) => compare!(a_val, $b.val, <, $pc, new_pc, $skip_inc),
+            Values::SIGNED(a_val) => compare!(a_val, $b.val, <, i64, $pc, new_pc, $skip_inc),
+            Values::UNSIGNED(a_val) => compare!(a_val, $b.val, <, u64, $pc, new_pc, $skip_inc),
+            Values::DECIMAL(a_val) => compare!(a_val, $b.val, <, f64, $pc, new_pc, $skip_inc),
             _ => panic!("expected a number for comparison, got `{:?}`", $a.val)
         }
     }
@@ -505,7 +506,6 @@ pub fn exec_block(scope: &Scope, block: &Vec<Instruction>, global_scope: &Scope,
                 let popped = stack[cur_frame].pop();
                 match popped.val {
                     Values::STRUCT(module, struct_name, index) => {                        
-
                         let val = Values::STRUCT(module, struct_name, index);
                         set_var(name, &val, scope, global_scope, stack, cur_frame, module_frame, global_frame);
                     }
@@ -1387,7 +1387,7 @@ pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, c
     return 0;
 }
 
-pub fn exec_func(func: &Function, global_scope: &Scope, stack: &mut Vec<Frame>, module_frame: usize, global_frame: usize, module: &String) -> i32 {
+pub fn exec_func(func: &Function, global_scope: &Scope, scope: &Scope, stack: &mut Vec<Frame>, module_frame: usize, global_frame: usize, module: &String) -> i32 {
     let len = stack.len();
 
     stack.push(Frame { vars: HashMap::new(), stack: Vec::new(), allocs: Vec::new() });
@@ -1397,11 +1397,29 @@ pub fn exec_func(func: &Function, global_scope: &Scope, stack: &mut Vec<Frame>, 
     for i in 0..func.arg_names.len() {
         // TODO: argument type checking
         let val = stack[len - 1].pop();
-
+        
         let index = func.arg_names.len() - 1 - i;
-        // println!("{} {} -> {:?}", func.arg_names[index], func.arg_types[index].clone(), val.val);
+        match val.val {
+            Values::STRUCT(module, name, scope_index) => {
+                let struct_type = get_struct(&module, &name, scope, global_scope);
 
-        stack[len].push_var(&func.arg_names[index], func.arg_types[index].clone(), val.val);
+                let new_struct = Values::STRUCT(module.clone(), name.clone(), stack[len].len());
+                
+                for name in struct_type.var_names {
+                    let offset = struct_type.var_offsets.get(&name).unwrap();
+                    let var = stack[len - 1].get(scope_index + offset);
+                    let typ = var.typ.clone();
+                    let value = var.val.clone();
+                    
+                    stack[len].push(Value { typ, val: value });
+                }
+                
+                stack[len].push_var(&func.arg_names[index], func.arg_types[index].clone(), new_struct);
+            }
+            _ => {
+                stack[len].push_var(&func.arg_names[index], func.arg_types[index].clone(), val.val);
+            }
+        }
     }
 
     // println!("exec_func: {module}");
