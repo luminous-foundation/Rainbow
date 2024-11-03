@@ -14,6 +14,7 @@ pub struct Function {
 #[derive(Debug, Clone)]
 pub struct Extern {
     pub name: String,
+    pub access_name: String,
     pub ret_type: Type,
 
     pub arg_types: Vec<Type>,
