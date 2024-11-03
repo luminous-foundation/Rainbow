@@ -1,5 +1,5 @@
-.extern u64 GetStdHandle(i32) @"Kernel32.dll"
-.extern u32 WriteConsoleA(u64, u8*, i32, u64, u64) @"Kernel32.dll"
+.extern u64 GetStdHandle(i32) @"Kernel32.dll" as getStdHandle
+.extern u32 WriteConsoleA(u64, u8*, i32, u64, u64) @"Kernel32.dll" as writeConsoleA
 
 .module io {
     VAR u64 STD_OUT
@@ -19,7 +19,7 @@
 
         ; init STD_OUT handle
         PUSH -11
-        CALL GetStdHandle
+        CALL getStdHandle
         POP $STD_OUT
 
         :loop    
@@ -37,7 +37,7 @@
         PUSH $len
         PUSH 0
         PUSH 0
-        CALL WriteConsoleA
+        CALL writeConsoleA
         POP $writeConsoleRes
 
         ; for some reason we need to just keep trying until it works

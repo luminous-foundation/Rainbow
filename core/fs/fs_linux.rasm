@@ -1,0 +1,181 @@
+.extern i32 open(u8*, i32) @"libc.so.6" as fs_open
+.extern i32 close(i32) @"libc.so.6" as fs_close
+
+.extern i64 read(i32, u8*, i64) @"libc.so.6" as fs_read
+.extern i64 write(i32, u8*, i64) @"libc.so.6" as fs_write
+
+.extern i64 lseek(i32, u64, i32) @"libc.so.6" as fs_seek
+
+.extern i32 get_errno() @"errno_helper.so" as get_errno
+
+.include "string.rasm"
+.include "io.rasm"
+
+; TODO: error handling
+.module fs {
+    ; fcntl constants
+    VAR u32 O_RDONLY
+    MOV 0 $O_RDONLY
+    VAR u32 O_WRONLY
+    MOV 1 $O_WRONLY
+    VAR u32 O_RDWR
+    MOV 2 $O_RDWR
+
+    VAR u32 O_CREAT
+    MOV 256 $O_CREAT ; 0x00000100
+    VAR u32 O_EXCL
+    MOV 512 $O_EXCL ; 0x00000200
+    VAR u32 O_NOCTTY
+    MOV 1024 $O_NOCTTY ; 0x00000400
+    VAR u32 O_TRUNC
+    MOV 4096 $O_TRUNC ; 0x00001000
+    VAR u32 O_APPEND
+    MOV 8192 $O_APPEND ; 0x00002000
+    VAR u32 O_NONBLOCK
+    MOV 16384 $O_NONBLOCK ; 0x00004000
+    VAR u32 O_DSYNC
+    MOV 65536 $O_DSYNC ; 0x00010000
+    VAR u32 FASYNC
+    MOV 131072 $FASYNC ; 0x00020000
+    VAR u32 O_DIRECT
+    MOV 262144 $O_DIRECT ; 0x00040000
+    VAR u32 O_LARGEFILE
+    MOV 1048576 $O_LARGEFILE ; 0x00100000
+    VAR u32 O_DIRECTORY
+    MOV 2097152 $O_DIRECTORY ; 0x00200000
+    VAR u32 O_NOFOLLOW
+    MOV 4194304 $O_NOFOLLOW ; 0x00400000
+    VAR u32 O_NOATIME
+    MOV 16777216 $O_NOATIME ; 0x01000000
+    VAR u32 O_CLOEXEC
+    MOV 33554432 $O_CLOEXEC ; 0x02000000
+
+    ; fs flags
+    VAR u32 READ
+    MOV $O_RDONLY $READ
+    VAR u32 WRITE
+    MOV $O_WRONLY $WRITE
+    VAR u32 READ_WRITE
+    MOV $O_RDWR $READ_WRITE
+    VAR u32 APPEND
+    MOV $O_APPEND $APPEND
+
+    ; opening a file
+    i32 open(struct file, i32 flags) {
+        VAR u8* pathCstr
+        
+        PUSH $file
+        CALL string.to_cstr
+        POP $pathCstr
+
+        VAR i32 fd
+
+        PUSH $pathCstr
+        PUSH $flags
+        CALL fs_open
+        POP $fd
+
+        JNE $fd -1 :ok
+        PUSH "Error when opening a file: "
+        PUSH 27
+        CALL io.print
+
+        VAR struct err
+        CALL get_errno
+        CALL string.ntos
+        POP $err
+
+        PUSH $err.text
+        PUSH $err.length
+        CALL io.println
+        :ok
+
+        RET $fd
+    }
+
+    ; reading from a file
+    i64 read(i32 fd, u8* buf, u64 count) {
+        VAR i64 bytesRead
+        
+        PUSH $fd
+        PUSH $buf
+        PUSH $count
+
+        CALL fs_read
+        POP $bytesRead
+
+        JNE $bytesRead -1 :okr
+        PUSH "Error when reading a file: "
+        PUSH 27
+        CALL io.print
+
+        VAR struct err
+        CALL get_errno
+        CALL string.ntos
+        POP $err
+
+        PUSH $err.text
+        PUSH $err.length
+        CALL io.println
+        :okr
+
+        RET $bytesRead
+    }
+
+    ; writing to a file
+    i64 write(i32 fd, u8* buf, u64 count) {
+        VAR i64 bytesWritten
+        
+        PUSH $fd
+        PUSH $buf
+        PUSH $count
+
+        CALL fs_write
+        POP $bytesWritten
+
+        JNE $bytesWritten -1 :okw
+        PUSH "Error when writing a file: "
+        PUSH 27
+        CALL io.print
+
+        VAR struct err
+        CALL get_errno
+        CALL string.ntos
+        POP $err
+
+        PUSH $err.text
+        PUSH $err.length
+        CALL io.println
+        :okw
+
+        RET $bytesWritten
+    }
+
+    i64 seek(i32 fd, u64 offset, i32 flags) {
+        VAR u64 newOffset
+        
+        PUSH $fd
+        PUSH $offset
+        PUSH $flags
+
+        CALL fs_seek
+        POP $newOffset
+
+        RET $newOffset
+    }
+
+    ; TODO: appending to a file
+    
+    ; closing a file
+    i32 close(i32 fd) {
+        PUSH $fd
+        CALL fs_close
+    }
+
+    ; TODO: file metadata
+    ; TODO: creating files/folders
+    ; TODO: deleting files/folders
+    ; TODO: moving files/filders
+    ; TODO: listing dirs (files and folders in a dir)
+    ; TODO: creating a file and all parent directories if they dont exist
+}
