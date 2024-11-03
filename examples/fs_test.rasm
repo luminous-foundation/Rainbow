@@ -1,0 +1,101 @@
+.include "fs.rasm"
+.include "string.rasm"
+.include "io.rasm"
+
+VAR i32 fd
+
+VAR struct path
+PUSH "./examples/fs_test.txt"
+PUSH 22
+CALL string.new
+POP $path
+
+VAR u32 flags
+OR $flags $fs.READ_WRITE $flags
+OR $flags $fs.APPEND $flags
+
+PUSH $path
+PUSH $flags
+CALL fs.open
+POP $fd
+
+; ------------------------------
+PUSH $fd
+PUSH 0
+PUSH 2
+CALL fs.seek
+
+PUSH $fd
+PUSH "I am writing this to a file. "
+PUSH 29
+CALL fs.write
+
+POP $_
+
+PUSH $fd
+PUSH "I am writing this to a file again."
+PUSH 34
+CALL fs.write
+
+POP $_
+
+PUSH $fd
+PUSH $io.NEWLINE
+PUSH 1
+CALL fs.write
+; ------------------------------
+
+; ------------------------------
+PUSH $fd
+PUSH 0
+PUSH 0
+CALL fs.seek
+
+VAR u8* fileBuf
+ALLOC u8 75 $fileBuf
+
+VAR i64 bytesRead
+
+PUSH $fd
+PUSH $fileBuf
+PUSH 75
+CALL fs.read
+
+POP $bytesRead
+
+VAR struct readString
+PUSH $fileBuf
+PUSH $bytesRead
+CALL string.new
+POP $readString
+
+PUSH $readString.text
+PUSH $readString.length
+CALL io.println
+; ------------------------------
+
+VAR struct bytesReadString
+
+PUSH $bytesRead
+CALL string.ntos
+POP $bytesReadString
+
+PUSH $path.text
+PUSH $path.length
+CALL io.println
+
+VAR struct fdString
+PUSH $fd
+CALL string.ntos
+POP $fdString
+
+PUSH $fdString.text
+PUSH $fdString.length
+CALL io.println
+
+PUSH $bytesReadString.text
+PUSH $bytesReadString.length
+CALL io.println
+
+PUSH $fd
+CALL fs.close

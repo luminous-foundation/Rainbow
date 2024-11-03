@@ -3,14 +3,19 @@
 
 VAR struct str
 VAR struct str2
+VAR struct str3
 
-PUSH 12345
+PUSH -54321
 CALL string.ntos
 POP $str
 
-PUSH 67890
+PUSH 12345
 CALL string.ntos
 POP $str2
+
+PUSH 67890
+CALL string.ntos
+POP $str3
 
 PUSH $str.text
 PUSH $str.length
@@ -18,4 +23,8 @@ CALL io.println
 
 PUSH $str2.text
 PUSH $str2.length
+CALL io.println
+
+PUSH $str3.text
+PUSH $str3.length
 CALL io.println

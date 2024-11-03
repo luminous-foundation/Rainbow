@@ -1,5 +1,0 @@
-.if PLATFORM == PLATFORM_WIN32 
-    .include "io_w32.rasm"
-.elseif PLATFORM == PLATFORM_LINUX
-    .include "io_linux.rasm"
-.end
