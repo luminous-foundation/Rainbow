@@ -181,6 +181,50 @@ pub fn call_ffi(_extern: &Extern, stack: &mut Vec<Frame>, cur_frame: usize, glob
             _ => panic!("unsupported return type `{:?}`", _extern.ret_type),
         };
 
+        for i in 0..arg_types.len() {
+            let arg = raw_args[i];
+            let typ = _extern.arg_types[i].clone();
+
+            match typ.typ[0] {
+                Types::POINTER => {
+                    let index;
+                    let len;
+                    match args[i].val {
+                        Values::POINTER(p, s) => {
+                            index = p;
+                            len = s;
+                        }
+                        _ => panic!("type mismatch, expected POINTER got {:?} (value: {:?})", args[i].typ, args[i].val)
+                    }
+
+                    let pointer = *(arg as *mut *mut c_void);
+                    for j in 0..len {
+                        let pointer_val = match typ.typ[1] {
+                            Types::VOID => &Values::VOID,
+                            Types::I8 => &Values::SIGNED(*(pointer.wrapping_add(j) as *mut i8) as i64),
+                            Types::I16 => &Values::SIGNED(*(pointer.wrapping_add(j) as *mut i16) as i64),
+                            Types::I32 => &Values::SIGNED(*(pointer.wrapping_add(j) as *mut i32) as i64),
+                            Types::I64 => &Values::SIGNED(*(pointer.wrapping_add(j) as *mut i64) as i64),
+                            Types::U8 => &Values::UNSIGNED(*(pointer.wrapping_add(j) as *mut u8) as u64),
+                            Types::U16 => &Values::UNSIGNED(*(pointer.wrapping_add(j) as *mut u16) as u64),
+                            Types::U32 => &Values::UNSIGNED(*(pointer.wrapping_add(j) as *mut u32) as u64),
+                            Types::U64 => &Values::UNSIGNED(*(pointer.wrapping_add(j) as *mut u64) as u64),
+                            Types::F16 => todo!(),
+                            Types::F32 => &Values::DECIMAL(*(pointer.wrapping_add(j) as *mut f32) as f64),
+                            Types::F64 => &Values::DECIMAL(*(pointer.wrapping_add(j) as *mut f64) as f64),
+                            Types::POINTER => todo!(),
+                            Types::TYPE => todo!(),
+                            Types::STRUCT => todo!(),
+                            Types::NAME => todo!(),
+                        };
+
+                        stack[global_frame].stack[index + j].set(pointer_val);
+                    }
+                }
+                _ => ()
+            }
+        }
+
         stack[cur_frame].push(Value { typ: _extern.ret_type.clone(), val });
     }
 }
