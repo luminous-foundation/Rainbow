@@ -168,10 +168,16 @@
     
     ; closing a file
     i32 close(i32 fd) {
+        VAR i32 ret
+
         PUSH $fd
         CALL fs_close
+        POP $ret
+
+        RET $ret
     }
 
+    ; TODO: check if file exists
     ; TODO: file metadata
     ; TODO: creating files/folders
     ; TODO: deleting files/folders
