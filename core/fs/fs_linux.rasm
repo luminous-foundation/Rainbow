@@ -50,6 +50,13 @@
     VAR u32 O_CLOEXEC
     MOV 33554432 $O_CLOEXEC ; 0x02000000
 
+    VAR u32 SEEK_SET
+    MOV 0 $SEEK_SET
+    VAR u32 SEEK_CUR
+    MOV 1 $SEEK_CUR
+    VAR u32 SEEK_END
+    MOV 2 $SEEK_END
+
     ; fs flags
     VAR u32 READ
     MOV $O_RDONLY $READ
@@ -142,7 +149,7 @@
         CALL get_errno
         CALL string.ntos
         POP $err
-
+        
         PUSH $err.text
         PUSH $err.length
         CALL io.println
@@ -178,6 +185,36 @@
     }
 
     ; TODO: check if file exists
+
+    ; file length
+    i64 getLength(i32 fd) {
+        VAR i64 ret
+    
+        ; figure out where we started
+        VAR i64 currentLocation
+        PUSH $fd
+        PUSH 0
+        PUSH $SEEK_CUR
+        CALL fs_seek
+        POP $currentLocation
+
+        ; get the length
+        PUSH $fd
+        PUSH 0
+        PUSH $SEEK_END
+        CALL fs_seek
+        POP $ret
+
+        ; go back to where we were before
+        PUSH $fd
+        PUSH $currentLocation
+        PUSH $SEEK_SET
+        CALL fs_seek
+        POP $_
+
+        RET $ret
+    }
+
     ; TODO: file metadata
     ; TODO: creating files/folders
     ; TODO: deleting files/folders

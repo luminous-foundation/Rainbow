@@ -45,6 +45,18 @@ PUSH 1
 CALL fs.write
 ; ------------------------------
 
+VAR struct lengthString
+
+PUSH $fd
+CALL fs.getLength
+
+CALL string.ntos
+POP $lengthString
+
+PUSH $lengthString.text
+PUSH $lengthString.length
+CALL io.println
+
 ; ------------------------------
 PUSH $fd
 PUSH 0
