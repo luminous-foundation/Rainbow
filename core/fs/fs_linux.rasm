@@ -6,6 +6,8 @@
 
 .extern i64 lseek(i32, u64, i32) @"libc.so.6" as fs_seek
 
+.extern i32 ftruncate(i32, u64) @"libc.so.6" as fs_truncate
+
 .extern i32 get_errno() @"errno_helper.so" as get_errno
 
 .include "string.rasm"
@@ -129,6 +131,32 @@
         RET $bytesRead
     }
 
+    struct readString(i32 fd) {
+        VAR struct res
+
+        VAR i64 length
+
+        PUSH $fd
+        CALL getLength
+        POP $length
+
+        VAR u8* buf
+        ALLOC u8 $length $buf
+        
+        PUSH $fd
+        PUSH $buf
+        PUSH $length
+        CALL read
+        POP $_
+
+        PUSH $buf
+        PUSH $length
+        CALL string.new
+        POP $res
+
+        RET $res
+    }
+
     ; writing to a file
     i64 write(i32 fd, u8* buf, u64 count) {
         VAR i64 bytesWritten
@@ -169,6 +197,13 @@
         POP $newOffset
 
         RET $newOffset
+    }
+
+    void clear(i32 fd) {
+        PUSH $fd
+        PUSH 0
+        CALL fs_truncate
+        POP $_
     }
 
     ; TODO: appending to a file

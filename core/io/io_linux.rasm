@@ -1,4 +1,4 @@
-.extern i64 write(i32, u8*, u64) @"libc.so.6"
+.extern i64 write(i32, u8*, u64) @"libc.so.6" as _write
 
 .module io {
     VAR u8* NEWLINE
