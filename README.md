@@ -10,6 +10,7 @@ If you just want to run a Rainbow file (.rbb), either run `cargo run --release r
 The current recommended method for programming for Rainbow is to use [RASM](https://github.com/luminous-foundation/rasm).
 
 However, if you would like to use Rainbow for your language (or so desire to program in raw bytecode) you can refer to [the spec](spec.md).
+
 The current recommended method for generating Rainbow for a programming language is to use [rainbow-wrapper](https://github.com/luminous-foundation/rainbow-wrapper).
 
 Here is also a quick example of a program that adds two numbers, and stores the result in a variable.
