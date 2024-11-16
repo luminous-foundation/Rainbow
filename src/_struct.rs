@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use indexmap::IndexMap;
 
 use crate::_type::Type;
 
@@ -10,5 +10,5 @@ pub struct Struct {
 
     pub var_names: Vec<String>,
     pub var_types: Vec<Type>,
-    pub var_offsets: HashMap<String, usize>,
+    pub var_offsets: IndexMap<String, usize>,
 }

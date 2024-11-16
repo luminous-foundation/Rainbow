@@ -1,11 +1,13 @@
-use std::{collections::HashMap, fs, path::Path, usize};
+use std::{fs, path::Path, usize};
+
+use indexmap::IndexMap;
 
 use half::f16;
 
 use crate::{_struct::Struct, _type::{Type, Types}, block::Block, frame::Frame, function::{Extern, Function}, instruction::{Instruction, Opcode}, module::Module, parse_program, scope::Scope, value::{Value, Values}};
 
 // expects `index` to be at the start of the scope body
-pub fn parse_scope(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, linker_paths: &Vec<String>, debug: bool, consts: &HashMap<String, i32>) -> Result<Scope, String> {
+pub fn parse_scope(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, linker_paths: &Vec<String>, debug: bool, consts: &IndexMap<String, i32>) -> Result<Scope, String> {
     let mut scope: Scope = Scope::new();
 
     while *index < bytes.len() {
@@ -61,7 +63,7 @@ pub fn parse_scope(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, l
                 let module = Module { name: name.clone(), scope: module_scope, frame: stack.len() };
                 scope.modules.insert(name, module);
 
-                stack.push(Frame { vars: HashMap::new(), stack: Vec::new(), allocs: Vec::new() });
+                stack.push(Frame { vars: IndexMap::new(), stack: Vec::new(), allocs: Vec::new() });
             }
             _ => {
                 if scope.blocks.len() == 0 {
@@ -111,7 +113,7 @@ fn skip_scope(bytes: &Vec<u8>, index: &mut usize) {
     let mut stack = Vec::new();
     let linker_paths = Vec::new();
     let debug = false;
-    let consts = HashMap::new();
+    let consts = IndexMap::new();
 
     while *index < bytes.len() {
         match bytes[*index] {
@@ -161,7 +163,7 @@ fn skip_scope(bytes: &Vec<u8>, index: &mut usize) {
 
 // expects `index` to be at the byte after start of the conditional
 // leaves `index` to be the byte after the conditional
-fn eval_conditional(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, linker_paths: &Vec<String>, debug: bool, consts: &HashMap<String, i32>) -> Result<Option<Scope>, String> {
+fn eval_conditional(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, linker_paths: &Vec<String>, debug: bool, consts: &IndexMap<String, i32>) -> Result<Option<Scope>, String> {
     while *index < bytes.len() {
         match bytes[*index] {
             0x00 | 0x01 => {
@@ -261,7 +263,7 @@ fn eval_conditional(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, 
 fn parse_struct(bytes: &Vec<u8>, index: &mut usize) -> Result<Struct, String> {
     let name = parse_bytecode_string(bytes, index)?;
 
-    let mut strct = Struct { name, size: 0, var_names: Vec::new(), var_types: Vec::new(), var_offsets: HashMap::new() };
+    let mut strct = Struct { name, size: 0, var_names: Vec::new(), var_types: Vec::new(), var_offsets: IndexMap::new() };
 
     *index += 1;
 
@@ -291,7 +293,7 @@ fn skip_import(bytes: &Vec<u8>, index: &mut usize) {
 
 // expects `index` to be at the start of the import
 // leaves `index` to be the byte after the import
-fn parse_import(bytes: &Vec<u8>, stack: &mut Vec<Frame>, scope: &mut Scope, index: &mut usize, linker_paths: &Vec<String>, consts: &HashMap<String, i32>) -> Result<(), String> {
+fn parse_import(bytes: &Vec<u8>, stack: &mut Vec<Frame>, scope: &mut Scope, index: &mut usize, linker_paths: &Vec<String>, consts: &IndexMap<String, i32>) -> Result<(), String> {
     let import = parse_bytecode_string(bytes, index)?;
 
     let mut import_path = String::new();
@@ -1151,12 +1153,12 @@ pub fn parse_instruction(bytes: &Vec<u8>, index: &mut usize) -> Result<Instructi
         _ => return Err(format!("unknown instruction {:#04x} at {:#06x}", opcode_byte, start_index))
     };
 
-    return Ok(Instruction { index: start_index, opcode: opcode });
+    return Ok(Instruction { index: start_index, opcode });
 }
 
 // expects `index` to be at the start of the function definition
 // leaves `index` to be the byte after the function
-pub fn parse_function(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, linker_paths: &Vec<String>, debug: bool, consts: &HashMap<String, i32>) -> Result<Function, String> {
+pub fn parse_function(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, linker_paths: &Vec<String>, debug: bool, consts: &IndexMap<String, i32>) -> Result<Function, String> {
     let ret_type = parse_type(bytes, index)?;
 
     let name = parse_bytecode_string(bytes, index)?;
@@ -1171,7 +1173,7 @@ pub fn parse_function(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize
     *index += 1;
     let scope = parse_scope(bytes, stack, index, linker_paths, debug, consts)?;
 
-    return Ok(Function { name: name, ret_type: ret_type, arg_types: arg_types, arg_names: arg_names, scope: scope });
+    return Ok(Function { name, ret_type, arg_types, arg_names, scope });
 }
 
 // expects `index` to be at the start of the type

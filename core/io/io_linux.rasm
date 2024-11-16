@@ -9,7 +9,7 @@
         PUSH 1
         PUSH $text
         PUSH $len
-        CALL write
+        CALL _write
     }
 
     void println(u8* text u32 len) {

@@ -1,0 +1,18 @@
+.extern void bar(struct) @"struct_ffi.so"
+
+.struct Foo {
+    i32 a
+    f32 b
+}
+
+void main() {
+    VAR struct foo
+    INST Foo $foo
+    MOV 1 $foo.a
+    MOV 2.3 $foo.b
+
+    PUSH $foo
+    CALL bar
+}
+
+CALL main

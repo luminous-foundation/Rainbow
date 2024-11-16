@@ -1,6 +1,6 @@
-use std::collections::HashMap;
+use indexmap::IndexMap;
 
-use crate::{_type::Types, block::Block, ffi::call_ffi, frame::Frame, func_exists, function::Function, get_extern, get_func, get_struct, get_var, instruction::{Instruction, Opcode}, scope::Scope, set_var, value::{Value, Values}};
+use crate::{_type::Types, block::Block, ffi::call_ffi, frame::Frame, func_exists, function::Function, get_extern, get_func, get_struct, get_var, instruction::{Instruction, Opcode}, scope::Scope, set_var, value::{Value, Values}, module_exists};
 
 // instruction macros
 macro_rules! peek {
@@ -30,7 +30,11 @@ macro_rules! call {
             let module_name;
             if frame != $module_frame {
                 if $module.clone().len() > 0 {
-                    module_name = $module.clone() + "." + &module;
+                    if module_exists(&($module.clone() + "." + &module), $scope, $global_scope) {
+                        module_name = $module.clone() + "." + &module;
+                    } else {
+                        module_name = module;
+                    }
                 } else {
                     module_name = module;
                 }
@@ -41,7 +45,7 @@ macro_rules! call {
             exec_func(&func, $global_scope, $scope, $stack, frame, $global_frame, &module_name);
         } else {
             let func = get_extern($func, $scope, $global_scope);
-            call_ffi(func, $stack, $cur_frame, $global_frame);
+            call_ffi(func, $stack, $cur_frame, $global_frame, $scope, $global_scope);
         }
     }
 }
@@ -272,7 +276,6 @@ macro_rules! ret {
     ($v:expr, $stack:expr, $cur_frame:expr, $global_frame:expr, $scope:expr, $global_scope:expr) => {
         if $cur_frame != $global_frame {
             match &$v.val {
-                // TODO: if the struct has the same name as a variable in the struct it will ignore the variable
                 Values::STRUCT(module, name, index) => {
                     let struct_type = get_struct(module, name, $scope, $global_scope);
 
@@ -289,7 +292,6 @@ macro_rules! ret {
                     }
                     
                     $stack[$cur_frame - 1].push(new_struct);
-                    // println!("{:?}", stack[cur_frame-1]);
                 }
                 _ => $stack[$cur_frame - 1].push($v.clone()),
             }
@@ -478,8 +480,6 @@ pub fn exec_block(scope: &Scope, block: &Vec<Instruction>, global_scope: &Scope,
     // let mut counts: [u32; 256] = [0; 256];
 
     // let start = std::time::Instant::now();
-
-    // println!("block: {module}");
 
     let mut skip_inc = false;
 
@@ -1209,7 +1209,7 @@ pub fn exec_block(scope: &Scope, block: &Vec<Instruction>, global_scope: &Scope,
                 let mut index = *stack[global_frame].vars.get(ptr).unwrap_or_else(|| panic!("attempted to free non-existent pointer `{}`", ptr));
                 let start = index;
 
-                stack[global_frame].vars.remove(ptr);
+                stack[global_frame].vars.shift_remove(ptr);
 
                 // TODO: this loop will get extremely slow with large allocs
                 //       replace this with full heap reconstruction, or somehow allow the heap to get fragmented
@@ -1299,7 +1299,6 @@ pub fn exec_block(scope: &Scope, block: &Vec<Instruction>, global_scope: &Scope,
         }
     }
     
-    // println!("scope took {:.4}ms", start.elapsed().as_secs_f32() * 1000f32);
 
     // for x in 0x00..0xff {
     //     if counts[x] > 0 {
@@ -1313,10 +1312,7 @@ pub fn exec_block(scope: &Scope, block: &Vec<Instruction>, global_scope: &Scope,
 pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, cur_frame: usize, pop_stack: bool, pc: &mut usize, module_frame: usize, global_frame: usize, module_name: &String) -> i32 {
     let scope_stack_start = stack[cur_frame].stack.len();
 
-    // println!("exec_scope: {module_name}");
-
     for (_, module) in &scope.modules {
-        // println!("calling: {module_name} {}", module.name);
         let retval = exec_scope(&module.scope, &global_scope, stack, module.frame, pop_stack, &mut 0, module.frame, global_frame, &(module_name.clone() + &module.name));
         if retval != 0 {
             return retval;
@@ -1348,7 +1344,6 @@ pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, c
 
         let ret = match block {
             Block::CODE(vec) => {
-                // println!("code: {module_name}");
                 exec_block(scope, vec, global_scope, stack, cur_frame, pc, start, module_frame, global_frame, module_name)
             }
             Block::SCOPE(scope) => {
@@ -1390,9 +1385,7 @@ pub fn exec_scope(scope: &Scope, global_scope: &Scope, stack: &mut Vec<Frame>, c
 pub fn exec_func(func: &Function, global_scope: &Scope, scope: &Scope, stack: &mut Vec<Frame>, module_frame: usize, global_frame: usize, module: &String) -> i32 {
     let len = stack.len();
 
-    stack.push(Frame { vars: HashMap::new(), stack: Vec::new(), allocs: Vec::new() });
-
-    // println!("{stack:?}");
+    stack.push(Frame { vars: IndexMap::new(), stack: Vec::new(), allocs: Vec::new() });
 
     for i in 0..func.arg_names.len() {
         // TODO: argument type checking
@@ -1421,13 +1414,9 @@ pub fn exec_func(func: &Function, global_scope: &Scope, scope: &Scope, stack: &m
             }
         }
     }
-
-    // println!("exec_func: {module}");
     let retval = exec_scope(&func.scope, global_scope, stack, len, true, &mut 0, module_frame, global_frame, module);
 
     stack.pop();
-
-    // println!();
 
     return retval;
 }

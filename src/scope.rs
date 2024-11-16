@@ -1,4 +1,6 @@
-use std::{collections::HashMap, fmt::{self}};
+use std::fmt;
+
+use indexmap::IndexMap;
 
 use crate::{_struct::Struct, block::Block, function::{Extern, Function}, module::Module};
 
@@ -9,11 +11,11 @@ pub struct Scope {
     pub blocks: Vec<Block>,
     pub block_starts: Vec<usize>,
 
-    pub functions: HashMap<String, Function>,
-    pub externs: HashMap<String, Extern>,
-    pub structs: HashMap<String, Struct>,
+    pub functions: IndexMap<String, Function>,
+    pub externs: IndexMap<String, Extern>,
+    pub structs: IndexMap<String, Struct>,
 
-    pub modules: HashMap<String, Module>,
+    pub modules: IndexMap<String, Module>,
 }
 
 impl fmt::Display for Scope {
@@ -24,7 +26,7 @@ impl fmt::Display for Scope {
 
 impl Scope {
     pub fn new() -> Scope {
-        Scope { parent_scope: None, blocks: Vec::new(), block_starts: Vec::new(), functions: HashMap::new(), externs: HashMap::new(), structs: HashMap::new(), modules: HashMap::new() }
+        Scope { parent_scope: None, blocks: Vec::new(), block_starts: Vec::new(), functions: IndexMap::new(), externs: IndexMap::new(), structs: IndexMap::new(), modules: IndexMap::new() }
     }
 
     pub fn func_exists(&self, name: &String, check_module: bool) -> bool {

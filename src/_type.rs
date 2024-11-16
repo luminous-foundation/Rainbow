@@ -62,7 +62,7 @@ impl Types {
             Types::POINTER => std::mem::size_of::<usize>(),
             Types::TYPE => 1,
             Types::STRUCT => 0, // struct does not have a known size
-            Types::NAME => 0, // struct does not have a known size
+            Types::NAME => 0, // name does not have a known size
         }
     }
 }

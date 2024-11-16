@@ -1,4 +1,6 @@
-use std::{collections::HashMap, env, fs, path::Path, process};
+use std::{env, fs, path::Path, process};
+
+use indexmap::IndexMap;
 
 use _struct::Struct;
 use _type::Types;
@@ -96,6 +98,11 @@ fn main() {
         process::exit(1);
     }
 
+    let index = program.replace("\\", "/").rfind("/");
+    if index.is_some() {
+        linker_paths.push(program.split_at(index.unwrap()).0.to_string());
+    }
+
     let program = fs::read(program).expect("failed to read program");
 
     let start = std::time::Instant::now();
@@ -111,13 +118,13 @@ fn main() {
 }
 
 pub fn run_program(program: &Vec<u8>, linker_paths: Vec<String>, debug: bool) -> i32 {
-    let mut consts: HashMap<String, i32> = HashMap::new();
+    let mut consts: IndexMap<String, i32> = IndexMap::new();
 
     init_consts(&mut consts);
 
     let mut stack: Vec<Frame> = Vec::new();
 
-    stack.push(Frame { vars: HashMap::new(), stack: Vec::new(), allocs: Vec::new() });
+    stack.push(Frame { vars: IndexMap::new(), stack: Vec::new(), allocs: Vec::new(), });
 
     let mut global_scope = Scope::new();
     
@@ -143,7 +150,7 @@ pub fn run_program(program: &Vec<u8>, linker_paths: Vec<String>, debug: bool) ->
     // dbg!(stack);
 }
 
-fn init_consts(consts: &mut HashMap<String, i32>) {
+fn init_consts(consts: &mut IndexMap<String, i32>) {
     consts.insert("PLATFORM_LINUX".to_string(), 0);
     consts.insert("PLATFORM_WIN32".to_string(), 1);
     consts.insert("PLATFORM_OTHER".to_string(), 2);
@@ -167,7 +174,7 @@ fn usage() {
     println!("  [file]                          runs the given program");
 }
 
-fn parse_program(program: &Vec<u8>, stack: &mut Vec<Frame>, scope: &mut Scope, linker_paths: &Vec<String>, debug: bool, consts: &HashMap<String, i32>) {
+fn parse_program(program: &Vec<u8>, stack: &mut Vec<Frame>, scope: &mut Scope, linker_paths: &Vec<String>, debug: bool, consts: &IndexMap<String, i32>) {
     let mut index = 0;
 
     *scope = match parse_scope(&program, stack, &mut index, linker_paths, debug, consts) {
@@ -176,7 +183,7 @@ fn parse_program(program: &Vec<u8>, stack: &mut Vec<Frame>, scope: &mut Scope, l
     };
 
     let global_frame = stack.len();
-    stack.push(Frame { vars: HashMap::new(), stack: Vec::new(), allocs: Vec::new() });
+    stack.push(Frame { vars: IndexMap::new(), stack: Vec::new(), allocs: Vec::new() });
     
     match parse_data_section(&program, stack, &mut index, global_frame) {
         Ok(_) => (),
@@ -402,14 +409,11 @@ fn set_var(name: &String, value: &Values, scope: &Scope, global_scope: &Scope, s
         if stack[global_frame].vars.contains_key(name) {
             stack[global_frame].set_var(name, value);
         } else {
-            // println!("{name}");
             if name.contains(".") {
                 let split = name.split(".").collect::<Vec<&str>>();
                 
                 let struct_name = &split[0].to_string();
                 let parent_struct = get_var(struct_name, scope, global_scope, stack, cur_frame, module_frame, global_frame).clone();
-
-                // println!("{struct_name} {parent_struct:?}");
                 set_struct_var(&parent_struct, &split[1].to_string(), value, scope, global_scope, stack, cur_frame);
                 return;
             }
@@ -433,9 +437,7 @@ fn get_struct<'a>(module: &String, name: &String, global_scope: &'a Scope, scope
     } else if global_scope.struct_exists(&name, false) {
         return global_scope.get_struct(&name);
     } else {
-        // println!("{name}");
         if name.contains(".") {
-            // println!("getting {name}");
 
             let split = name.split(".").collect::<Vec<&str>>();
             
@@ -457,8 +459,6 @@ fn set_struct_var(parent_struct: &Value, name: &String, value: &Values, scope: &
         Values::STRUCT(module, name, index) => (module, name, index),
         _ => panic!("cannot set a variable in a value that is not a struct"),
     };
-
-    // println!("{} {}", struct_val.0, struct_val.1);
     let _struct = get_struct(struct_val.0, struct_val.1, scope, global_scope);
 
     let var_offset = _struct.var_offsets.get(name).
@@ -468,7 +468,6 @@ fn set_struct_var(parent_struct: &Value, name: &String, value: &Values, scope: &
 }
 
 fn get_struct_var<'a>(parent_struct: &Value, name: &String, scope: &Scope, global_scope: &'a Scope, stack: &'a mut [Frame], cur_frame: usize) -> &'a Value {    
-    // println!("{:?}", parent_struct.val);
     
     let struct_val = match &parent_struct.val {
         Values::STRUCT(module, name, index) => (module, name, index),
@@ -479,9 +478,6 @@ fn get_struct_var<'a>(parent_struct: &Value, name: &String, scope: &Scope, globa
 
     let var_offset = _struct.var_offsets.get(name).
                             expect(format!("attempted to get non-existant variable `{name}` in struct `{}`", _struct.name).as_str());
-
-    // println!("{:?}", _struct);
-    // println!("{:?}", stack);
 
     return stack[cur_frame].get(struct_val.2+var_offset);
 }

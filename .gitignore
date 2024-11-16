@@ -1,1 +1,3 @@
 /target
+/examples/broken.*
+fs_text.txt

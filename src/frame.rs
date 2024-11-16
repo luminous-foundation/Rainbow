@@ -1,10 +1,10 @@
-use std::{collections::HashMap, usize};
+use indexmap::IndexMap;
 
-use crate::{_type::{Type, Types}, value::{Value, Values}};
+use crate::{_type::{Type, Types}, get_struct, value::{Value, Values}, scope::Scope};
 
 #[derive(Debug, Clone)]
 pub struct Frame {
-    pub vars: HashMap<String, usize>,
+    pub vars: IndexMap<String, usize>,
     pub stack: Vec<Value>,
 
     // TODO: the current allocs system will not work if multiple pointers point to one place,
@@ -28,11 +28,12 @@ impl Frame {
     }
     
     // TODO: have this remove any variables that say they live at this location
+    // TODO: structs leave dangling values behind if popped
     pub fn pop(&mut self) -> Value {
         let alloc = self.allocs.pop().expect("attempted to pop empty stack");
         if alloc.len() > 0 {
             if self.vars.contains_key(&alloc) {
-                self.vars.remove(&alloc);
+                self.vars.shift_remove(&alloc);
             } else {
                 println!("https://github.com/luminous-foundation/Rainbow");
                 panic!("something has gone terribly wrong here, create an issue if you see this");
@@ -42,13 +43,46 @@ impl Frame {
         return self.stack.pop().expect("attempted to pop empty stack");
     }
 
-    pub fn pop_args(&mut self, amnt: usize) -> Vec<Value> {
-        if amnt > self.stack.len() {
-            panic!("stack overflow while popping {} args off stack", amnt);
+    pub fn pop_index(&mut self, index: usize, global_scope: &Scope, scope: &Scope) -> Vec<Value> {
+        let mut res: Vec<Value> = Vec::new();
+
+        let val = self.stack.remove(index);
+        match &val.val {
+            Values::STRUCT(module, _struct, index) => {
+                let index = *index; // rust
+                let struct_type = get_struct(module, _struct, global_scope, scope);
+                
+                self.allocs.pop();
+                res.push(val);
+
+                for (_, offset) in struct_type.var_offsets {
+                   res.push(self.stack[index + offset].clone()); 
+                }
+            }
+            _ => {
+                self.allocs.pop();
+                res.push(val);
+            }
         }
 
-        self.allocs.truncate(self.allocs.len() - amnt);
-        return self.stack.split_off(self.stack.len() - amnt);
+        return res;
+    }
+
+    pub fn pop_args(&mut self, amnt: usize, global_scope: &Scope, scope: &Scope) -> Vec<Vec<Value>> {
+        if amnt > self.stack.len() {
+            panic!("stack underflow while popping {} args off stack", amnt);
+        }
+       
+        let index = self.stack.len() - amnt;
+
+        let mut res: Vec<Vec<Value>> = Vec::new();
+        let mut i = 0;
+        while i < amnt {
+            res.push(self.pop_index(index, global_scope, scope));
+            i += 1;
+        }
+
+        return res;
     }
 
     pub fn get_var(&self, name: &String) -> &Value {
@@ -88,7 +122,7 @@ impl Frame {
 
     pub fn push_var(&mut self, name: &String, typ: Type, value: Values) {
         let index = self.stack.len();
-        self.stack.push(Value { typ: typ, val: value });
+        self.stack.push(Value { typ, val: value });
         self.vars.insert(name.clone(), index);
         self.allocs.push(name.clone());
     }
