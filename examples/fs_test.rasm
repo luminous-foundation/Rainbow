@@ -4,7 +4,7 @@
 
 VAR i32 fd
 
-VAR struct path
+VAR struct _ path
 PUSH "./examples/fs_test.txt"
 PUSH 22
 CALL string.new
@@ -45,7 +45,7 @@ PUSH 1
 CALL fs.write
 ; ------------------------------
 
-VAR struct lengthString
+VAR struct _ lengthString
 
 PUSH $fd
 CALL fs.getLength
@@ -75,7 +75,7 @@ CALL fs.read
 
 POP $bytesRead
 
-VAR struct readString
+VAR struct _ readString
 PUSH $fileBuf
 PUSH $bytesRead
 CALL string.new
@@ -86,7 +86,7 @@ PUSH $readString.length
 CALL io.println
 ; ------------------------------
 
-VAR struct bytesReadString
+VAR struct _ bytesReadString
 
 PUSH $bytesRead
 CALL string.ntos
@@ -96,7 +96,7 @@ PUSH $path.text
 PUSH $path.length
 CALL io.println
 
-VAR struct fdString
+VAR struct _ fdString
 PUSH $fd
 CALL string.ntos
 POP $fdString

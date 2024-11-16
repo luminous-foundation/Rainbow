@@ -1,9 +1,11 @@
 .include "string.rasm"
 .include "io.rasm"
 
-VAR struct str
-VAR struct str2
-VAR struct str3
+; you can either define the type
+;  or use _ to say you don't know/don't care
+VAR struct string.string str
+VAR struct _ str2
+VAR struct _ str3
 
 PUSH -54321
 CALL string.ntos

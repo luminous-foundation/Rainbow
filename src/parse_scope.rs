@@ -1186,8 +1186,17 @@ pub fn parse_type(bytes: &[u8], index: &mut usize) -> Result<Type, String> {
         *index += 1;
     }
 
-    typ.typ.push(Types::from_u8(bytes[*index]));
+    let mut new_typ = Types::from_u8(bytes[*index]);
     *index += 1;
+
+    match new_typ {
+        Types::STRUCT(_) => {
+            new_typ = Types::STRUCT(parse_bytecode_string(bytes, index)?);
+        }
+        _ => {}
+    }
+
+    typ.typ.push(new_typ);
 
     return Ok(typ);
 }

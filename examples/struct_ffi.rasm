@@ -1,4 +1,5 @@
-.extern void bar(struct) @"struct_ffi.so"
+.extern void bar(struct Foo) @"struct_ffi.so"
+.extern struct Foo baz(i32, f32) @"struct_ffi.so"
 
 .struct Foo {
     i32 a
@@ -6,7 +7,7 @@
 }
 
 void main() {
-    VAR struct foo
+    VAR struct Foo foo
     INST Foo $foo
     MOV 1 $foo.a
     MOV 2.3 $foo.b

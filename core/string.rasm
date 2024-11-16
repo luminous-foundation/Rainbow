@@ -9,8 +9,8 @@
         u64 length
     }
 
-    struct new(u8* text u64 length) {
-        VAR struct res
+    struct string new(u8* text u64 length) {
+        VAR struct _ res
 
         INST string $res
         MOV $text $res.text
@@ -38,8 +38,8 @@
         RET $len
     }
 
-    struct ntos(i64 n) {
-        VAR struct res
+    struct string ntos(i64 n) {
+        VAR struct _ res
 
         ; Get the length of the new string
         VAR i64 len
@@ -104,7 +104,7 @@
         RET $res ; ...and return
     }
 
-    u8* to_cstr(struct str) {
+    u8* to_cstr(struct string str) {
         ; Create a new string buffer
         VAR u8* newString
 

@@ -7,7 +7,7 @@
 }
 
 void main() {
-    VAR struct foo
+    VAR struct _ foo
     INST Foo $foo
     
     MOV 123 $foo.a

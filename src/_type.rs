@@ -4,22 +4,22 @@ use std::fmt;
 #[derive(Debug, Clone)]
 #[repr(u8)]
 pub enum Types {
-    VOID    = 0x00,
-    I8      = 0x01,
-    I16     = 0x02,
-    I32     = 0x03,
-    I64     = 0x04,
-    U8      = 0x05,
-    U16     = 0x06,
-    U32     = 0x07,
-    U64     = 0x08,
-    F16     = 0x09,
-    F32     = 0x0A,
-    F64     = 0x0B,
-    POINTER = 0x0C,
-    TYPE    = 0x0D,
-    STRUCT  = 0x0E,
-    NAME    = 0x0F,
+    VOID           = 0x00,
+    I8             = 0x01,
+    I16            = 0x02,
+    I32            = 0x03,
+    I64            = 0x04,
+    U8             = 0x05,
+    U16            = 0x06,
+    U32            = 0x07,
+    U64            = 0x08,
+    F16            = 0x09,
+    F32            = 0x0A,
+    F64            = 0x0B,
+    POINTER        = 0x0C,
+    TYPE           = 0x0D,
+    STRUCT(String) = 0x0E,
+    NAME           = 0x0F,
 }
 
 impl Types {
@@ -39,7 +39,7 @@ impl Types {
             0x0B => Types::F64,
             0x0C => Types::POINTER,
             0x0D => Types::TYPE,
-            0x0E => Types::STRUCT,
+            0x0E => Types::STRUCT(String::new()),
             0x0F => Types::NAME,
             _ => panic!("unknown type {:#04x}", typ)
         }
@@ -61,7 +61,7 @@ impl Types {
             Types::F64 => 8,
             Types::POINTER => std::mem::size_of::<usize>(),
             Types::TYPE => 1,
-            Types::STRUCT => 0, // struct does not have a known size
+            Types::STRUCT(_) => 0, // struct does not have a known size
             Types::NAME => 0, // name does not have a known size
         }
     }
@@ -80,23 +80,23 @@ impl fmt::Display for Type {
         rev_typ.reverse();
         for typ in &self.typ {
             str += match typ {
-                Types::VOID => "void",
-                Types::I8 => "i8",
-                Types::I16 => "i16",
-                Types::I32 => "i32",
-                Types::I64 => "i64",
-                Types::U8 => "u8",
-                Types::U16 => "u16",
-                Types::U32 => "u32",
-                Types::U64 => "u64",
-                Types::F16 => "f16",
-                Types::F32 => "f32",
-                Types::F64 => "f64",
-                Types::POINTER => "*",
-                Types::TYPE => "type",
-                Types::STRUCT => "struct",
-                Types::NAME => "name",
-            }
+                Types::VOID => "void".to_string(),
+                Types::I8 => "i8".to_string(),
+                Types::I16 => "i16".to_string(),
+                Types::I32 => "i32".to_string(),
+                Types::I64 => "i64".to_string(),
+                Types::U8 => "u8".to_string(),
+                Types::U16 => "u16".to_string(),
+                Types::U32 => "u32".to_string(),
+                Types::U64 => "u64".to_string(),
+                Types::F16 => "f16".to_string(),
+                Types::F32 => "f32".to_string(),
+                Types::F64 => "f64".to_string(),
+                Types::POINTER => "*".to_string(),
+                Types::TYPE => "type".to_string(),
+                Types::STRUCT(t) => format!("struct({})", t),
+                Types::NAME => "name".to_string(),
+            }.as_str();
         }
 
         f.write_str(&str)

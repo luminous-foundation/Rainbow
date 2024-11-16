@@ -96,7 +96,7 @@ pub fn call_ffi(_extern: &Extern, stack: &mut Vec<Frame>, cur_frame: usize, glob
         let mut index = 0;
         for typ in &_extern.arg_types {
             match typ.typ[0] {
-                Types::STRUCT => {
+                Types::STRUCT(_) => {
                     match &args[index][0].val {
                         Values::STRUCT(module, name, _) => {
                             let _struct = get_struct(&module, &name, global_scope, scope);
@@ -219,7 +219,7 @@ pub fn call_ffi(_extern: &Extern, stack: &mut Vec<Frame>, cur_frame: usize, glob
         
         prep_cif(&mut cif, ffi_abi_FFI_DEFAULT_ABI, _extern.arg_types.len(), addr_of_mut!(ret_type), arg_types.as_mut_ptr()).unwrap();
 
-        let val = match _extern.ret_type.typ[0] {
+        let val = match &_extern.ret_type.typ[0] {
             Types::VOID => {
                 call::<c_void>(&mut cif, code_ptr, raw_args.as_mut_ptr());
                 Values::VOID
@@ -273,7 +273,7 @@ pub fn call_ffi(_extern: &Extern, stack: &mut Vec<Frame>, cur_frame: usize, glob
                     _ => panic!("unsupported return type `{:?}`", _extern.ret_type),
                 }
             }
-            Types::STRUCT => {
+            Types::STRUCT(typ) => {
                 todo!("struct return types are not yet implemented");
             }
             _ => panic!("unsupported return type `{:?}`", _extern.ret_type),
@@ -312,7 +312,7 @@ pub fn call_ffi(_extern: &Extern, stack: &mut Vec<Frame>, cur_frame: usize, glob
                             Types::F64 => &Values::DECIMAL(*(pointer.wrapping_add(j) as *mut f64) as f64),
                             Types::POINTER => todo!(),
                             Types::TYPE => todo!(),
-                            Types::STRUCT => todo!(),
+                            Types::STRUCT(_) => todo!(),
                             Types::NAME => todo!(),
                         };
 

@@ -110,7 +110,7 @@
         PUSH $buf
         PUSH $count
 
-        CALL fs_read
+        CALL fs_read ; you can use _ to say you dont know/dont care about the type of struct, otherwise put the struct name
         POP $bytesRead
 
         JNE $bytesRead -1 :okr

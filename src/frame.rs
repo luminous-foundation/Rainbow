@@ -128,7 +128,7 @@ impl Frame {
     }
 
     pub fn get_default_val(typ: &Type) -> Values {
-        match typ.typ[0] {
+        match &typ.typ[0] {
             Types::VOID => Values::VOID,
             Types::I8 => Values::SIGNED(0),
             Types::I16 => Values::SIGNED(0),
@@ -143,7 +143,7 @@ impl Frame {
             Types::F64 => Values::DECIMAL(0f64),
             Types::POINTER => Values::POINTER(usize::MAX, 0),
             Types::TYPE => Values::TYPE(Type { typ: vec![Types::VOID] }),
-            Types::STRUCT => Values::STRUCT(String::new(), "null".to_string(), usize::MAX),
+            Types::STRUCT(t) => Values::STRUCT(String::new(), t.clone(), usize::MAX),
             Types::NAME => Values::NAME("".to_string()),
         }
     }
