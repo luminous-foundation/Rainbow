@@ -1,5 +1,5 @@
 use libloading::{Library, Symbol};
-use libffi::{low::*, raw::FFI_TYPE_STRUCT};
+use libffi::{low::*, raw::{ffi_call, FFI_TYPE_STRUCT}};
 use std::{ffi::c_void, ptr::{addr_of_mut, null_mut}};
 use crate::{_struct::Struct, _type::{Type, Types}, frame::Frame, function::Extern, get_struct, value::{Value, Values}, scope::Scope};
 
@@ -78,6 +78,32 @@ pub unsafe fn get_pointer(vals: &[Value], pp: &mut Vec<*mut c_void>, s8p: &mut V
     }
 }
 
+pub unsafe fn struct_from_bytes(name: &String, struct_def: &Struct, bytes: &mut Vec<u8>, frame: &mut Frame) -> Values {
+    let index = frame.stack.len();
+
+    let bytes_ptr = bytes.as_mut_ptr();
+    let mut offset = 0;
+    for typ in &struct_def.var_types {
+        let val = match typ.typ[0] {
+            Types::I8 => Values::SIGNED(*(bytes_ptr.add(offset) as *mut i8) as i64),
+            Types::I16 => Values::SIGNED(*(bytes_ptr.add(offset) as *mut i16) as i64),
+            Types::I32 => Values::SIGNED(*(bytes_ptr.add(offset) as *mut i32) as i64),
+            Types::I64 => Values::SIGNED(*(bytes_ptr.add(offset) as *mut i64)),
+            Types::U8 => Values::UNSIGNED(*(bytes_ptr.add(offset) as *mut u8) as u64),
+            Types::U16 => Values::UNSIGNED(*(bytes_ptr.add(offset) as *mut u16) as u64),
+            Types::U32 => Values::UNSIGNED(*(bytes_ptr.add(offset) as *mut u32) as u64),
+            Types::U64 => Values::UNSIGNED(*(bytes_ptr.add(offset) as *mut u64)),
+            Types::F32 => Values::DECIMAL(*(bytes_ptr.add(offset) as *mut f32) as f64),
+            Types::F64 => Values::DECIMAL(*(bytes_ptr.add(offset) as *mut f64)),
+            _ => todo!("{} is not implemented for FFI struct returns yet", typ),
+        };
+        frame.push(Value { typ: typ.clone(), val });
+        offset += typ.get_size();
+    }
+
+    return Values::STRUCT(String::new(), name.clone(), index);
+}
+
 pub fn call_ffi(_extern: &Extern, stack: &mut Vec<Frame>, cur_frame: usize, global_frame: usize, scope: &Scope, global_scope: &Scope) {
     unsafe {
         let lib = Library::new(&_extern.dll).unwrap();
@@ -119,13 +145,21 @@ pub fn call_ffi(_extern: &Extern, stack: &mut Vec<Frame>, cur_frame: usize, glob
 
         let mut cif: ffi_cif = Default::default();
 
-        let mut ret_type = type_to_type(&_extern.ret_type);
+        let mut ret_type = match &_extern.ret_type.typ[0] {
+            Types::STRUCT(name) => {
+                let _struct = get_struct(&String::new(), &name, global_scope, scope);
+                
+                struct_to_ffi(_struct, &mut types, &mut var_type_storage) 
+            }
+            _ => type_to_type(&_extern.ret_type)
+        };
 
         let mut raw_args: Vec<*mut c_void> = Vec::new();
 
         let mut signed_args: Vec<i64> = Vec::new();
         let mut unsigned_args: Vec<u64> = Vec::new();
-        let mut decimal_args: Vec<f64> = Vec::new();
+        let mut f32_args: Vec<f32> = Vec::new();
+        let mut f64_args: Vec<f64> = Vec::new();
 
         let mut pp: Vec<*mut c_void> = Vec::new();
         let mut s8p: Vec<Vec<i8>> = Vec::new();
@@ -141,6 +175,7 @@ pub fn call_ffi(_extern: &Extern, stack: &mut Vec<Frame>, cur_frame: usize, glob
 
         let mut struct_data: Vec<Vec<u8>> = Vec::new();
 
+        let mut i = 0;
         for arg in &args {
             match &arg[0].val {
                 Values::SIGNED(n) => {
@@ -152,8 +187,17 @@ pub fn call_ffi(_extern: &Extern, stack: &mut Vec<Frame>, cur_frame: usize, glob
                     raw_args.push(unsigned_args.last_mut().unwrap() as *mut _ as *mut c_void);
                 }
                 Values::DECIMAL(n) => {
-                    decimal_args.push(*n);
-                    raw_args.push(decimal_args.last_mut().unwrap() as *mut _ as *mut c_void);
+                    match &_extern.arg_types[i].typ[0] {
+                        Types::F32 => {
+                            f32_args.push(*n as f32);
+                            raw_args.push(f32_args.last_mut().unwrap() as *mut _ as *mut c_void);
+                        }
+                        Types::F64 => {
+                            f64_args.push(*n);
+                            raw_args.push(f64_args.last_mut().unwrap() as *mut _ as *mut c_void);
+                        }
+                        _ => panic!("type mismatch, got {:?} expected {:?}", arg[0], _extern.arg_types[i].typ)
+                    }
                 }
                 Values::POINTER(p, s) => {
                     let val = &stack[global_frame].stack[*p..*p+*s];
@@ -169,40 +213,40 @@ pub fn call_ffi(_extern: &Extern, stack: &mut Vec<Frame>, cur_frame: usize, glob
 
                     let mut offset = 0;
                     let mut i = 0;
-                    for _ in struct_type.var_types {
+                    for typ in struct_type.var_types {
                         let val = &arg[i + 1];
-                        
+
                         let val_ptr = struct_bytes.as_mut_ptr().add(offset);
 
                         match val.val {
                             Values::SIGNED(num) => {
-                                match val.typ.typ[0] {
+                                match typ.typ[0] {
                                     Types::I8  => *(val_ptr as *mut i8)  = num as i8,
                                     Types::I16 => *(val_ptr as *mut i16) = num as i16,
                                     Types::I32 => *(val_ptr as *mut i32) = num as i32,
                                     Types::I64 => *(val_ptr as *mut i64) = num as i64,
-                                    _ => panic!("illegal type created, type is `SIGNED` value is {:?}", val)
+                                    _ => panic!("type mismatch, expected `{:?}` got `{:?}`", typ.typ, val.typ)
                                 }
-                                offset += val.typ.typ[0].get_size();
+                                offset += typ.typ[0].get_size();
                             }
                             Values::UNSIGNED(num) => {
-                                match val.typ.typ[0] {
+                                match typ.typ[0] {
                                     Types::U8  => *(val_ptr as *mut u8)  = num as u8,
                                     Types::U16 => *(val_ptr as *mut u16) = num as u16,
                                     Types::U32 => *(val_ptr as *mut u32) = num as u32,
                                     Types::U64 => *(val_ptr as *mut u64) = num as u64,
-                                    _ => panic!("illegal type created, type is `SIGNED` value is {:?}", val)
+                                    _ => panic!("type mismatch, expected `{:?}` got `{:?}`", typ.typ, val.typ)
                                 }
-                                offset += val.typ.typ[0].get_size();
+                                offset += typ.typ[0].get_size();
                             }
                             Values::DECIMAL(num) => {
-                                match val.typ.typ[0] {
+                                match typ.typ[0] {
                                     Types::F16 => todo!("f16 not supported by ffi yet"), 
                                     Types::F32 => *(val_ptr as *mut f32) = num as f32,
                                     Types::F64 => *(val_ptr as *mut f64) = num as f64,
-                                    _ => panic!("illegal type created, type is `SIGNED` value is {:?}", val)
+                                    _ => panic!("type mismatch, expected `{:?}` got `{:?}`", typ.typ, val.typ)
                                 }
-                                offset += val.typ.typ[0].get_size();
+                                offset += typ.typ[0].get_size();
                             }
                             _ => todo!("unsupported value in struct {:?}", val)
                         }
@@ -215,6 +259,7 @@ pub fn call_ffi(_extern: &Extern, stack: &mut Vec<Frame>, cur_frame: usize, glob
                 }
                 _ => panic!("unsupported type `{:?}` for externs (value: `{:?}`)", arg[0].typ, arg[0].val),
             }
+            i += 1;
         }
         
         prep_cif(&mut cif, ffi_abi_FFI_DEFAULT_ABI, _extern.arg_types.len(), addr_of_mut!(ret_type), arg_types.as_mut_ptr()).unwrap();
@@ -273,8 +318,14 @@ pub fn call_ffi(_extern: &Extern, stack: &mut Vec<Frame>, cur_frame: usize, glob
                     _ => panic!("unsupported return type `{:?}`", _extern.ret_type),
                 }
             }
-            Types::STRUCT(typ) => {
-                todo!("struct return types are not yet implemented");
+            Types::STRUCT(name) => {
+                let struct_type = get_struct(&String::new(), name, global_scope, scope);
+                let struct_size = get_struct_size(&struct_type);
+                
+                let mut struct_data = vec![0u8; struct_size];
+                ffi_call(&mut cif as *mut ffi_cif, Some(*code_ptr.as_fun()), struct_data.as_mut_ptr() as *mut c_void, raw_args.as_mut_ptr());
+
+                struct_from_bytes(name, &struct_type, &mut struct_data, &mut stack[cur_frame])
             }
             _ => panic!("unsupported return type `{:?}`", _extern.ret_type),
         };
