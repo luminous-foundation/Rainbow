@@ -72,6 +72,7 @@ pub struct Type {
     pub typ: Vec<Types>,
 }
 
+// TODO: redundant code 
 impl fmt::Display for Type {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut str = String::new();
@@ -98,6 +99,33 @@ impl fmt::Display for Type {
                 Types::NAME => "name".to_string(),
             }.as_str();
         }
+
+        f.write_str(&str)
+    }
+}
+
+impl fmt::Display for Types {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut str = String::new();
+
+        str += match self {
+            Types::VOID => "void".to_string(),
+            Types::I8 => "i8".to_string(),
+            Types::I16 => "i16".to_string(),
+            Types::I32 => "i32".to_string(),
+            Types::I64 => "i64".to_string(),
+            Types::U8 => "u8".to_string(),
+            Types::U16 => "u16".to_string(),
+            Types::U32 => "u32".to_string(),
+            Types::U64 => "u64".to_string(),
+            Types::F16 => "f16".to_string(),
+            Types::F32 => "f32".to_string(),
+            Types::F64 => "f64".to_string(),
+            Types::POINTER => "*".to_string(),
+            Types::TYPE => "type".to_string(),
+            Types::STRUCT(t) => format!("struct({})", t),
+            Types::NAME => "name".to_string(),
+        }.as_str();
 
         f.write_str(&str)
     }

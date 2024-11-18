@@ -1333,7 +1333,7 @@ pub fn parse_immediate(bytes: &[u8], index: &mut usize) -> Result<Value, String>
         0x0C => {
             value = Values::POINTER(usize::from_be_bytes(bytes[*index..*index+(usize::BITS/8) as usize].try_into().expect("immediate was incorrect length")), 0);
         }
-        0x0D => return Err("`TYPE` is unsupported as an immediate value".to_string()),
+        0x0D => return Err("`TYPE` is unsupported as an immediate value".to_string()), // TODO: support it
         0x0E => return Err("`STRUCT` is unsupported as an immediate value".to_string()),
         0x0F => {
             value = Values::NAME(parse_bytecode_string(bytes, index)?);

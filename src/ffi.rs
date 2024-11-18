@@ -17,7 +17,7 @@ pub unsafe fn type_to_type(typ: &Type) -> ffi_type {
         Types::F32     => types::float,
         Types::F64     => types::double,
         Types::POINTER => types::pointer,
-        _ => panic!("unsupported type `{:?}` for externs", typ.typ[0])
+        _ => panic!("unsupported type `{}` for externs", typ.typ[0])
     }
 }
 
@@ -74,7 +74,7 @@ pub unsafe fn get_pointer(vals: &[Value], pp: &mut Vec<*mut c_void>, s8p: &mut V
         Types::U64 => { push_ptr!(u64, vals, u64p, pp, UNSIGNED); }
         Types::F32 => { push_ptr!(f32, vals, f32p, pp, DECIMAL);  }
         Types::F64 => { push_ptr!(f64, vals, f64p, pp, DECIMAL);  }
-        _ => panic!("unsupported type `{:?}` for extern pointers", vals[0].typ.typ),
+        _ => panic!("unsupported type `{}` for extern pointers", vals[0]),
     }
 }
 
@@ -114,7 +114,7 @@ pub fn call_ffi(_extern: &Extern, stack: &mut Vec<Frame>, cur_frame: usize, glob
         
         let args = stack[cur_frame].pop_args(_extern.arg_types.len(), global_scope, scope);
 
-        let mut types: Vec<ffi_type> = Vec::new();
+        let mut types: Vec<ffi_type> = Vec::with_capacity(_extern.arg_types.len() * 4); // TODO: this is very jank
 
         let mut var_type_storage: Vec<Vec<*mut ffi_type>> = Vec::new();
 
@@ -131,7 +131,7 @@ pub fn call_ffi(_extern: &Extern, stack: &mut Vec<Frame>, cur_frame: usize, glob
                             types.push(arg_type);
                             arg_types.push(types.last_mut().unwrap() as *mut ffi_type);
                         }
-                        _ => panic!("illegal type created, type is `STRUCT` value is {:?}", args[index])
+                        _ => panic!("illegal type created, type is `STRUCT` value is {}", args[index][0])
                     }
                 }
                 _ => {
@@ -196,7 +196,7 @@ pub fn call_ffi(_extern: &Extern, stack: &mut Vec<Frame>, cur_frame: usize, glob
                             f64_args.push(*n);
                             raw_args.push(f64_args.last_mut().unwrap() as *mut _ as *mut c_void);
                         }
-                        _ => panic!("type mismatch, got {:?} expected {:?}", arg[0], _extern.arg_types[i].typ)
+                        _ => panic!("type mismatch, got {} expected {}", arg[0], _extern.arg_types[i])
                     }
                 }
                 Values::POINTER(p, s) => {
@@ -225,7 +225,7 @@ pub fn call_ffi(_extern: &Extern, stack: &mut Vec<Frame>, cur_frame: usize, glob
                                     Types::I16 => *(val_ptr as *mut i16) = num as i16,
                                     Types::I32 => *(val_ptr as *mut i32) = num as i32,
                                     Types::I64 => *(val_ptr as *mut i64) = num as i64,
-                                    _ => panic!("type mismatch, expected `{:?}` got `{:?}`", typ.typ, val.typ)
+                                    _ => panic!("type mismatch, expected `{}` got `{}`", typ, val.typ)
                                 }
                                 offset += typ.typ[0].get_size();
                             }
@@ -235,7 +235,7 @@ pub fn call_ffi(_extern: &Extern, stack: &mut Vec<Frame>, cur_frame: usize, glob
                                     Types::U16 => *(val_ptr as *mut u16) = num as u16,
                                     Types::U32 => *(val_ptr as *mut u32) = num as u32,
                                     Types::U64 => *(val_ptr as *mut u64) = num as u64,
-                                    _ => panic!("type mismatch, expected `{:?}` got `{:?}`", typ.typ, val.typ)
+                                    _ => panic!("type mismatch, expected `{}` got `{}`", typ, val.typ)
                                 }
                                 offset += typ.typ[0].get_size();
                             }
@@ -244,11 +244,11 @@ pub fn call_ffi(_extern: &Extern, stack: &mut Vec<Frame>, cur_frame: usize, glob
                                     Types::F16 => todo!("f16 not supported by ffi yet"), 
                                     Types::F32 => *(val_ptr as *mut f32) = num as f32,
                                     Types::F64 => *(val_ptr as *mut f64) = num as f64,
-                                    _ => panic!("type mismatch, expected `{:?}` got `{:?}`", typ.typ, val.typ)
+                                    _ => panic!("type mismatch, expected `{}` got `{}`", typ, val.typ)
                                 }
                                 offset += typ.typ[0].get_size();
                             }
-                            _ => todo!("unsupported value in struct {:?}", val)
+                            _ => todo!("unsupported value in struct {}", val)
                         }
 
                         i += 1;
@@ -257,11 +257,11 @@ pub fn call_ffi(_extern: &Extern, stack: &mut Vec<Frame>, cur_frame: usize, glob
                     raw_args.push(struct_bytes.as_mut_ptr() as *mut c_void);
                     struct_data.push(struct_bytes);
                 }
-                _ => panic!("unsupported type `{:?}` for externs (value: `{:?}`)", arg[0].typ, arg[0].val),
+                _ => panic!("unsupported type `{}` for externs (value: `{}`)", arg[0].typ, arg[0].val),
             }
             i += 1;
         }
-        
+
         prep_cif(&mut cif, ffi_abi_FFI_DEFAULT_ABI, _extern.arg_types.len(), addr_of_mut!(ret_type), arg_types.as_mut_ptr()).unwrap();
 
         let val = match &_extern.ret_type.typ[0] {
@@ -315,7 +315,7 @@ pub fn call_ffi(_extern: &Extern, stack: &mut Vec<Frame>, cur_frame: usize, glob
                         let result: *const c_void = call::<*const c_void>(&mut cif, code_ptr, raw_args.as_mut_ptr());
                         Values::UNSIGNED(result as u64)
                     }
-                    _ => panic!("unsupported return type `{:?}`", _extern.ret_type),
+                    _ => panic!("unsupported return type `{}`", _extern.ret_type),
                 }
             }
             Types::STRUCT(name) => {
@@ -327,7 +327,7 @@ pub fn call_ffi(_extern: &Extern, stack: &mut Vec<Frame>, cur_frame: usize, glob
 
                 struct_from_bytes(name, &struct_type, &mut struct_data, &mut stack[cur_frame])
             }
-            _ => panic!("unsupported return type `{:?}`", _extern.ret_type),
+            _ => panic!("unsupported return type `{}`", _extern.ret_type),
         };
 
         for i in 0..arg_types.len() {
@@ -343,7 +343,7 @@ pub fn call_ffi(_extern: &Extern, stack: &mut Vec<Frame>, cur_frame: usize, glob
                             index = p;
                             len = s;
                         }
-                        _ => panic!("type mismatch, expected POINTER got {:?} (value: {:?})", args[i][0].typ, args[i][0].val)
+                        _ => panic!("type mismatch, expected POINTER got {} (value: {})", args[i][0].typ, args[i][0].val)
                     }
 
                     let pointer = *(arg as *mut *mut c_void);

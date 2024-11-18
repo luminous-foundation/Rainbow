@@ -76,7 +76,7 @@ impl Scope {
         if self.modules.contains_key(name) {
             return self.modules.get(name).unwrap();
         } else {
-            panic!("tried to get undefined module `{}`", name);
+            panic!("tried to get undefined module `{name}`");
         }
     }
 
