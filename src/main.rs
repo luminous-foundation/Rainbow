@@ -108,8 +108,7 @@ fn main() {
     let start = std::time::Instant::now();
     let retval = run_program(&program, linker_paths, debug, timing);
     if timing {
-        println!();
-        println!("program execution took {:.6}s ({:.4}ms)", start.elapsed().as_secs_f32(), start.elapsed().as_secs_f32() * 1000f32);
+        println!("program parsing and execution took {:.6}s ({:.4}ms)", start.elapsed().as_secs_f32(), start.elapsed().as_secs_f32() * 1000f32);
     }
 
     if retval != 0 {
@@ -135,7 +134,13 @@ pub fn run_program(program: &Vec<u8>, linker_paths: HashSet<String>, debug: bool
     let global_frame = stack.len() - 1;
     stack[global_frame].extend(data_frame);
     
+    let start = std::time::Instant::now();
     let retval = exec_scope(&global_scope, &global_scope, &mut stack, global_frame, false, &mut 0, global_frame, global_frame, &String::new());
+
+    if timing {
+        println!();
+        println!("program execution took {:.6}s ({:.4}ms)", start.elapsed().as_secs_f32(), start.elapsed().as_secs_f32() * 1000f32);
+    }
 
     if retval != 0 {
         return retval;
@@ -409,9 +414,11 @@ fn set_var(name: &String, value: &Values, scope: &Scope, global_scope: &Scope, s
     }
 
     if stack[cur_frame].vars.contains_key(name) {
+        println!("local: {name}({}) = {value}", stack[cur_frame].get_var(name));
         stack[cur_frame].set_var(name, value);
     } else {
         if stack[global_frame].vars.contains_key(name) {
+            println!("global: {name}({}) = {value}", stack[cur_frame].get_var(name));
             stack[global_frame].set_var(name, value);
         } else {
             if name.contains(".") {
@@ -424,6 +431,7 @@ fn set_var(name: &String, value: &Values, scope: &Scope, global_scope: &Scope, s
             }
 
             if stack[module_frame].vars.contains_key(name) {
+                println!("module: {name}({}) = {value}", stack[cur_frame].get_var(name));
                 stack[module_frame].set_var(name, value);
             } else {
                 panic!("tried to set undefined variable `{name}`");
@@ -468,6 +476,11 @@ fn set_struct_var(parent_struct: &Value, name: &String, value: &Values, scope: &
 
     let var_offset = _struct.var_offsets.get(name).
                             expect(format!("attempted to set non-existant variable `{name}` in struct `{}`", _struct.name).as_str());
+    if struct_val.0.len() > 0 {
+        println!("struct: {}.{}.{name}({}) = {value}", struct_val.0, struct_val.1, stack[cur_frame].get(struct_val.2+var_offset));
+    } else {
+        println!("struct: {}.{name}({}) = {value}", struct_val.1, stack[cur_frame].get(struct_val.2+var_offset));
+    }
 
     stack[cur_frame].set(struct_val.2+var_offset, value);
 }

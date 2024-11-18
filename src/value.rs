@@ -26,8 +26,14 @@ impl fmt::Display for Values {
             Values::SIGNED(n) => res += &n.to_string(),
             Values::UNSIGNED(n) => res += &n.to_string(),
             Values::DECIMAL(n) => res += &n.to_string(),
-            Values::POINTER(n, _) => res += &("*".to_string() + &n.to_string()),
-            Values::STRUCT(_, _, _) => res += "struct",
+            Values::POINTER(n, _) => res += &("*".to_string() + &format!("0x{:x}", n)),
+            Values::STRUCT(module, name, _) => {
+                if module.len() > 0 {
+                    res += &format!("struct({module}.{name})")
+                } else {
+                    res += &format!("struct({name})");
+                }
+            }
             Values::TYPE(t) => res += &format!("{t}"),
             Values::NAME(n) => {
                 res += "\"";
@@ -50,20 +56,7 @@ impl fmt::Display for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut res = String::new();
 
-        match &self.val {
-            Values::VOID => res += "VOID",
-            Values::SIGNED(n) => res += &n.to_string(),
-            Values::UNSIGNED(n) => res += &n.to_string(),
-            Values::DECIMAL(n) => res += &n.to_string(),
-            Values::POINTER(n, _) => res += &("*".to_string() + &n.to_string()),
-            Values::STRUCT(_, _, _) => todo!("display for structs is not implemented"),
-            Values::TYPE(t) => res += &format!("{t}"),
-            Values::NAME(n) => {
-                res += "\"";
-                res += &n;
-                res += "\"";
-            }
-        }
+        res += &format!("{}", self.val);
 
         f.write_str(&res)
     }
