@@ -64,11 +64,11 @@ macro_rules! push_ptr {
 // rust has forced my hand with this one
 pub unsafe fn get_pointer(vals: &[Value], pp: &mut Vec<*mut c_void>, s8p: &mut Vec<Vec<i8>>, s16p: &mut Vec<Vec<i16>>, s32p: &mut Vec<Vec<i32>>, s64p: &mut Vec<Vec<i64>>, u8p: &mut Vec<Vec<u8>>, u16p: &mut Vec<Vec<u16>>, u32p: &mut Vec<Vec<u32>>, u64p: &mut Vec<Vec<u64>>, f32p: &mut Vec<Vec<f32>>, f64p: &mut Vec<Vec<f64>>) -> *mut c_void {
     match vals[0].typ.typ[0] {
-        Types::I8  => { push_ptr!(i8, vals,  s8p,  pp, SIGNED);   }
+        Types::I8  => { push_ptr!(i8,  vals, s8p,  pp, SIGNED);   }
         Types::I16 => { push_ptr!(i16, vals, s16p, pp, SIGNED);   }
         Types::I32 => { push_ptr!(i32, vals, s32p, pp, SIGNED);   }
         Types::I64 => { push_ptr!(i64, vals, s64p, pp, SIGNED);   }
-        Types::U8  => { push_ptr!(u8, vals,  u8p,  pp, UNSIGNED); }
+        Types::U8  => { push_ptr!(u8,  vals, u8p,  pp, UNSIGNED); }
         Types::U16 => { push_ptr!(u16, vals, u16p, pp, UNSIGNED); }
         Types::U32 => { push_ptr!(u32, vals, u32p, pp, UNSIGNED); }
         Types::U64 => { push_ptr!(u64, vals, u64p, pp, UNSIGNED); }
@@ -85,17 +85,17 @@ pub unsafe fn struct_from_bytes(name: &String, struct_def: &Struct, bytes: &mut 
     let mut offset = 0;
     for typ in &struct_def.var_types {
         let val = match typ.typ[0] {
-            Types::I8 => Values::SIGNED(*(bytes_ptr.add(offset) as *mut i8) as i64),
-            Types::I16 => Values::SIGNED(*(bytes_ptr.add(offset) as *mut i16) as i64),
-            Types::I32 => Values::SIGNED(*(bytes_ptr.add(offset) as *mut i32) as i64),
-            Types::I64 => Values::SIGNED(*(bytes_ptr.add(offset) as *mut i64)),
-            Types::U8 => Values::UNSIGNED(*(bytes_ptr.add(offset) as *mut u8) as u64),
-            Types::U16 => Values::UNSIGNED(*(bytes_ptr.add(offset) as *mut u16) as u64),
-            Types::U32 => Values::UNSIGNED(*(bytes_ptr.add(offset) as *mut u32) as u64),
+            Types::I8  => Values::SIGNED(*(bytes_ptr.add(offset)   as *mut i8)    as i64),
+            Types::I16 => Values::SIGNED(*(bytes_ptr.add(offset)   as *mut i16)   as i64),
+            Types::I32 => Values::SIGNED(*(bytes_ptr.add(offset)   as *mut i32)   as i64),
+            Types::I64 => Values::SIGNED(*(bytes_ptr.add(offset)   as *mut i64)),
+            Types::U8  => Values::UNSIGNED(*(bytes_ptr.add(offset) as *mut u8)    as u64),
+            Types::U16 => Values::UNSIGNED(*(bytes_ptr.add(offset) as *mut u16)   as u64),
+            Types::U32 => Values::UNSIGNED(*(bytes_ptr.add(offset) as *mut u32)   as u64),
             Types::U64 => Values::UNSIGNED(*(bytes_ptr.add(offset) as *mut u64)),
-            Types::F32 => Values::DECIMAL(*(bytes_ptr.add(offset) as *mut f32) as f64),
-            Types::F64 => Values::DECIMAL(*(bytes_ptr.add(offset) as *mut f64)),
-            _ => todo!("{} is not implemented for FFI struct returns yet", typ),
+            Types::F32 => Values::DECIMAL(*(bytes_ptr.add(offset)  as *mut f32)   as f64),
+            Types::F64 => Values::DECIMAL(*(bytes_ptr.add(offset)  as *mut f64)),
+            _          => todo!("{} is not implemented for FFI struct returns yet", typ),
         };
         frame.push(Value { typ: typ.clone(), val });
         offset += typ.get_size();
@@ -154,26 +154,26 @@ pub fn call_ffi(_extern: &Extern, stack: &mut Vec<Frame>, cur_frame: usize, glob
             _ => type_to_type(&_extern.ret_type)
         };
 
-        let mut raw_args: Vec<*mut c_void> = Vec::new();
+        let mut raw_args:      Vec<*mut c_void> = Vec::new();
 
-        let mut signed_args: Vec<i64> = Vec::new();
-        let mut unsigned_args: Vec<u64> = Vec::new();
-        let mut f32_args: Vec<f32> = Vec::new();
-        let mut f64_args: Vec<f64> = Vec::new();
+        let mut signed_args:   Vec<i64>         = Vec::new();
+        let mut unsigned_args: Vec<u64>         = Vec::new();
+        let mut f32_args:      Vec<f32>         = Vec::new();
+        let mut f64_args:      Vec<f64>         = Vec::new();
 
-        let mut pp: Vec<*mut c_void> = Vec::new();
-        let mut s8p: Vec<Vec<i8>> = Vec::new();
-        let mut s16p: Vec<Vec<i16>> = Vec::new();
-        let mut s32p: Vec<Vec<i32>> = Vec::new();
-        let mut s64p: Vec<Vec<i64>> = Vec::new();
-        let mut u8p: Vec<Vec<u8>> = Vec::new();
-        let mut u16p: Vec<Vec<u16>> = Vec::new();
-        let mut u32p: Vec<Vec<u32>> = Vec::new();
-        let mut u64p: Vec<Vec<u64>> = Vec::new();
-        let mut f32p: Vec<Vec<f32>> = Vec::new();
-        let mut f64p: Vec<Vec<f64>> = Vec::new();
+        let mut pp:            Vec<*mut c_void> = Vec::new();
+        let mut s8p:           Vec<Vec<i8>>     = Vec::new();
+        let mut s16p:          Vec<Vec<i16>>    = Vec::new();
+        let mut s32p:          Vec<Vec<i32>>    = Vec::new();
+        let mut s64p:          Vec<Vec<i64>>    = Vec::new();
+        let mut u8p:           Vec<Vec<u8>>     = Vec::new();
+        let mut u16p:          Vec<Vec<u16>>    = Vec::new();
+        let mut u32p:          Vec<Vec<u32>>    = Vec::new();
+        let mut u64p:          Vec<Vec<u64>>    = Vec::new();
+        let mut f32p:          Vec<Vec<f32>>    = Vec::new();
+        let mut f64p:          Vec<Vec<f64>>    = Vec::new();
 
-        let mut struct_data: Vec<Vec<u8>> = Vec::new();
+        let mut struct_data:   Vec<Vec<u8>>     = Vec::new();
 
         let mut i = 0;
         for arg in &args {
@@ -349,22 +349,22 @@ pub fn call_ffi(_extern: &Extern, stack: &mut Vec<Frame>, cur_frame: usize, glob
                     let pointer = *(arg as *mut *mut c_void);
                     for j in 0..len {
                         let pointer_val = match typ.typ[1] {
-                            Types::VOID => &Values::VOID,
-                            Types::I8 => &Values::SIGNED(*(pointer.wrapping_add(j) as *mut i8) as i64),
-                            Types::I16 => &Values::SIGNED(*(pointer.wrapping_add(j) as *mut i16) as i64),
-                            Types::I32 => &Values::SIGNED(*(pointer.wrapping_add(j) as *mut i32) as i64),
-                            Types::I64 => &Values::SIGNED(*(pointer.wrapping_add(j) as *mut i64) as i64),
-                            Types::U8 => &Values::UNSIGNED(*(pointer.wrapping_add(j) as *mut u8) as u64),
-                            Types::U16 => &Values::UNSIGNED(*(pointer.wrapping_add(j) as *mut u16) as u64),
-                            Types::U32 => &Values::UNSIGNED(*(pointer.wrapping_add(j) as *mut u32) as u64),
-                            Types::U64 => &Values::UNSIGNED(*(pointer.wrapping_add(j) as *mut u64) as u64),
-                            Types::F16 => todo!(),
-                            Types::F32 => &Values::DECIMAL(*(pointer.wrapping_add(j) as *mut f32) as f64),
-                            Types::F64 => &Values::DECIMAL(*(pointer.wrapping_add(j) as *mut f64) as f64),
-                            Types::POINTER => todo!(),
-                            Types::TYPE => todo!(),
+                            Types::VOID      => &Values::VOID,
+                            Types::I8        => &Values::SIGNED(*(pointer.wrapping_add(j)   as *mut i8)  as i64),
+                            Types::I16       => &Values::SIGNED(*(pointer.wrapping_add(j)   as *mut i16) as i64),
+                            Types::I32       => &Values::SIGNED(*(pointer.wrapping_add(j)   as *mut i32) as i64),
+                            Types::I64       => &Values::SIGNED(*(pointer.wrapping_add(j)   as *mut i64) as i64),
+                            Types::U8        => &Values::UNSIGNED(*(pointer.wrapping_add(j) as *mut u8)  as u64),
+                            Types::U16       => &Values::UNSIGNED(*(pointer.wrapping_add(j) as *mut u16) as u64),
+                            Types::U32       => &Values::UNSIGNED(*(pointer.wrapping_add(j) as *mut u32) as u64),
+                            Types::U64       => &Values::UNSIGNED(*(pointer.wrapping_add(j) as *mut u64) as u64),
+                            Types::F16       => todo!(),
+                            Types::F32       => &Values::DECIMAL(*(pointer.wrapping_add(j)  as *mut f32) as f64),
+                            Types::F64       => &Values::DECIMAL(*(pointer.wrapping_add(j)  as *mut f64) as f64),
+                            Types::POINTER   => todo!(),
+                            Types::TYPE      => todo!(),
                             Types::STRUCT(_) => todo!(),
-                            Types::NAME => todo!(),
+                            Types::NAME      => todo!(),
                         };
 
                         stack[global_frame].stack[index + j].set(pointer_val);
