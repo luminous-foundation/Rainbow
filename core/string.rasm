@@ -104,6 +104,45 @@
         RET $res ; ...and return
     }
 
+    i64 ston(struct string str) {
+        VAR i64 res
+        MOV 0 $res
+
+        JE $str.length 0 :end
+
+        VAR u8 curChar
+        VAR u64 iterations
+        MOV 0 $iterations
+
+        :loopie
+            ; Get the current character
+            DEREF $str.text $curChar
+
+            ; If the character is not a digit, end loop
+            ; This should probably return some sort of error,
+            ; But we call it Iterative Design :)
+            JLE $curChar 48 :endie
+
+            ; Convert it to a number
+            SUB $curChar 48 $curChar
+            
+            ; Add it to the result
+            MUL $res 10 $res
+            ADD $res $curChar $res
+
+            ; Move to the next character
+            ADD 1 $iterations $iterations
+            ADD $str.text 1 $str.text
+
+            ; Check if we're done
+            JE $iterations $str.length :endie
+
+            JMP :loopie
+        :endie
+
+        RET $res
+    }
+
     u8* to_cstr(struct string str) {
         ; Create a new string buffer
         VAR u8* newString
