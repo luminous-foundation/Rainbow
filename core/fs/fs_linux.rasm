@@ -70,7 +70,7 @@
     MOV $O_APPEND $APPEND
 
     ; opening a file
-    i32 open(struct file, i32 flags) {
+    i32 open(struct string file, i32 flags) {
         VAR u8* pathCstr
         
         PUSH $file
@@ -89,7 +89,7 @@
         PUSH 27
         CALL io.print
 
-        VAR struct err
+        VAR struct _ err
         CALL get_errno
         CALL string.ntos
         POP $err
@@ -118,7 +118,7 @@
         PUSH 27
         CALL io.print
 
-        VAR struct err
+        VAR struct _ err
         CALL get_errno
         CALL string.ntos
         POP $err
@@ -131,8 +131,8 @@
         RET $bytesRead
     }
 
-    struct readString(i32 fd) {
-        VAR struct res
+    struct string readString(i32 fd) {
+        VAR struct _ res
 
         VAR i64 length
 
@@ -173,7 +173,7 @@
         PUSH 27
         CALL io.print
 
-        VAR struct err
+        VAR struct _ err
         CALL get_errno
         CALL string.ntos
         POP $err
