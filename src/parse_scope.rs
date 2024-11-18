@@ -384,6 +384,11 @@ pub fn parse_extern(bytes: &Vec<u8>, index: &mut usize, linker_paths: &Vec<Strin
             }
         }
     }
+
+    if dll_path.len() == 0 {
+        dll_path = dll;
+    }
+
     let dll = dll_path;
 
     let access_name = parse_bytecode_string(bytes, index)?;
