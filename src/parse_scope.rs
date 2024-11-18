@@ -7,7 +7,7 @@ use half::f16;
 use crate::{_struct::Struct, _type::{Type, Types}, block::Block, frame::Frame, function::{Extern, Function}, instruction::{Instruction, Opcode}, module::Module, parse_program, scope::Scope, value::{Value, Values}};
 
 // expects `index` to be at the start of the scope body
-pub fn parse_scope(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, linker_paths: &Vec<String>, debug: bool, consts: &IndexMap<String, i32>) -> Result<Scope, String> {
+pub fn parse_scope(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, linker_paths: &Vec<String>, debug: bool, consts: &IndexMap<String, i32>, timing: bool) -> Result<Scope, String> {
     let mut scope: Scope = Scope::new();
 
     while *index < bytes.len() {
@@ -15,13 +15,13 @@ pub fn parse_scope(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, l
             0xFF => {
                 *index += 1;
 
-                let func = parse_function(bytes, stack, index, linker_paths, debug, consts)?;
+                let func = parse_function(bytes, stack, index, linker_paths, debug, consts, timing)?;
                 scope.functions.insert(func.name.clone(), func);
             }
             0xFE => {
                 *index += 1;
 
-                scope.add_block(Block::SCOPE(parse_scope(bytes, stack, index, linker_paths, debug, consts)?));
+                scope.add_block(Block::SCOPE(parse_scope(bytes, stack, index, linker_paths, debug, consts, timing)?));
             }
             0xFD => {
                 *index += 1;
@@ -38,7 +38,7 @@ pub fn parse_scope(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, l
             }
             0xFA => {
                 *index += 1;
-                parse_import(bytes, stack, &mut scope, index, linker_paths, consts)?;
+                parse_import(bytes, stack, &mut scope, index, linker_paths, consts, timing)?;
             }
             0xF9 => {
                 *index += 1;
@@ -48,7 +48,7 @@ pub fn parse_scope(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, l
             0xF7 => {
                 *index += 1;
 
-                let s = eval_conditional(bytes, stack, index, linker_paths, debug, consts)?;
+                let s = eval_conditional(bytes, stack, index, linker_paths, debug, consts, timing)?;
                 if s.is_some() {
                     let s = s.unwrap(); 
                     scope.merge(s);
@@ -58,7 +58,7 @@ pub fn parse_scope(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, l
                 *index += 1;
                 let name = parse_bytecode_string(bytes, index)?;
                 *index += 1;
-                let module_scope = parse_scope(bytes, stack, index, linker_paths, debug, consts)?;
+                let module_scope = parse_scope(bytes, stack, index, linker_paths, debug, consts, timing)?;
 
                 let module = Module { name: name.clone(), scope: module_scope, frame: stack.len() };
                 scope.modules.insert(name, module);
@@ -109,7 +109,7 @@ pub fn parse_scope(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, l
 // this just skips past a scope
 // throws away everything it parses
 // not the most performant but whatever
-fn skip_scope(bytes: &Vec<u8>, index: &mut usize) {
+fn skip_scope(bytes: &Vec<u8>, index: &mut usize, timing: bool) {
     let mut stack = Vec::new();
     let linker_paths = Vec::new();
     let debug = false;
@@ -119,11 +119,11 @@ fn skip_scope(bytes: &Vec<u8>, index: &mut usize) {
         match bytes[*index] {
             0xFF => {
                 *index += 1;
-                let _ = parse_function(bytes, &mut stack, index, &linker_paths, debug, &consts);
+                let _ = parse_function(bytes, &mut stack, index, &linker_paths, debug, &consts, timing);
             }
             0xFE => {
                 *index += 1;
-                skip_scope(bytes, index);
+                skip_scope(bytes, index, timing);
             }
             0xFD => {
                 *index += 1;
@@ -146,13 +146,13 @@ fn skip_scope(bytes: &Vec<u8>, index: &mut usize) {
             }
             0xF7 => {
                 *index += 1;
-                let _ = eval_conditional(bytes, &mut stack, index, &linker_paths, debug, &consts);
+                let _ = eval_conditional(bytes, &mut stack, index, &linker_paths, debug, &consts, timing);
             }
             0xF6 => {
                 *index += 1;
                 let _ = parse_bytecode_string(bytes, index);
                 *index += 1;
-                skip_scope(bytes, index);
+                skip_scope(bytes, index, timing);
             }
             _ => {
                 let _ = parse_instruction(bytes, index);
@@ -163,7 +163,7 @@ fn skip_scope(bytes: &Vec<u8>, index: &mut usize) {
 
 // expects `index` to be at the byte after start of the conditional
 // leaves `index` to be the byte after the conditional
-fn eval_conditional(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, linker_paths: &Vec<String>, debug: bool, consts: &IndexMap<String, i32>) -> Result<Option<Scope>, String> {
+fn eval_conditional(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, linker_paths: &Vec<String>, debug: bool, consts: &IndexMap<String, i32>, timing: bool) -> Result<Option<Scope>, String> {
     while *index < bytes.len() {
         match bytes[*index] {
             0x00 | 0x01 => {
@@ -197,44 +197,44 @@ fn eval_conditional(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, 
                 match condition {
                     0x00 => {
                         if left == right {
-                            return Ok(Some(parse_scope(bytes, stack, index, linker_paths, debug, consts)?));
+                            return Ok(Some(parse_scope(bytes, stack, index, linker_paths, debug, consts, timing)?));
                         } else {
-                            skip_scope(bytes, index);
+                            skip_scope(bytes, index, timing);
                         }
                     }
                     0x01 => {
                         if left != right {
-                            return Ok(Some(parse_scope(bytes, stack, index, linker_paths, debug, consts)?));
+                            return Ok(Some(parse_scope(bytes, stack, index, linker_paths, debug, consts, timing)?));
                         } else {
-                            skip_scope(bytes, index);
+                            skip_scope(bytes, index, timing);
                         }
                     }
                     0x02 => {
                         if left >= right {
-                            return Ok(Some(parse_scope(bytes, stack, index, linker_paths, debug, consts)?));
+                            return Ok(Some(parse_scope(bytes, stack, index, linker_paths, debug, consts, timing)?));
                         } else {
-                            skip_scope(bytes, index);
+                            skip_scope(bytes, index, timing);
                         }
                     }
                     0x03 => {
                         if left > right {
-                            return Ok(Some(parse_scope(bytes, stack, index, linker_paths, debug, consts)?));
+                            return Ok(Some(parse_scope(bytes, stack, index, linker_paths, debug, consts, timing)?));
                         } else {
-                            skip_scope(bytes, index);
+                            skip_scope(bytes, index, timing);
                         }
                     }
                     0x04 => {
                         if left <= right {
-                            return Ok(Some(parse_scope(bytes, stack, index, linker_paths, debug, consts)?));
+                            return Ok(Some(parse_scope(bytes, stack, index, linker_paths, debug, consts, timing)?));
                         } else {
-                            skip_scope(bytes, index);
+                            skip_scope(bytes, index, timing);
                         }
                     }
                     0x05 => {
                         if left < right {
-                            return Ok(Some(parse_scope(bytes, stack, index, linker_paths, debug, consts)?));
+                            return Ok(Some(parse_scope(bytes, stack, index, linker_paths, debug, consts, timing)?));
                         } else {
-                            skip_scope(bytes, index);
+                            skip_scope(bytes, index, timing);
                         }
                     }
                     _ => return Err(format!("unknown conditional `{:#04x}`", bytes[*index]))
@@ -245,7 +245,7 @@ fn eval_conditional(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, 
             0x02 => {
                 *index += 2;
 
-                return Ok(Some(parse_scope(bytes, stack, index, linker_paths, debug, consts)?));
+                return Ok(Some(parse_scope(bytes, stack, index, linker_paths, debug, consts, timing)?));
             }
             0x03 => {
                 *index += 1;
@@ -293,7 +293,7 @@ fn skip_import(bytes: &Vec<u8>, index: &mut usize) {
 
 // expects `index` to be at the start of the import
 // leaves `index` to be the byte after the import
-fn parse_import(bytes: &Vec<u8>, stack: &mut Vec<Frame>, scope: &mut Scope, index: &mut usize, linker_paths: &Vec<String>, consts: &IndexMap<String, i32>) -> Result<(), String> {
+fn parse_import(bytes: &Vec<u8>, stack: &mut Vec<Frame>, scope: &mut Scope, index: &mut usize, linker_paths: &Vec<String>, consts: &IndexMap<String, i32>, timing: bool) -> Result<(), String> {
     let import = parse_bytecode_string(bytes, index)?;
 
     let mut import_path = String::new();
@@ -317,7 +317,7 @@ fn parse_import(bytes: &Vec<u8>, stack: &mut Vec<Frame>, scope: &mut Scope, inde
     let mut new_scope = Scope::new();
 
     let program = fs::read(import_path.clone()).expect(&format!("failed to read import `{import}`"));
-    parse_program(&program, stack, &mut new_scope, linker_paths, false, consts);
+    parse_program(&program, stack, &mut new_scope, linker_paths, false, consts, timing, &import);
 
     scope.merge(new_scope);
 
@@ -1158,7 +1158,7 @@ pub fn parse_instruction(bytes: &Vec<u8>, index: &mut usize) -> Result<Instructi
 
 // expects `index` to be at the start of the function definition
 // leaves `index` to be the byte after the function
-pub fn parse_function(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, linker_paths: &Vec<String>, debug: bool, consts: &IndexMap<String, i32>) -> Result<Function, String> {
+pub fn parse_function(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize, linker_paths: &Vec<String>, debug: bool, consts: &IndexMap<String, i32>, timing: bool) -> Result<Function, String> {
     let ret_type = parse_type(bytes, index)?;
 
     let name = parse_bytecode_string(bytes, index)?;
@@ -1171,7 +1171,7 @@ pub fn parse_function(bytes: &Vec<u8>, stack: &mut Vec<Frame>, index: &mut usize
     }
 
     *index += 1;
-    let scope = parse_scope(bytes, stack, index, linker_paths, debug, consts)?;
+    let scope = parse_scope(bytes, stack, index, linker_paths, debug, consts, timing)?;
 
     return Ok(Function { name, ret_type, arg_types, arg_names, scope });
 }

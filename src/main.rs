@@ -106,7 +106,7 @@ fn main() {
     let program = fs::read(program).expect("failed to read program");
 
     let start = std::time::Instant::now();
-    let retval = run_program(&program, linker_paths, debug);
+    let retval = run_program(&program, linker_paths, debug, timing);
     if timing {
         println!();
         println!("program execution took {:.6}s ({:.4}ms)", start.elapsed().as_secs_f32(), start.elapsed().as_secs_f32() * 1000f32);
@@ -117,7 +117,7 @@ fn main() {
     }
 }
 
-pub fn run_program(program: &Vec<u8>, linker_paths: Vec<String>, debug: bool) -> i32 {
+pub fn run_program(program: &Vec<u8>, linker_paths: Vec<String>, debug: bool, timing: bool) -> i32 {
     let mut consts: IndexMap<String, i32> = IndexMap::new();
 
     init_consts(&mut consts);
@@ -128,7 +128,7 @@ pub fn run_program(program: &Vec<u8>, linker_paths: Vec<String>, debug: bool) ->
 
     let mut global_scope = Scope::new();
     
-    parse_program(program, &mut stack, &mut global_scope, &linker_paths, debug, &consts);
+    parse_program(program, &mut stack, &mut global_scope, &linker_paths, debug, &consts, timing, "program");
 
     let data_frame = stack.remove(1);
 
@@ -174,10 +174,11 @@ fn usage() {
     println!("  [file]                          runs the given program");
 }
 
-fn parse_program(program: &Vec<u8>, stack: &mut Vec<Frame>, scope: &mut Scope, linker_paths: &Vec<String>, debug: bool, consts: &IndexMap<String, i32>) {
+fn parse_program(program: &Vec<u8>, stack: &mut Vec<Frame>, scope: &mut Scope, linker_paths: &Vec<String>, debug: bool, consts: &IndexMap<String, i32>, timing: bool, what_parsing: &str) {
+    let start = std::time::Instant::now();
     let mut index = 0;
 
-    *scope = match parse_scope(&program, stack, &mut index, linker_paths, debug, consts) {
+    *scope = match parse_scope(&program, stack, &mut index, linker_paths, debug, consts, timing) {
         Ok(scope) => scope,
         Err(error) => panic!("failed to parse program:\n{error}")
     };
@@ -193,6 +194,10 @@ fn parse_program(program: &Vec<u8>, stack: &mut Vec<Frame>, scope: &mut Scope, l
     if debug {
         println!("global scope: ");
         println!("{scope}");
+    }
+
+    if timing {
+        println!("parsing {what_parsing} took {:.6}s ({:.4}ms)", start.elapsed().as_secs_f32(), start.elapsed().as_secs_f32() * 1000f32);
     }
 }
 
