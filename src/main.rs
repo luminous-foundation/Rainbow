@@ -1,4 +1,4 @@
-use std::{env, fs, path::Path, process};
+use std::{env, fs, path::Path, process, collections::HashSet};
 
 use indexmap::IndexMap;
 
@@ -39,7 +39,7 @@ fn main() {
         process::exit(1);
     }
 
-    let mut linker_paths: Vec<String> = Vec::new();
+    let mut linker_paths: HashSet<String> = HashSet::new();
 
     let mut timing = false;
     let mut debug = false;
@@ -57,7 +57,7 @@ fn main() {
                 }
 
                 i += 1;
-                linker_paths.push(args[i].clone());
+                add_link_path(args[i].clone(), &mut linker_paths);
             }
             "--debug" | "-d" => {
                 debug = true;
@@ -100,7 +100,7 @@ fn main() {
 
     let index = program.replace("\\", "/").rfind("/");
     if index.is_some() {
-        linker_paths.push(program.split_at(index.unwrap()).0.to_string());
+        add_link_path(program.split_at(index.unwrap()).0.to_string(), &mut linker_paths);
     }
 
     let program = fs::read(program).expect("failed to read program");
@@ -117,7 +117,7 @@ fn main() {
     }
 }
 
-pub fn run_program(program: &Vec<u8>, linker_paths: Vec<String>, debug: bool, timing: bool) -> i32 {
+pub fn run_program(program: &Vec<u8>, linker_paths: HashSet<String>, debug: bool, timing: bool) -> i32 {
     let mut consts: IndexMap<String, i32> = IndexMap::new();
 
     init_consts(&mut consts);
@@ -174,7 +174,7 @@ fn usage() {
     println!("  [file]                          runs the given program");
 }
 
-fn parse_program(program: &Vec<u8>, stack: &mut Vec<Frame>, scope: &mut Scope, linker_paths: &Vec<String>, debug: bool, consts: &IndexMap<String, i32>, timing: bool, what_parsing: &str) {
+fn parse_program(program: &Vec<u8>, stack: &mut Vec<Frame>, scope: &mut Scope, linker_paths: &HashSet<String>, debug: bool, consts: &IndexMap<String, i32>, timing: bool, what_parsing: &str) {
     let start = std::time::Instant::now();
     let mut index = 0;
 
@@ -485,4 +485,12 @@ fn get_struct_var<'a>(parent_struct: &Value, name: &String, scope: &Scope, globa
                             expect(format!("attempted to get non-existant variable `{name}` in struct `{}`", _struct.name).as_str());
 
     return stack[cur_frame].get(struct_val.2+var_offset);
+}
+
+fn add_link_path(mut folder: String, link_paths: &mut HashSet<String>) {
+    folder = folder.replace("\\", "/");
+    if folder.ends_with("/") {
+        folder = folder[..folder.len()-1].to_string();
+    }
+    link_paths.insert(fs::canonicalize(folder).unwrap().as_os_str().to_str().unwrap().to_string());
 }
