@@ -301,19 +301,21 @@ fn parse_import(bytes: &Vec<u8>, stack: &mut Vec<Frame>, scope: &mut Scope, inde
         import_path = import.clone();
     }
 
-    for path in linker_paths {
-        let paths = get_paths(path).unwrap();
+    if import_path.len() == 0 {
+        for path in linker_paths {
+            let paths = get_paths(path).unwrap();
 
-        for path in paths {
-            if path.ends_with(&import) {
-                if import_path == "" {
-                    import_path = path;
-                } else {
-                    return Err(format!("ambiguous import {import}\n({import_path} and {path})"));
+            for path in paths {
+                if path.ends_with(&import) {
+                    if import_path == "" {
+                        import_path = path;
+                    } else {
+                        return Err(format!("ambiguous import {import}\n({import_path} and {path})"));
+                    }
                 }
             }
         }
-    }
+    }   
     let mut new_scope = Scope::new();
 
     let program = fs::read(import_path.clone()).expect(&format!("failed to read import `{import}`"));
