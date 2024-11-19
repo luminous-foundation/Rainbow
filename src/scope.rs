@@ -168,11 +168,13 @@ impl Scope {
         let mut str = String::new();
 
         for (name, module) in &self.modules {
-            str += &indentation;
-            str += "module ";
-            str += name;
-            str += "\n";
-            str += &module.scope.to_string(depth + 1, 0);
+            if name != "io" && name != "string" && name != "fs" {
+                str += &indentation;
+                str += "module ";
+                str += name;
+                str += "\n";
+                str += &module.scope.to_string(depth + 1, 0);
+            }
         }
 
         str += &indentation;
