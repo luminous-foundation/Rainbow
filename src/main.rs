@@ -414,11 +414,11 @@ fn set_var(name: &String, value: &Values, scope: &Scope, global_scope: &Scope, s
     }
 
     if stack[cur_frame].vars.contains_key(name) {
-        // println!("local: {name}({}) = {value}", stack[cur_frame].get_var(name));
+        println!("local: {name}({}) = {value}", stack[cur_frame].get_var(name));
         stack[cur_frame].set_var(name, value);
     } else {
         if stack[global_frame].vars.contains_key(name) {
-            // println!("global: {name}({}) = {value}", stack[cur_frame].get_var(name));
+            println!("global: {name}({}) = {value}", stack[cur_frame].get_var(name));
             stack[global_frame].set_var(name, value);
         } else {
             if name.contains(".") {
@@ -432,7 +432,7 @@ fn set_var(name: &String, value: &Values, scope: &Scope, global_scope: &Scope, s
             }
 
             if stack[module_frame].vars.contains_key(name) {
-                // println!("module: {name}({}) = {value}", stack[cur_frame].get_var(name));
+                println!("module: {name}({}) = {value}", stack[cur_frame].get_var(name));
                 stack[module_frame].set_var(name, value);
             } else {
                 panic!("tried to set undefined variable `{name}`");
@@ -484,11 +484,11 @@ fn set_struct_var(parent_struct: &Value, source_struct: &String, name: &String, 
 
         let var_offset = _struct.var_offsets.get(name).
                                 expect(format!("attempted to set non-existant variable `{name}` in struct `{}`", _struct.name).as_str());
-        // if struct_val.0.len() > 0 {
-            // println!("struct: {}.{source_struct}.{name}({}) = {value}", struct_val.0, stack[cur_frame].get(struct_val.2+var_offset));
-        // } else {
-            // println!("struct: {source_struct}.{name}({}) = {value}", stack[cur_frame].get(struct_val.2+var_offset));
-        // }
+        if struct_val.0.len() > 0 {
+            println!("struct: {}.{source_struct}.{name}({}) = {value}", struct_val.0, stack[cur_frame].get(struct_val.2+var_offset));
+        } else {
+            println!("struct: {source_struct}.{name}({}) = {value}", stack[cur_frame].get(struct_val.2+var_offset));
+        }
 
         stack[cur_frame].set(struct_val.2+var_offset, value);
     }
