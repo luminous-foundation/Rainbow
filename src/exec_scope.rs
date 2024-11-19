@@ -210,6 +210,8 @@ macro_rules! mov {
                 let struct_type = get_struct(module, name, $global_scope, $scope);
                 let value = &Values::STRUCT(module.clone(), name.clone(), $stack[$cur_frame].len());
 
+                // TODO: i just fixed this but i've realized it fails to do deep copies properly
+                //       i really do not want to try and fix it right now so this todo is for future me
                 for (_, offset) in struct_type.var_offsets {
                     let val = $stack[$cur_frame].get(index + offset).clone();
                     $stack[$cur_frame].push(val);
@@ -1224,13 +1226,11 @@ pub fn exec_block(scope: &Scope, block: &Vec<Instruction>, global_scope: &Scope,
                 let mut index = *stack[global_frame].vars.get(ptr).unwrap_or_else(|| panic!("attempted to free non-existent pointer `{}`", ptr));
                 let start = index;
 
-                stack[global_frame].vars.remove(ptr);
+                stack[global_frame].vars.swap_remove(ptr);
 
-                // TODO: this loop will get extremely slow with large allocs
-                //       replace this with full heap reconstruction, or somehow allow the heap to get fragmented
                 while &stack[global_frame].allocs[index] == ptr {
-                    stack[global_frame].allocs.remove(start);
-                    stack[global_frame].stack.remove(start);
+                    stack[global_frame].allocs.swap_remove(start);
+                    stack[global_frame].stack.swap_remove(start);
                     index += 1;
                 }
             }

@@ -33,7 +33,7 @@ impl Frame {
         let alloc = self.allocs.pop().expect("attempted to pop empty stack");
         if alloc.len() > 0 {
             if self.vars.contains_key(&alloc) {
-                self.vars.shift_remove(&alloc);
+                self.vars.swap_remove(&alloc);
             } else {
                 println!("https://github.com/luminous-foundation/Rainbow");
                 panic!("something has gone terribly wrong here, create an issue if you see this");
