@@ -385,13 +385,13 @@ fn get_var<'a>(name: &String, scope: &'a Scope, global_scope: &'a Scope, stack: 
         return stack[cur_frame].get_var(name);
     } else {
         if name.contains(".") {
-            let split = name.split(".").collect::<Vec<&str>>();
-            
+            let split = name.split(".").collect::<Vec<&str>>();                
             let struct_name = &split[0].to_string();
-            
+            let var_name = split[1..].to_vec().join(".");
+
             if var_exists(struct_name, stack, cur_frame, global_frame, module_frame) {
                 let parent_struct = get_var(struct_name, scope, global_scope, stack, cur_frame, module_frame, global_frame).clone();
-                return get_struct_var(&parent_struct, &split[1].to_string(), scope, global_scope, stack, cur_frame);
+                return get_struct_var(&parent_struct, struct_name, &var_name, scope, global_scope, stack, cur_frame, module_frame, global_frame);
             } else if module_exists(struct_name, &scope, &global_scope) {
                 let module = get_module(struct_name, scope, global_scope);
                 return get_var(&split[1].to_string(), &module.scope, global_scope, stack, cur_frame, module.frame, global_frame);
@@ -414,11 +414,9 @@ fn set_var(name: &String, value: &Values, scope: &Scope, global_scope: &Scope, s
     }
 
     if stack[cur_frame].vars.contains_key(name) {
-        println!("local: {name}({}) = {value}", stack[cur_frame].get_var(name));
         stack[cur_frame].set_var(name, value);
     } else {
         if stack[global_frame].vars.contains_key(name) {
-            println!("global: {name}({}) = {value}", stack[cur_frame].get_var(name));
             stack[global_frame].set_var(name, value);
         } else {
             if name.contains(".") {
@@ -432,7 +430,6 @@ fn set_var(name: &String, value: &Values, scope: &Scope, global_scope: &Scope, s
             }
 
             if stack[module_frame].vars.contains_key(name) {
-                println!("module: {name}({}) = {value}", stack[cur_frame].get_var(name));
                 stack[module_frame].set_var(name, value);
             } else {
                 panic!("tried to set undefined variable `{name}`");
@@ -469,7 +466,7 @@ fn get_struct<'a>(module: &String, name: &String, global_scope: &'a Scope, scope
 
 fn set_struct_var(parent_struct: &Value, source_struct: &String, name: &String, value: &Values, scope: &Scope, global_scope: &Scope, stack: &mut [Frame], cur_frame: usize, module_frame: usize, global_frame: usize) {
     if name.contains(".") {
-        let split = name.split(".").collect::<Vec<&str>>();                
+        let split = name.split(".").collect::<Vec<&str>>();
         let struct_name = &split[0].to_string();
         let var_name = split[1..].to_vec().join(".");
 
@@ -484,29 +481,32 @@ fn set_struct_var(parent_struct: &Value, source_struct: &String, name: &String, 
 
         let var_offset = _struct.var_offsets.get(name).
                                 expect(format!("attempted to set non-existant variable `{name}` in struct `{}`", _struct.name).as_str());
-        if struct_val.0.len() > 0 {
-            println!("struct: {}.{source_struct}.{name}({}) = {value}", struct_val.0, stack[cur_frame].get(struct_val.2+var_offset));
-        } else {
-            println!("struct: {source_struct}.{name}({}) = {value}", stack[cur_frame].get(struct_val.2+var_offset));
-        }
 
         stack[cur_frame].set(struct_val.2+var_offset, value);
     }
 }
 
-fn get_struct_var<'a>(parent_struct: &Value, name: &String, scope: &Scope, global_scope: &'a Scope, stack: &'a mut [Frame], cur_frame: usize) -> &'a Value {    
-    
-    let struct_val = match &parent_struct.val {
-        Values::STRUCT(module, name, index) => (module, name, index),
-        _ => panic!("cannot get a variable in a value that is not a struct"),
-    };
+fn get_struct_var<'a>(parent_struct: &Value, source_struct: &String, name: &String, scope: &Scope, global_scope: &'a Scope, stack: &'a mut [Frame], cur_frame: usize, module_frame: usize, global_frame: usize) -> &'a Value {
+    if name.contains(".") {
+        let split = name.split(".").collect::<Vec<&str>>();
+        let struct_name = &split[0].to_string();
+        let var_name = split[1..].to_vec().join(".");
 
-    let _struct = get_struct(struct_val.0, struct_val.1, scope, global_scope);
+        let parent_struct = get_var(&(source_struct.clone() + "." + &struct_name), scope, global_scope, stack, cur_frame, module_frame, global_frame).clone();
+        return get_struct_var(&parent_struct, &(source_struct.clone() + "." + &var_name), &var_name, scope, global_scope, stack, cur_frame, module_frame, global_frame);
+    } else {
+        let struct_val = match &parent_struct.val {
+            Values::STRUCT(module, name, index) => (module, name, index),
+            _ => panic!("cannot get a variable in a value that is not a struct"),
+        };
 
-    let var_offset = _struct.var_offsets.get(name).
-                            expect(format!("attempted to get non-existant variable `{name}` in struct `{}`", _struct.name).as_str());
+        let _struct = get_struct(struct_val.0, struct_val.1, scope, global_scope);
 
-    return stack[cur_frame].get(struct_val.2+var_offset);
+        let var_offset = _struct.var_offsets.get(name).
+                                expect(format!("attempted to get non-existant variable `{name}` in struct `{}`", _struct.name).as_str());
+
+        return stack[cur_frame].get(struct_val.2+var_offset);
+    }
 }
 
 fn add_link_path(mut folder: String, link_paths: &mut HashSet<String>) {
