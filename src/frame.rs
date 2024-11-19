@@ -95,7 +95,7 @@ impl Frame {
 
     pub fn set_var(&mut self, name: &String, value: &Values) {
         let val = *self.vars.get(name).unwrap_or_else(|| panic!("attempted to set value of undefined variable `{}`", name));
-        self.stack[val].set(value);
+        self.stack[val].set(value); 
     }
 
     pub fn set(&mut self, index: usize, value: &Values) {

@@ -205,7 +205,22 @@ macro_rules! jl {
 
 macro_rules! mov {
     ($a:expr, $b:expr, $scope:expr, $global_scope:expr, $stack:expr, $cur_frame:expr, $module_frame:expr, $global_frame:expr) => {
-        set_var($b, &$a.val, $scope, $global_scope, $stack, $cur_frame, $module_frame, $global_frame);
+        match &$a.val {
+            Values::STRUCT(module, name, index) => {
+                let struct_type = get_struct(module, name, $global_scope, $scope);
+                let value = &Values::STRUCT(module.clone(), name.clone(), $stack[$cur_frame].len());
+
+                for (_, offset) in struct_type.var_offsets {
+                    let val = $stack[$cur_frame].get(index + offset).clone();
+                    $stack[$cur_frame].push(val);
+                }
+                
+                set_var($b, &value, $scope, $global_scope, $stack, $cur_frame, $module_frame, $global_frame);
+            }
+            _ => {
+                set_var($b, &$a.val, $scope, $global_scope, $stack, $cur_frame, $module_frame, $global_frame);
+            }
+        }
     }
 }
 
@@ -1209,7 +1224,7 @@ pub fn exec_block(scope: &Scope, block: &Vec<Instruction>, global_scope: &Scope,
                 let mut index = *stack[global_frame].vars.get(ptr).unwrap_or_else(|| panic!("attempted to free non-existent pointer `{}`", ptr));
                 let start = index;
 
-                stack[global_frame].vars.shift_remove(ptr);
+                stack[global_frame].vars.remove(ptr);
 
                 // TODO: this loop will get extremely slow with large allocs
                 //       replace this with full heap reconstruction, or somehow allow the heap to get fragmented
